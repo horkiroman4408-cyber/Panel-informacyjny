@@ -9,7 +9,7 @@ try{const saved=JSON.parse(localStorage.getItem('incydenty-worker-tv'));if(saved
 const onlyNormsInput=q('onlynorms');
 if(onlyNormsInput){onlyNormsInput.checked=false;onlyNormsInput.hidden=true;const oldLabel=onlyNormsInput.closest('label');if(oldLabel)oldLabel.replaceWith(onlyNormsInput);}
 const dailyTV=q('tv').onclick;
-q('workerArea').innerHTML=`<div class="workerheading"><div><div class="eyebrow">WYNIKI ZA WYBRANY OKRES</div><h2>Karty pracowników</h2><p>Realizacja norm i czas pracy w procesach.</p></div><button id="workerImport" class="primary">Wczytaj pliki Excel</button><input id="workerFiles" type="file" accept=".xlsx" multiple hidden></div><div class="workerfilters glass"><label>Okres<select id="workerPeriod"></select></label><label>Pracownik<input id="workerSearch" placeholder="Szukaj Login TH" autocomplete="off"></label><span id="workerCount"></span><button id="workerClear">Wyczyść karty</button></div><div id="workerMessage" role="status" hidden></div><div id="workerCards" class="workercards"></div><div id="workerTVbar" class="monthly-tvbar" hidden><span id="workerTVstatus"></span><button id="workerTVsettings">⚙ Ustawienia</button><button id="workerPause">Ⅱ Wstrzymaj</button><button id="workerExit">Zakończ pokaz ✕</button></div><dialog id="workerTVdialog" aria-labelledby="workerTVtitle"><div class="confighead"><div><div class="eyebrow">KARTY PRACOWNIKÓW</div><h2 id="workerTVtitle">Ustawienia TV</h2></div><button id="workerTVclose" aria-label="Zamknij ustawienia kart TV">✕</button></div><div class="configgrid"><label>Zmiana co<select id="workerInterval"><option value="10">10 sekund</option><option value="20">20 sekund</option><option value="30">30 sekund</option><option value="60">60 sekund</option></select></label><div class="worker-mode-label">Rozmieszczenie kart</div></div><div class="worker-mode-choices" role="radiogroup" aria-label="Rozmieszczenie kart"><label class="worker-mode-option"><input type="radio" name="workerTVMode" value="auto" id="workerModeAuto"><span><b>Automatycznie</b><small>Dopasuj liczbę kart do ekranu i liczby procesów</small></span></label><label class="worker-mode-option"><input type="radio" name="workerTVMode" value="manual" id="workerModeManual"><span><b>Ręcznie</b><small>Wybierz liczbę pracowników na ekranie</small></span></label></div><div id="workerManualBox" class="worker-manual-box" hidden><div class="worker-manual-label">Kart jednocześnie</div><div class="worker-card-choices" role="radiogroup" aria-label="Kart jednocześnie"><label><input type="radio" name="workerTVCount" value="5"><span>5</span></label><label><input type="radio" name="workerTVCount" value="10"><span>10</span></label><label><input type="radio" name="workerTVCount" value="15"><span>15</span></label><label><input type="radio" name="workerTVCount" value="20"><span>20</span></label></div></div><div class="worker-tv-note" id="workerTVnote">Wszystkie procesy są widoczne na każdej karcie. Jeśli wybrany układ nie mieści się na ekranie, karta nie zostanie ucięta.</div><label class="hideoption"><input id="workerAutoHide" type="checkbox"> Ukrywaj sterowanie po 3 sekundach</label><p class="confighelp">Pokaz obejmuje pracowników z wybranego okresu i filtra. Karty są uporządkowane po Login TH. Wszystkie procesy pracownika są widoczne razem, bez zmiany stron wewnątrz kart.</p><button id="workerTVstart" class="primary">Uruchom pokaz</button></dialog>`;
+q('workerArea').innerHTML=`<div class="workerheading"><div><div class="eyebrow">WYNIKI ZA WYBRANY OKRES</div><h2>Karty pracowników</h2><p>Realizacja norm i czas pracy w procesach.</p></div><button id="workerImport" class="primary" hidden aria-hidden="true" tabindex="-1">Wczytaj pliki Excel</button><input id="workerFiles" type="file" accept=".xlsx" multiple hidden></div><div class="workerfilters glass"><label>Okres<select id="workerPeriod"></select></label><label>Pracownik<input id="workerSearch" placeholder="Szukaj Login TH" autocomplete="off"></label><span id="workerCount"></span><button id="workerClear">Wyczyść karty</button></div><div id="workerMessage" role="status" hidden></div><div id="workerCards" class="workercards"></div><div id="workerTVbar" class="monthly-tvbar" hidden><span id="workerTVstatus"></span><button id="workerTVsettings">⚙ Ustawienia</button><button id="workerPause">Ⅱ Wstrzymaj</button><button id="workerExit">Zakończ pokaz ✕</button></div><dialog id="workerTVdialog" aria-labelledby="workerTVtitle"><div class="confighead"><div><div class="eyebrow">KARTY PRACOWNIKÓW</div><h2 id="workerTVtitle">Ustawienia TV</h2></div><button id="workerTVclose" aria-label="Zamknij ustawienia kart TV">✕</button></div><div class="configgrid"><label>Zmiana co<select id="workerInterval"><option value="10">10 sekund</option><option value="20">20 sekund</option><option value="30">30 sekund</option><option value="60">60 sekund</option></select></label><div class="worker-mode-label">Rozmieszczenie kart</div></div><div class="worker-mode-choices" role="radiogroup" aria-label="Rozmieszczenie kart"><label class="worker-mode-option"><input type="radio" name="workerTVMode" value="auto" id="workerModeAuto"><span><b>Automatycznie</b><small>Dopasuj liczbę kart do ekranu i liczby procesów</small></span></label><label class="worker-mode-option"><input type="radio" name="workerTVMode" value="manual" id="workerModeManual"><span><b>Ręcznie</b><small>Wybierz liczbę pracowników na ekranie</small></span></label></div><div id="workerManualBox" class="worker-manual-box" hidden><div class="worker-manual-label">Kart jednocześnie</div><div class="worker-card-choices" role="radiogroup" aria-label="Kart jednocześnie"><label><input type="radio" name="workerTVCount" value="5"><span>5</span></label><label><input type="radio" name="workerTVCount" value="10"><span>10</span></label><label><input type="radio" name="workerTVCount" value="15"><span>15</span></label><label><input type="radio" name="workerTVCount" value="20"><span>20</span></label></div></div><div class="worker-tv-note" id="workerTVnote">Wszystkie procesy są widoczne na każdej karcie. Jeśli wybrany układ nie mieści się na ekranie, karta nie zostanie ucięta.</div><label class="hideoption"><input id="workerAutoHide" type="checkbox"> Ukrywaj sterowanie po 3 sekundach</label><p class="confighelp">Pokaz obejmuje pracowników z wybranego okresu i filtra. Karty są uporządkowane po Login TH. Wszystkie procesy pracownika są widoczne razem, bez zmiany stron wewnątrz kart.</p><button id="workerTVstart" class="primary">Uruchom pokaz</button></dialog>`;
 function validWorker(r){return r&&typeof r.login==='string'&&validDate(r.from)&&validDate(r.to)&&r.from<=r.to&&Array.isArray(r.rows)&&r.rows.length>0&&r.rows.every(x=>typeof x.process==='string'&&[x.pieces,x.hours,x.kpi].every(v=>Number.isFinite(v)&&v>=0));}
 function plural(n,one,few,many){return n===1?one:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?few:many;}
 function periodKey(r){return r.from+'|'+r.to}function reportKey(r){return r.login+'|'+periodKey(r)}
@@ -23,8 +23,8 @@ function message(text){q('workerMessage').textContent=text;q('workerMessage').hi
 function updatePeriods(preferred){const selected=preferred||q('workerPeriod').value,periods=[...new Map(reports.map(r=>[periodKey(r),r])).entries()].sort(([a],[b])=>b.localeCompare(a));q('workerPeriod').replaceChildren(...periods.map(([key,r])=>{const o=document.createElement('option');o.value=key;o.textContent=periodLabel(r);return o}));if(periods.some(([k])=>k===selected))q('workerPeriod').value=selected;}
 function cardMarkup(r,limit){const summary=summarize(r),key=reportKey(r),isExpanded=expanded.has(key),totalPages=1,localPage=0,shown=monthlyTV?r.rows:isExpanded?r.rows:r.rows.slice(0,5);return `<article class="employee-card glass" data-key="${safe(key)}"><div class="employee-head"><div><div class="eyebrow">LOGIN TH</div><h3>${safe(r.login)}</h3><p>${safe(periodLabel(r))}</p></div><span class="employee-badge">${r.rows.length} ${plural(r.rows.length,'proces','procesy','procesów')}</span></div><div class="employee-summary"><div><span>KPI za okres</span><strong class="${summary.kpi!==null&&summary.kpi>=100?'goodtext':'neutral-kpi'}">${summary.kpi===null?'—':num(summary.kpi)+'%'}</strong></div><div><span>Czas w procesach</span><strong>${num(summary.hours)} <small>h</small></strong></div><div title="Liczba procesów z KPI co najmniej 100% względem wszystkich procesów pracownika."><span>Procesy w normie</span><strong>${summary.inNorm}/${r.rows.length}</strong></div></div><div class="employee-table"><div class="employee-table-head"><span>Proces</span><span>Szt. przel.</span><span>Czas</span><span>KPI</span></div><div class="employee-processes">${shown.map(x=>`<div class="employee-process"><div class="employee-process-line"><strong>${safe(x.process)}</strong><span>${num(x.pieces,0)}</span><span>${num(x.hours,1)} h</span><b class="${x.kpi>=100?'good':'below'}">${num(x.kpi)}%</b></div><div class="employee-track"><div style="width:${Math.min(100,x.kpi/1.5)}%" class="${x.kpi>=100?'':'below-fill'}"></div><i></i></div></div>`).join('')}</div></div>${monthlyTV?'':`<div class="employee-foot"><button class="employee-expand" data-key="${safe(key)}">${isExpanded?'Zwiń':'Pełna karta'}</button></div>`}</article>`;}
 function render(){const list=filtered();q('workerCount').textContent=list.length+' '+plural(list.length,'karta','karty','kart')+' · '+reports.length+' zapisanych';if(active){q('tv').disabled=!list.length;q('upload').disabled=busy;}q('workerClear').disabled=!reports.length;q('workerPeriod').disabled=!reports.length;const visible=monthlyTV?list.slice(index,index+effectiveCards):list;q('workerCards').className='workercards'+(monthlyTV?' cards-tv-grid':'');q('workerCards').innerHTML=visible.length?visible.map(r=>cardMarkup(r,monthlyTV?capacity:5)).join(''):`<div class="glass reportempty"><div class="emptyico">↥</div><h3>${reports.length?'Brak kart dla tego filtra':'Wczytaj raporty pracowników'}</h3><p>Dodaj do 25 plików Excel jednocześnie.<br>Login TH i okres zostaną odczytane z filtrów w plikach.</p><button id="workerEmptyImport" class="primary">Wczytaj pliki Excel</button></div>`;q('workerEmptyImport')?.addEventListener('click',()=>q('workerFiles').click());if(monthlyTV){q('workerTVstatus').textContent=(list.length?(index+1)+'–'+Math.min(index+effectiveCards,list.length):'0')+' / '+list.length+(paused?' · Pauza':' · co '+settings.interval+' s');cancelAnimationFrame(raf);raf=requestAnimationFrame(measure);}}
-function switchView(worker){if(monthlyTV)stop();active=worker;q('workerArea').hidden=!worker;q('norms').hidden=worker;q('processView').classList.toggle('active',!worker);q('workerView').classList.toggle('active',worker);q('upload').textContent=worker?'↥ Pliki pracowników':'↥ Wczytaj Excel';q('notice').hidden=true;if(worker)render();else{q('tv').disabled=!data.sections.length;q('upload').disabled=false;}}
-q('processView').onclick=()=>switchView(false);q('workerView').onclick=()=>switchView(true);const dailyTab=q('results').onclick;q('results').onclick=()=>{dailyTab();q('resultViews').hidden=false;switchView(active)};const assignmentTab=q('assignment').onclick;q('assignment').onclick=()=>{assignmentTab();q('resultViews').hidden=true;q('workerArea').hidden=true};const back=q('back').onclick;q('back').onclick=()=>{back();q('resultViews').hidden=false;switchView(active)};
+function switchView(worker){if(monthlyTV)stop();active=worker;q('workerArea').hidden=!worker;q('norms').hidden=worker;q('processView').classList.toggle('active',!worker);q('workerView').classList.toggle('active',worker);q('upload').textContent=worker?'↥ Wczytaj pliki pracowników':'↥ Wczytaj raport Excel';q('upload').hidden=false;q('notice').hidden=true;if(worker)render();else{q('tv').disabled=!data.sections.length;q('upload').disabled=false;}}
+q('processView').onclick=()=>switchView(false);q('workerView').onclick=()=>switchView(true);const dailyTab=q('results').onclick;q('results').onclick=()=>{dailyTab();q('resultViews').hidden=false;switchView(active)};const assignmentTab=q('assignment').onclick;q('assignment').onclick=()=>{assignmentTab();q('resultViews').hidden=true;q('workerArea').hidden=true;q('upload').hidden=true};const back=q('back').onclick;q('back').onclick=()=>{back();q('resultViews').hidden=false;switchView(active)};
 const dailyUpload=q('upload').onclick;q('upload').onclick=()=>active?q('workerFiles').click():dailyUpload();q('workerImport').onclick=()=>q('workerFiles').click();q('workerSearch').oninput=q('workerPeriod').onchange=()=>{index=0;step=0;render()};q('workerCards').onclick=e=>{const b=e.target.closest('.employee-expand');if(!b)return;const key=b.dataset.key;if(expanded.has(key))expanded.delete(key);else expanded.add(key);render()};q('workerClear').onclick=()=>{reports=[];expanded.clear();save();updatePeriods();render();message('Usunięto zapisane karty pracowników. Wyniki procesów pozostają osobno.');};
 q('workerFiles').onchange=async event=>{const files=[...event.target.files];if(!files.length)return;if(files.length>25){message('Wybierz maksymalnie 25 plików w jednej partii.');event.target.value='';return}busy=true;q('workerImport').disabled=true;q('upload').disabled=true;let imported=0,replaced=0,preferred;const errors=[];for(let i=0;i<files.length;i++){const file=files[i];message('Wczytywanie '+(i+1)+' / '+files.length+'…');try{if(file.size>10000000)throw Error('Maksymalny rozmiar pliku to 10 MB.');const r=parseWorkerRows(await xlsxRows(await file.arrayBuffer(),'Export'),file.name);const existing=reports.findIndex(x=>reportKey(x)===reportKey(r));if(existing>=0){reports[existing]=r;replaced++}else reports.push(r);preferred=periodKey(r);imported++;}catch(error){errors.push(file.name+': '+error.message)}}const stored=save();busy=false;q('workerImport').disabled=false;q('upload').disabled=false;updatePeriods(preferred);expanded.clear();index=0;step=0;render();message('Wczytano '+imported+' / '+files.length+' plików'+(replaced?' · zaktualizowano '+replaced+' kart':'')+'.'+(!stored?' Nie udało się zapisać kart w przeglądarce.':' Karty zapisano w tej przeglądarce.')+(errors.length?' Pominięto: '+errors.join(' | '):''));event.target.value='';};
 function toggleTVMode(){const manual=q('workerModeManual').checked;q('workerManualBox').hidden=!manual;}
@@ -65,8 +65,58 @@ function measure(){if(!monthlyTV||settings.layout!=='auto')return;
 
 function stop(){monthlyTV=false;clearInterval(timer);clearTimeout(hideTimer);cancelAnimationFrame(raf);document.body.classList.remove('tv','monthly-tv');q('workerTVbar').hidden=true;q('workerTVbar').classList.remove('controls-hidden');q('workerTVbar').inert=false;if(q('workerTVdialog').open)q('workerTVdialog').close();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});render();}
 q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=openTV;q('workerTVstart').onclick=start;q('workerTVclose').onclick=()=>q('workerTVdialog').close();q('workerTVdialog').addEventListener('close',controls);q('workerPause').onclick=()=>{paused=!paused;q('workerPause').textContent=paused?'▶ Wznów':'Ⅱ Wstrzymaj';render();controls()};q('workerExit').onclick=stop;for(const e of ['pointermove','pointerdown','touchstart'])document.addEventListener(e,controls,{passive:true});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&monthlyTV&&!q('workerTVdialog').open)stop();else controls()});document.addEventListener('fullscreenchange',()=>{if(monthlyTV&&!document.fullscreenElement)stop()});let resizeTimer;window.addEventListener('resize',()=>{if(monthlyTV){clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{maxRow=0;renderTV()},100)}});
-const help=document.createElement('dialog');help.id='workerInfo';help.innerHTML='<h2>Karty pracowników — dane</h2><p>Login TH i zakres dat pochodzą z filtrów w każdym pliku Excel.</p><p>KPI za okres to średnia KPI procesów ważona czasem. Każdy KPI procesu pochodzi z kolumny KPI %.</p><p>Procesy w normie pokazuje liczbę procesów z KPI ≥ 100% w stosunku do wszystkich procesów pracownika. Wartości Pieces dla poszczególnych procesów pozostają w tabeli.</p><p>Zaokrąglenia dotyczą tylko widoku. Obliczenia wykorzystują pełną precyzję danych.</p><p>Pliki są przetwarzane lokalnie. Karty są zapisane osobno od wyników procesów, w tej przeglądarce. Ten sam Login TH i ten sam zakres dat aktualizują istniejącą kartę.</p><button id="workerInfoClose" class="primary">Zamknij</button>';document.body.append(help);const dailyInfo=q('settings').onclick;q('settings').onclick=()=>active?help.showModal():dailyInfo();q('workerInfoClose').onclick=()=>help.close();
-
+// One information center for both data views, replacing the old two dialogs.
+const legacyInfo=q('info');legacyInfo.hidden=true;
+const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
+infoPanel.innerHTML=`
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.8</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
+ <section class="inc-info-section" id="incTabData" role="tabpanel">
+  <h3>Dane raportów</h3>
+  <div class="inc-info-item"><div><strong>Wyniki procesów</strong><small>Źródło: Excel · arkusz RAPORT</small><small id="incProcessSource"></small></div></div>
+  <div class="inc-info-item"><div><strong>Karty pracowników</strong><small>Źródło: raporty Login TH · arkusz Export</small><small id="incWorkerSource"></small></div></div>
+  <h3>Jak obliczane są wyniki?</h3>
+  <p><b>Realizacja normy</b> = wynik szt./h ÷ norma × 100%.</p>
+  <p><b>KPI za okres</b> = średnia KPI procesów ważona czasem pracy.</p>
+  <p><b>Procesy w normie</b> = liczba procesów z KPI ≥ 100% / wszystkie procesy pracownika.</p>
+  <p class="inc-muted">Wynik szt./h i KPI procesu pochodzą z raportów. Zaokrąglenie dotyczy jedynie wyświetlania.</p>
+  <div class="inc-info-safe"><b>Ochrona danych</b><p>Import odbywa się lokalnie. Dane zapisują się w tej przeglądarce i nie są wysyłane na serwer. Nie synchronizują się między komputerami.</p></div>
+  <details class="inc-danger-area"><summary>Zarządzanie danymi</summary><div><button type="button" id="incClearProcess">Wyczyść wyniki procesów</button><button type="button" id="incClearWorkers">Wyczyść karty pracowników</button></div></details>
+ </section>
+ <section class="inc-info-section" id="incTabApp" role="tabpanel" hidden>
+  <div class="inc-info-item"><strong>Wersja aplikacji</strong><b id="incAppVersion">1.1.8</b></div>
+  <div class="inc-info-item"><strong>Status PWA</strong><span id="incPwaStatus">Sprawdzanie…</span></div>
+  <h3>Funkcje</h3><p>Wyniki procesów, karty pracowników, import Excel i niezależne pokazy TV w osobnych oknach aplikacji.</p>
+  <h3>Tryb TV</h3><p>Wybór ekranów, kolejności, czasu wyświetlania i automatycznego lub ręcznego dopasowania kart do ekranu.</p>
+  <p class="inc-muted">Przydział do procesów jest przygotowany do rozbudowy. Import przydziałów nie jest jeszcze dostępny.</p>
+ </section>
+ <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
+  <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
+  <details open><summary><strong>v1.1.8</strong> · Informacje i układ aplikacji</summary><p>Jedno centrum informacji, historia zmian oraz jeden przycisk importu na aktywny widok. Uporządkowana nawigacja.</p></details>
+  <details><summary><strong>v1.1.7</strong> · Karty pracowników</summary><p>Procesy w normie zamiast łącznego wolumenu; usunięto powtarzający się opis u dołu kart.</p></details>
+  <details><summary><strong>v1.1.6</strong> · Uproszczenie widoków</summary><p>Usunięto tryb Tylko normy.</p></details>
+  <details><summary><strong>v1.1.5</strong> · Wspólny pokaz TV</summary><p>Ekrany wyników i kart pracowników w jednym pokazie, z wyborem kolejności i czasu.</p></details>
+  <details><summary><strong>v1.1.4</strong> · Kompaktowy interfejs</summary><p>Zmniejszono odstępy oraz wysokość elementów zwykłego widoku.</p></details>
+  <details><summary><strong>v1.1.3</strong> · Karty na ekranie TV</summary><p>Wprowadzono dostosowanie liczby kart pracowników do ekranu.</p></details>
+  <details><summary><strong>v1.1.2</strong> · Aktualizacje PWA</summary><p>Poprawiono listę zasobów offline i odświeżanie aktualizacji.</p></details>
+  <details><summary><strong>v1.1.1</strong> · Pięć kart</summary><p>Dodano widok pięciu kart pracowników z pełną listą procesów.</p></details>
+  <details><summary><strong>v1.1.0</strong> · Karty pracowników</summary><p>Dodano wieloplikowy import raportów pracowników i ich karty.</p></details>
+ </section>`;
+document.body.append(infoPanel);
+const infoTabs=[...infoPanel.querySelectorAll('[data-info-tab]')];
+function showInfoTab(tab){for(const b of infoTabs){const on=b.dataset.infoTab===tab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;}for(const [id,key] of [['incTabData','data'],['incTabApp','app'],['incTabHistory','history']])q(id).hidden=tab!==key;}
+function openInformation(){
+ q('incProcessSource').textContent=data.sections.length?(data.source||'Raport wczytany')+' · '+(validPeriod(data.period)?displayPeriodDate(data.period.from,data.period.fromTime)+' — '+displayPeriodDate(data.period.to,data.period.toTime):'Okres nieustawiony'):'Nie wczytano raportu';
+ q('incWorkerSource').textContent=reports.length?reports.length+' zapisanych kart · ostatni import: '+new Date(Math.max(...reports.map(r=>Date.parse(r.importedAt)||0))).toLocaleString('pl-PL'):'Nie wczytano kart';
+ const pwaText=q('pwaState')?.textContent||'';q('incPwaStatus').textContent=navigator.serviceWorker?.controller?'Offline dostępny po zapisaniu zasobów':'PWA · '+(pwaText||'Sprawdzanie statusu');
+ fetch('./version.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{if(v&&/^\d+\.\d+\.\d+$/.test(v.version)){q('incVersion').textContent='v'+v.version;q('incAppVersion').textContent=v.version;}}).catch(()=>{});
+ showInfoTab('data');infoPanel.showModal();
+}
+q('settings').textContent='ⓘ Informacje';q('settings').onclick=openInformation;
+infoTabs.forEach(b=>b.onclick=()=>showInfoTab(b.dataset.infoTab));q('incInfoClose').onclick=()=>infoPanel.close();
+q('incClearProcess').onclick=()=>{if(!confirm('Usunąć zapisany raport wyników procesów?'))return;q('reset').click();infoPanel.close();};
+q('incClearWorkers').onclick=()=>{if(!confirm('Usunąć wszystkie zapisane karty pracowników?'))return;q('workerClear').click();openInformationRefresh();};
+function openInformationRefresh(){q('incWorkerSource').textContent='Nie wczytano kart';}
 // TV layout belongs to this module: no separate tv5.css is required.
 const workerLayoutStyles=document.createElement('style');
 workerLayoutStyles.id='employee-layout-styles';
@@ -204,6 +254,53 @@ body.monthly-tv .cards-tv-grid .employee-process-line strong{font-size:clamp(9px
  body:not(.tv) .employee-card{padding:18px}
  body:not(.tv) .workercards{gap:14px}
 }
+
+/* Normal desktop layout: one import, compact consistent navigation and cards */
+body:not(.tv) #workerImport{display:none!important}
+body:not(.tv) .shell{max-width:1920px;padding-top:clamp(12px,1.3vw,24px)}
+body:not(.tv) header{min-height:74px!important;align-items:center}
+body:not(.tv) .brand h1{font-size:clamp(25px,2vw,35px);letter-spacing:.10em}
+body:not(.tv) .brand p{font-size:12px}
+body:not(.tv) nav.glass{margin-top:14px;padding:7px 10px;border-radius:20px}
+body:not(.tv) nav .tabs button{padding:10px 16px;font-size:13px}
+body:not(.tv) nav .actions button{font-size:12px;padding:9px 14px}
+body:not(.tv) #resultViews{margin:12px auto 12px}
+body:not(.tv) .titlebar{margin:13px 0 16px}
+body:not(.tv) .titlebar h2{font-size:25px}
+body:not(.tv) .toolbar{margin-bottom:11px}
+body:not(.tv) .reportperiod{margin:4px 0 17px}
+body:not(.tv) .workerheading{margin:12px 0 13px}
+body:not(.tv) .workerheading h2{font-size:25px}
+body:not(.tv) .workerfilters{margin-bottom:14px}
+@media(max-width:760px){body:not(.tv) header{min-height:80px!important}body:not(.tv) .shell{padding:14px}body:not(.tv) nav.glass{flex-wrap:wrap}body:not(.tv) nav .tabs{width:100%}body:not(.tv) nav .actions{width:100%;justify-content:flex-end}}
+#incInfo{width:min(620px,calc(100vw - 28px));max-width:620px;max-height:min(84vh,850px);overflow:auto;padding:24px;border-radius:24px;color:#263348}
+#incInfo .inc-info-top{display:flex;justify-content:space-between;gap:15px;align-items:start}
+#incInfo .inc-kicker{font-size:10px;color:#74839a;letter-spacing:.13em;font-weight:800}
+#incInfo h2{font-size:27px;margin:6px 0 3px}
+#incInfo .inc-info-top p{font-size:12px;margin:0}
+#incInfo .inc-info-topright{display:flex;align-items:center;gap:12px}
+#incInfo .inc-version{background:#eaf4ff;color:#0876d9;padding:7px 9px;border-radius:10px;font-weight:700;font-size:12px}
+#incInfoClose{padding:8px 12px}
+#incInfo .inc-info-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#f0f3f8;padding:4px;border-radius:13px;margin:22px 0 18px}
+#incInfo .inc-info-tabs button{border:0;background:transparent;border-radius:10px;padding:10px 6px;font-size:13px}
+#incInfo .inc-info-tabs button[aria-selected=true]{background:white;box-shadow:0 2px 8px #1f29370d;color:#0876d9}
+#incInfo .inc-info-section{font-size:13px}
+#incInfo .inc-info-section h3{font-size:14px;margin:20px 0 10px}
+#incInfo .inc-info-section h3:first-child{margin-top:0}
+#incInfo .inc-info-section p{font-size:12px;color:#506178;line-height:1.6;margin:9px 0}
+#incInfo .inc-info-item{padding:12px 0;border-bottom:1px solid #e6ebf2;display:flex;justify-content:space-between;gap:15px}
+#incInfo .inc-info-item div{display:grid;gap:4px}
+#incInfo .inc-info-item small{display:block;font-size:11px;color:#64748b;line-height:1.5}
+#incInfo .inc-info-item strong{font-size:13px}
+#incInfo .inc-muted{color:#75849a!important}
+#incInfo .inc-info-safe{padding:12px 14px;background:#f6f9fc;border-radius:13px;margin:16px 0}
+#incInfo .inc-info-safe p{margin:5px 0 0}
+#incInfo details{border:1px solid #e6eaf0;border-radius:12px;margin:8px 0;padding:11px 13px}
+#incInfo details summary{cursor:pointer;line-height:1.5;font-size:12px}
+#incInfo details[open] summary{margin-bottom:9px}
+#incInfo .inc-danger-area{margin-top:16px}
+#incInfo .inc-danger-area>div{display:flex;gap:8px;flex-wrap:wrap}
+#incInfo .inc-danger-area button{padding:8px 11px;font-size:11px;color:#a33535}
 `;
 document.head.appendChild(workerLayoutStyles);
 
