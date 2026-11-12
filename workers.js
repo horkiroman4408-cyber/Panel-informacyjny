@@ -59,10 +59,11 @@ function tick(){if(!monthlyTV||paused||q('workerTVdialog').open)return;const len
 let workerFitQueued=false;
 function measure(){
   if(!monthlyTV)return;
-  // Use natural layout heights; animated cards are translated during Cloud Rise.
-  const wrap=q('workerCards'),cards=[...wrap.querySelectorAll('.employee-card')];
+  // Grid layout height is independent of transform/opacity entrance animations.
+  // Avoid measuring animated child rects, which previously caused spurious re-renders.
+  const wrap=q('workerCards'),cards=wrap.querySelectorAll('.employee-card');
   if(!cards.length)return;
-  const bottom=Math.max(...cards.map(card=>card.getBoundingClientRect().top+card.offsetHeight));
+  const bottom=wrap.getBoundingClientRect().top+wrap.offsetHeight;
   const tooTall=bottom>window.innerHeight-16;
   if(tooTall && effectiveCards>1){
     // Prefer fewer full-size cards rather than hiding any process or cropping the header.
@@ -93,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.12</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.13</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -116,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.12</strong> · Dopasowanie do ekranu TV</summary><p>Poprawiono wykorzystanie pełnej szerokości, pozycję nagłówka i dobór liczby kart do wysokości ekranu przy 100% powiększenia.</p></details>
+  <details open><summary><strong>v1.1.13</strong> · Płynniejsza animacja kart</summary><p>Uproszczono efekt pojawiania się kart TV: bez kosztownego rozmycia i bez pomiarów podczas ruchu, z krótszymi opóźnieniami.</p></details>
+  <details><summary><strong>v1.1.12</strong> · Dopasowanie do ekranu TV</summary><p>Poprawiono wykorzystanie pełnej szerokości, pozycję nagłówka i dobór liczby kart do wysokości ekranu przy 100% powiększenia.</p></details>
   <details><summary><strong>v1.1.11</strong> · Animacje kart</summary><p>Delikatne pojawianie się kart i bloków od dołu podczas zmiany ekranów. Ustawienia ograniczenia ruchu są respektowane.</p></details>
    <details><summary><strong>v1.1.10</strong> · Ikony i ustawienia TV</summary><p>Nowe ikony przycisków oraz czytelniejsze ustawienia liczby kart na ekranie.</p></details>   <details><summary><strong>v1.1.9</strong> · Nagłówek kart pracowników</summary><p>Wyśrodkowano nagłówek widoku kart pracowników w zwykłym trybie, bez zmian w TV.</p></details>
   <details><summary><strong>v1.1.8</strong> · Informacje i układ aplikacji</summary><p>Jedno centrum informacji, historia zmian oraz jeden przycisk importu na aktywny widok. Uporządkowana nawigacja.</p></details>
@@ -509,24 +511,23 @@ const cardMotionStyle=document.createElement('style');
 cardMotionStyle.id='incydenty-card-motion';
 cardMotionStyle.textContent=`
 @keyframes incCloudRise{
-  from{opacity:0;transform:translate3d(0,22px,0) scale(.988);filter:blur(4px)}
-  70%{filter:blur(0)}
-  to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}
+  from{opacity:0;transform:translate3d(0,14px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
 }
-/* The animation runs when render() creates new cards; it does not create more renders. */
+/* Only opacity and transform animate: no expensive full-card blur repaint on TV. */
 #cards > .card,
 #workerCards > .employee-card{
-  animation:incCloudRise .58s cubic-bezier(.2,.82,.22,1) both;
+  animation:incCloudRise .42s cubic-bezier(.22,.8,.24,1) both;
 }
-#cards > .card:nth-child(2),#workerCards > .employee-card:nth-child(2){animation-delay:45ms}
-#cards > .card:nth-child(3),#workerCards > .employee-card:nth-child(3){animation-delay:90ms}
-#cards > .card:nth-child(4),#workerCards > .employee-card:nth-child(4){animation-delay:135ms}
-#cards > .card:nth-child(5),#workerCards > .employee-card:nth-child(5){animation-delay:180ms}
-#workerCards > .employee-card:nth-child(6){animation-delay:200ms}
-#workerCards > .employee-card:nth-child(7){animation-delay:220ms}
-#workerCards > .employee-card:nth-child(8){animation-delay:240ms}
-#workerCards > .employee-card:nth-child(9){animation-delay:260ms}
-#workerCards > .employee-card:nth-child(n+10){animation-delay:280ms}
+#cards > .card:nth-child(2),#workerCards > .employee-card:nth-child(2){animation-delay:25ms}
+#cards > .card:nth-child(3),#workerCards > .employee-card:nth-child(3){animation-delay:50ms}
+#cards > .card:nth-child(4),#workerCards > .employee-card:nth-child(4){animation-delay:75ms}
+#cards > .card:nth-child(5),#workerCards > .employee-card:nth-child(5){animation-delay:100ms}
+#workerCards > .employee-card:nth-child(6){animation-delay:100ms}
+#workerCards > .employee-card:nth-child(7){animation-delay:100ms}
+#workerCards > .employee-card:nth-child(8){animation-delay:100ms}
+#workerCards > .employee-card:nth-child(9){animation-delay:100ms}
+#workerCards > .employee-card:nth-child(n+10){animation-delay:100ms}
 /* Dialogs appear gently but never move under a pointer or during editing. */
 #incInfo[open],#unifiedTVdialog[open]{animation:incDialogReveal .28s ease-out both}
 @keyframes incDialogReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
