@@ -1,0 +1,32 @@
+{
+  "id": "./",
+  "name": "INCYDENTY — Panel informacyjny działu",
+  "short_name": "INCYDENTY",
+  "description": "Przydział do procesów oraz wyniki i normy działu Incydenty.",
+  "lang": "pl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fafafc",
+  "theme_color": "#0a84ff",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
