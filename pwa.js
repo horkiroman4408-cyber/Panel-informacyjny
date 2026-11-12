@@ -1,4 +1,6 @@
 'use strict';
+// Update standalone PWA window chrome while preserving the light page theme.
+document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#142c30');
 (()=>{
   const install=document.getElementById('installApp'),toast=document.getElementById('pwaUpdate');
   let prompt,registration,reloading=false;
@@ -14,7 +16,7 @@
   navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{
     registration=reg;offerUpdate();
     reg.update().catch(()=>{});
-    navigator.serviceWorker.ready.then(()=>{document.getElementById('pwaState').textContent='PWA 1.1.14 · Gotowa do pracy offline';});
+    navigator.serviceWorker.ready.then(()=>{document.getElementById('pwaState').textContent='PWA 1.1.15 · Gotowa do pracy offline';});
     reg.addEventListener('updatefound',()=>{const worker=reg.installing;worker?.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)offerUpdate();});});
     window.addEventListener('online',()=>reg.update().catch(()=>{}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){offerUpdate();reg.update().catch(()=>{});}});
