@@ -1,8 +1,8 @@
 /* Bump VERSION with every patch; paths work beneath any GitHub Pages repository. */
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const PREFIX = 'incydenty-' + new URL(self.registration.scope).pathname + '-';
 const CACHE = PREFIX + VERSION;
-const FILES = ['./','index.html','style.css','data.js','app.js','workers.js','pwa.js','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
+const FILES = ['./','index.html','style.css','tv5.css','data.js','app.js','workers.js','pwa.js','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(path => new Request(new URL(path,self.registration.scope),{cache:'reload'})))));
 });
@@ -14,7 +14,6 @@ self.addEventListener('fetch',event=>{
   const request=event.request,url=new URL(request.url);
   if(request.method!=='GET'||url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope))return;
   if(request.mode==='navigate'){
-    // Serve one coherent release. New releases become active after user acceptance.
     event.respondWith(caches.open(CACHE).then(async cache=>(await cache.match('index.html'))||fetch(request)));
     return;
   }
