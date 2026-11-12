@@ -11,7 +11,7 @@ Aplikacja PWA do prezentowania danych działu na komputerze i telewizorze, w jas
 - **Wyniki i normy** — wyniki pracowników, normy procesów i procent ich realizacji. Dostępny jest też widok samych norm.
 - **Przydział do procesów** — zakładka przygotowana do dalszej rozbudowy; import przydziału nie jest jeszcze dostępny.
 - **Okres wyników** — daty od/do, opcjonalnie godziny; okres jest zapisywany z raportem. Obsługiwane procesy obejmują Audyt, Scalanie, Rozkładanie, NADWE i VAS.
-- **Tryb TV** — wszystkie procesy razem lub osobno, wybór i kolejność ekranów, zmiana co 10–60 sekund albo stały ekran. Panel sterowania ukrywa się po 3 sekundach. Automatyczna, komfortowa lub kompaktowa gęstość dopasowuje liczbę wierszy do ekranu; listy procesów zmieniają strony niezależnie.
+- **Tryb TV** — wszystkie procesy razem lub osobno, wybór i kolejność ekranów, zmiana co 10–60 sekund albo stały ekran. Panel sterowania ukrywa się po 3 sekundach. Automatyczna, komfortowa lub kompaktowa gęstość dopasowuje liczbę wierszy do ekranu; listy procesów zmieniają strony niezależnie. Pełne dane (sztuki, czas, pasek realizacji i status normy) pozostają widoczne.
 - **PWA** — instalacja jako aplikacja, praca offline po pierwszym załadowaniu i powiadomienia o aktualizacjach.
 
 ### Jak działa
@@ -29,7 +29,7 @@ PWA-приложение для показа данных отдела на ко
 - **Wyniki i normy** — результаты сотрудников, нормы процессов и процент выполнения. Есть отдельный показ только норм.
 - **Przydział do procesów** — вкладка для дальнейшего развития; загрузка распределения пока не реализована.
 - **Период результатов** — даты от/до и время по желанию; сохраняется вместе с отчётом. Поддерживаются Audyt, Scalanie, Rozkładanie, NADWE и VAS.
-- **Режим TV** — все процессы вместе или отдельно, выбор и порядок экранов, переключение каждые 10–60 секунд либо постоянный экран. Управление скрывается через 3 секунды. Автоматическая, комфортная и компактная плотность подстраивают вместимость под экран; списки процессов листаются независимо.
+- **Режим TV** — все процессы вместе или отдельно, выбор и порядок экранов, переключение каждые 10–60 секунд либо постоянный экран. Управление скрывается через 3 секунды. Автоматическая, комфортная и компактная плотность подстраивают вместимость под экран; списки процессов листаются независимо. Количество штук, время, полоска выполнения и статус нормы остаются видимыми.
 - **PWA** — установка как приложения, офлайн-работа после первой загрузки и уведомления об обновлениях.
 
 ### Как работает

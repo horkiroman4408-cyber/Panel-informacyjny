@@ -1,6 +1,6 @@
-INCYDENTY v1.0.3 — patch for v1.0.2
+INCYDENTY v1.0.4 — patch for v1.0.2 / v1.0.3
 
-PL: Zastąp pliki w katalogu głównym repozytorium. Po publikacji GitHub Pages wybierz Aktualizuj. W Tryb TV wybierz Gęstość danych: Automatyczna, Komfortowa lub Kompaktowa.
-RU: Замени файлы в корне репозитория. После публикации GitHub Pages нажми Aktualizuj. В Tryb TV выбери Gęstość danych: Automatyczna, Komfortowa или Kompaktowa.
+PL: Zastąp pliki w katalogu głównym repozytorium. Po publikacji GitHub Pages wybierz Aktualizuj. Pełne dane pracowników są widoczne w każdym wariancie gęstości TV.
+RU: Замени файлы в корне репозитория. После публикации GitHub Pages нажми Aktualizuj. Полные данные работников видны при любой плотности TV.
 
 Dane raportu nie są dołączone. Данные отчёта не включены.
