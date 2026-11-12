@@ -22,7 +22,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(reports));return tru
 function message(text){q('workerMessage').textContent=text;q('workerMessage').hidden=false;}
 function updatePeriods(preferred){const selected=preferred||q('workerPeriod').value,periods=[...new Map(reports.map(r=>[periodKey(r),r])).entries()].sort(([a],[b])=>b.localeCompare(a));q('workerPeriod').replaceChildren(...periods.map(([key,r])=>{const o=document.createElement('option');o.value=key;o.textContent=periodLabel(r);return o}));if(periods.some(([k])=>k===selected))q('workerPeriod').value=selected;}
 function cardMarkup(r,limit){const summary=summarize(r),key=reportKey(r),isExpanded=expanded.has(key),totalPages=1,localPage=0,shown=monthlyTV?r.rows:isExpanded?r.rows:r.rows.slice(0,5);return `<article class="employee-card glass" data-key="${safe(key)}"><div class="employee-head"><div><div class="eyebrow">LOGIN TH</div><h3>${safe(r.login)}</h3><p>${safe(periodLabel(r))}</p></div><span class="employee-badge">${r.rows.length} ${plural(r.rows.length,'proces','procesy','procesów')}</span></div><div class="employee-summary"><div><span>KPI za okres</span><strong class="${summary.kpi!==null&&summary.kpi>=100?'goodtext':'neutral-kpi'}">${summary.kpi===null?'—':num(summary.kpi)+'%'}</strong></div><div><span>Czas w procesach</span><strong>${num(summary.hours)} <small>h</small></strong></div><div title="Liczba procesów z KPI co najmniej 100% względem wszystkich procesów pracownika."><span>Procesy w normie</span><strong>${summary.inNorm}/${r.rows.length}</strong></div></div><div class="employee-table"><div class="employee-table-head"><span>Proces</span><span>Szt. przel.</span><span>Czas</span><span>KPI</span></div><div class="employee-processes">${shown.map(x=>`<div class="employee-process"><div class="employee-process-line"><strong>${safe(x.process)}</strong><span>${num(x.pieces,0)}</span><span>${num(x.hours,1)} h</span><b class="${x.kpi>=100?'good':'below'}">${num(x.kpi)}%</b></div><div class="employee-track"><div style="width:${Math.min(100,x.kpi/1.5)}%" class="${x.kpi>=100?'':'below-fill'}"></div><i></i></div></div>`).join('')}</div></div>${monthlyTV?'':`<div class="employee-foot"><button class="employee-expand" data-key="${safe(key)}">${isExpanded?'Zwiń':'Pełna karta'}</button></div>`}</article>`;}
-function render(){const list=filtered();q('workerCount').textContent=list.length+' '+plural(list.length,'karta','karty','kart')+' · '+reports.length+' zapisanych';if(active){q('tv').disabled=!list.length;q('upload').disabled=busy;}q('workerClear').disabled=!reports.length;q('workerPeriod').disabled=!reports.length;const visible=monthlyTV?list.slice(index,index+effectiveCards):list;q('workerCards').className='workercards'+(monthlyTV?' cards-tv-grid':'');q('workerCards').innerHTML=visible.length?visible.map(r=>cardMarkup(r,monthlyTV?capacity:5)).join(''):`<div class="glass reportempty"><div class="emptyico">↥</div><h3>${reports.length?'Brak kart dla tego filtra':'Wczytaj raporty pracowników'}</h3><p>Dodaj do 25 plików Excel jednocześnie.<br>Login TH i okres zostaną odczytane z filtrów w plikach.</p><button id="workerEmptyImport" class="primary">📥 Wczytaj pliki Excel</button></div>`;q('workerEmptyImport')?.addEventListener('click',()=>q('workerFiles').click());if(monthlyTV){q('workerTVstatus').textContent=(list.length?(index+1)+'–'+Math.min(index+effectiveCards,list.length):'0')+' / '+list.length+(paused?' · Pauza':' · co '+settings.interval+' s');cancelAnimationFrame(raf);raf=requestAnimationFrame(measure);}}
+function render(){const list=filtered();q('workerCount').textContent=list.length+' '+plural(list.length,'karta','karty','kart')+' · '+reports.length+' zapisanych';if(active){q('tv').disabled=!list.length;q('upload').disabled=busy;}q('workerClear').disabled=!reports.length;q('workerPeriod').disabled=!reports.length;const visible=monthlyTV?list.slice(index,index+effectiveCards):list;q('workerCards').className='workercards'+(monthlyTV?' cards-tv-grid':'');if(monthlyTV){q('workerCards').style.setProperty('--tv-worker-cols',String(Math.min(5,Math.max(1,visible.length))));}q('workerCards').innerHTML=visible.length?visible.map(r=>cardMarkup(r,monthlyTV?capacity:5)).join(''):`<div class="glass reportempty"><div class="emptyico">↥</div><h3>${reports.length?'Brak kart dla tego filtra':'Wczytaj raporty pracowników'}</h3><p>Dodaj do 25 plików Excel jednocześnie.<br>Login TH i okres zostaną odczytane z filtrów w plikach.</p><button id="workerEmptyImport" class="primary">📥 Wczytaj pliki Excel</button></div>`;q('workerEmptyImport')?.addEventListener('click',()=>q('workerFiles').click());if(monthlyTV){q('workerTVstatus').textContent=(list.length?(index+1)+'–'+Math.min(index+effectiveCards,list.length):'0')+' / '+list.length+(paused?' · Pauza':' · co '+settings.interval+' s');cancelAnimationFrame(raf);raf=requestAnimationFrame(measure);}}
 function switchView(worker){if(monthlyTV)stop();active=worker;q('workerArea').hidden=!worker;q('norms').hidden=worker;q('processView').classList.toggle('active',!worker);q('workerView').classList.toggle('active',worker);q('upload').textContent=worker?'📥 Pliki pracowników':'📥 Wczytaj Excel';q('upload').hidden=false;q('notice').hidden=true;if(worker)render();else{q('tv').disabled=!data.sections.length;q('upload').disabled=false;}}
 q('processView').onclick=()=>switchView(false);q('workerView').onclick=()=>switchView(true);const dailyTab=q('results').onclick;q('results').onclick=()=>{dailyTab();q('resultViews').hidden=false;switchView(active)};const assignmentTab=q('assignment').onclick;q('assignment').onclick=()=>{assignmentTab();q('resultViews').hidden=true;q('workerArea').hidden=true;q('upload').hidden=true};const back=q('back').onclick;q('back').onclick=()=>{back();q('resultViews').hidden=false;switchView(active)};
 const dailyUpload=q('upload').onclick;q('upload').onclick=()=>active?q('workerFiles').click():dailyUpload();q('workerImport').onclick=()=>q('workerFiles').click();q('workerSearch').oninput=q('workerPeriod').onchange=()=>{index=0;step=0;render()};q('workerCards').onclick=e=>{const b=e.target.closest('.employee-expand');if(!b)return;const key=b.dataset.key;if(expanded.has(key))expanded.delete(key);else expanded.add(key);render()};q('workerClear').onclick=()=>{reports=[];expanded.clear();save();updatePeriods();render();message('Usunięto zapisane karty pracowników. Wyniki procesów pozostają osobno.');};
@@ -34,33 +34,57 @@ q('workerModeManual').addEventListener('change',toggleTVMode);
 
 function controls(){if(!monthlyTV)return;const bar=q('workerTVbar');bar.classList.remove('controls-hidden');bar.inert=false;bar.removeAttribute('aria-hidden');clearTimeout(hideTimer);if(settings.autohide&&!q('workerTVdialog').open)hideTimer=setTimeout(()=>{if(bar.contains(document.activeElement))document.activeElement.blur();bar.classList.add('controls-hidden');bar.inert=true;bar.setAttribute('aria-hidden','true')},3000);}
 function chooseCount(){
-  const list=filtered(),availableW=q('workerCards').clientWidth||innerWidth;
-  // The layout uses five columns. At small CSS viewport widths fewer columns are usable.
-  if(availableW<900)return 5;
+  // Initial estimate only. Exact measurement is performed after the browser lays out each page.
+  const list=filtered(),left=list.length-index;
+  if(left<=0)return 1;
   const top=q('workerCards').getBoundingClientRect().top;
-  const availableHeight=Math.max(200,innerHeight-top-50);
-  const gap=10;
+  const room=Math.max(100,window.innerHeight-top-25);
+  const availableW=q('workerCards').clientWidth||innerWidth;
+  const columns=availableW>=1100?5:availableW>=660?3:availableW>=400?2:1;
   for(const count of [20,15,10,5]){
-    const groups=Math.ceil(count/5);
-    let sum=0;
+    const actual=Math.min(count,left),groups=Math.ceil(actual/columns);
+    let height=0;
     for(let row=0;row<groups;row++){
-      const block=list.slice(index+row*5,index+(row+1)*5);
-      if(!block.length)break;
-      const maxProcesses=Math.max(...block.map(r=>r.rows.length));
-      // Conservative line-height estimate. The final DOM check below validates fit.
-      sum+=195+maxProcesses*39+(row>0?gap:0);
+      const group=list.slice(index+row*columns,index+(row+1)*columns);
+      const processes=Math.max(0,...group.map(r=>r.rows.length));
+      height+=155+processes*37+(row?10:0);
     }
-    if(sum<=availableHeight)return Math.min(count,Math.max(5,Math.ceil((list.length-index)/5)*5));
+    if(height<=room)return actual;
   }
-  return 5;
+  return Math.min(5,left);
 }
-function renderTV(){if(!monthlyTV)return;effectiveCards=settings.layout==='auto'?chooseCount():settings.cards;render();}
+function renderTV(){if(!monthlyTV)return;q('workerCards').style.removeProperty('zoom');q('workerCards').style.removeProperty('width');effectiveCards=settings.layout==='auto'?chooseCount():settings.cards;render();}
 function start(){settings={interval:Number(q('workerInterval').value),cards:Number(document.querySelector('input[name="workerTVCount"]:checked')?.value||10),layout:q('workerModeManual').checked?'manual':'auto',autohide:q('workerAutoHide').checked};try{localStorage.setItem('incydenty-worker-tv',JSON.stringify(settings))}catch{}q('workerTVdialog').close();monthlyTV=true;paused=false;index=0;step=0;capacity=6;maxRow=0;document.body.classList.add('tv','monthly-tv');q('workerTVbar').hidden=false;q('workerPause').textContent='Ⅱ Wstrzymaj';clearInterval(timer);timer=setInterval(tick,settings.interval*1000);renderTV();controls();if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});}
 function tick(){if(!monthlyTV||paused||q('workerTVdialog').open)return;const length=filtered().length;index+=effectiveCards;if(index>=length)index=0;renderTV();}
-function measure(){if(!monthlyTV||settings.layout!=='auto')return;
-  const cards=[...q('workerCards').querySelectorAll('.employee-card')];if(!cards.length)return;
-  const bottom=Math.max(...cards.map(el=>el.getBoundingClientRect().bottom));
-  if(bottom>innerHeight-16&&effectiveCards>5){effectiveCards-=5;render();}
+let workerFitQueued=false;
+function measure(){
+  if(!monthlyTV)return;
+  // Use natural layout heights; animated cards are translated during Cloud Rise.
+  const wrap=q('workerCards'),cards=[...wrap.querySelectorAll('.employee-card')];
+  if(!cards.length)return;
+  const bottom=Math.max(...cards.map(card=>card.getBoundingClientRect().top+card.offsetHeight));
+  const tooTall=bottom>window.innerHeight-16;
+  if(tooTall && effectiveCards>1){
+    // Prefer fewer full-size cards rather than hiding any process or cropping the header.
+    effectiveCards=effectiveCards>5?effectiveCards-5:effectiveCards-1;
+    render();return;
+  }
+  if(tooTall && !workerFitQueued){
+    // Last resort for a single unusually long card: shrink just the card region,
+    // never the title, brand header, clocks or TV controls.
+    workerFitQueued=true;
+    const region=wrap.getBoundingClientRect();
+    const room=Math.max(100,window.innerHeight-region.top-20);
+    const natural=Math.max(1,bottom-region.top);
+    const ratio=Math.max(.45,Math.min(1,room/natural));
+    wrap.style.zoom=String(ratio);
+    wrap.style.width=(100/ratio)+'%';
+    requestAnimationFrame(()=>{workerFitQueued=false;});
+  }
+}
+function resetWorkerFit(){
+  const wrap=q('workerCards');wrap.style.removeProperty('zoom');wrap.style.removeProperty('width');
+  wrap.style.setProperty('--tv-worker-cols',String(Math.min(5,Math.max(1,effectiveCards,0))));
 }
 
 function stop(){monthlyTV=false;clearInterval(timer);clearTimeout(hideTimer);cancelAnimationFrame(raf);document.body.classList.remove('tv','monthly-tv');q('workerTVbar').hidden=true;q('workerTVbar').classList.remove('controls-hidden');q('workerTVbar').inert=false;if(q('workerTVdialog').open)q('workerTVdialog').close();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});render();}
@@ -69,7 +93,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.11</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.12</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -92,7 +116,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.11</strong> · Animacje kart</summary><p>Delikatne pojawianie się kart i bloków od dołu podczas zmiany ekranów. Ustawienia ograniczenia ruchu są respektowane.</p></details>
+  <details open><summary><strong>v1.1.12</strong> · Dopasowanie do ekranu TV</summary><p>Poprawiono wykorzystanie pełnej szerokości, pozycję nagłówka i dobór liczby kart do wysokości ekranu przy 100% powiększenia.</p></details>
+  <details><summary><strong>v1.1.11</strong> · Animacje kart</summary><p>Delikatne pojawianie się kart i bloków od dołu podczas zmiany ekranów. Ustawienia ograniczenia ruchu są respektowane.</p></details>
    <details><summary><strong>v1.1.10</strong> · Ikony i ustawienia TV</summary><p>Nowe ikony przycisków oraz czytelniejsze ustawienia liczby kart na ekranie.</p></details>   <details><summary><strong>v1.1.9</strong> · Nagłówek kart pracowników</summary><p>Wyśrodkowano nagłówek widoku kart pracowników w zwykłym trybie, bez zmian w TV.</p></details>
   <details><summary><strong>v1.1.8</strong> · Informacje i układ aplikacji</summary><p>Jedno centrum informacji, historia zmian oraz jeden przycisk importu na aktywny widok. Uporządkowana nawigacja.</p></details>
   <details><summary><strong>v1.1.7</strong> · Karty pracowników</summary><p>Procesy w normie zamiast łącznego wolumenu; usunięto powtarzający się opis u dołu kart.</p></details>
@@ -367,6 +392,10 @@ const unifiedTV=(()=>{
  const processRender=()=>window.render();
  function show(id,reset=true){
    activeId=id;fitWarning='';clearInterval(pageTimer);
+   // Reserve the TV geometry BEFORE measuring cards, not after rendering them.
+   document.body.classList.add('tv','unified-tv');
+   document.documentElement.scrollTop=0;document.body.scrollTop=0;
+   window.scrollTo(0,0);
    if(isProcess(id)){
      monthlyTV=false;cancelAnimationFrame(raf);clearInterval(timer);q('workerArea').hidden=true;q('norms').hidden=false;q('workerTVbar').hidden=true;
      q('processView').classList.add('active');q('workerView').classList.remove('active');
@@ -381,17 +410,12 @@ const unifiedTV=(()=>{
      active=true;monthlyTV=true;clearInterval(timer);q('workerTVbar').hidden=true;index=reset?0:index;
      settings.layout=config.layout;settings.cards=config.cards;
      document.body.classList.add('monthly-tv');renderTV();
-     if(config.layout==='manual')requestAnimationFrame(checkManualFit);
+     requestAnimationFrame(checkManualFit);
    }
-   document.body.classList.add('tv','unified-tv');u('unifiedTVbar').hidden=false;updateStatus();
+   u('unifiedTVbar').hidden=false;updateStatus();
  }
- function checkManualFit(){if(!running||activeId!=='workers'||config.layout!=='manual')return;
-   const cards=[...q('workerCards').querySelectorAll('.employee-card')];if(!cards.length)return;
-   const last=Math.max(...cards.map(el=>el.getBoundingClientRect().bottom));
-   if(last>innerHeight-20&&effectiveCards>5){effectiveCards-=5;fitWarning='Dopasowano do wysokości ekranu';render();requestAnimationFrame(checkManualFit)}
-   else if(last>innerHeight-20){fitWarning='Za dużo procesów na wysokość ekranu';updateStatus()}
-   else updateStatus();
- }
+ function checkManualFit(){if(!running||activeId!=='workers')return;measure();}
+
  function updateStatus(){const screens=selectedScreens(),screenNo=Math.max(0,screens.findIndex(x=>x.id===activeId))+1;
    u('unifiedTVstatus').textContent=`${screenName(activeId)} · ${screenNo} / ${screens.length}${pausedUnified?' · Pauza':''}${fitWarning?' · '+fitWarning:''}`;
    u('unifiedTVpause').textContent=pausedUnified?'▶ Wznów':'Ⅱ Wstrzymaj';}
@@ -408,7 +432,7 @@ const unifiedTV=(()=>{
    dialog.close();running=true;pausedUnified=false;screenCursor=0;
    const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
    q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
-   show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';schedule();revealControls();
+   window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';schedule();revealControls();
    if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
  }
  function revealControls(){if(!running)return;const el=u('unifiedTVbar');el.classList.remove('controls-hidden');clearTimeout(controlsTimer);if(config.autohide&&!dialog.open)controlsTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.classList.add('controls-hidden')},3000)}
@@ -511,6 +535,22 @@ cardMotionStyle.textContent=`
 }
 `;
 document.head.appendChild(cardMotionStyle);
+// TV viewport repair: never preserve an ordinary-page scroll offset in fullscreen.
+const tvViewportRepair=document.createElement('style');
+tvViewportRepair.id='incydenty-tv-viewport-repair';
+tvViewportRepair.textContent=`
+body.tv .shell{max-width:none!important;width:100%!important;min-height:100vh;min-height:100dvh;padding-top:clamp(12px,1.3vh,28px)!important;padding-left:clamp(16px,2vw,52px)!important;padding-right:clamp(16px,2vw,52px)!important}
+body.tv header{min-height:clamp(72px,10vh,124px)!important}
+body.tv #workerArea,body.tv #norms{min-width:0}
+body.tv .workercards.cards-tv-grid{grid-template-columns:repeat(var(--tv-worker-cols,5),minmax(0,1fr))!important;width:100%;align-items:start}
+body.tv #cards{width:100%;min-width:0}
+body.tv #cards .card{min-width:0}
+body.tv .workerheading{margin-top:6px!important;margin-bottom:clamp(8px,1.2vh,22px)!important}
+body.tv .titlebar{margin-top:clamp(4px,.9vh,16px)!important;margin-bottom:clamp(8px,1.2vh,24px)!important}
+body.tv .reportperiod{margin-bottom:clamp(8px,1.2vh,20px)!important}
+`;
+document.head.appendChild(tvViewportRepair);
+
 
 updatePeriods();render();
 })();
