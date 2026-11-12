@@ -204,5 +204,162 @@ body.monthly-tv .cards-tv-grid .employee-process-line strong{font-size:clamp(9px
 `;
 document.head.appendChild(workerLayoutStyles);
 
+// A single controller owns TV slideshow across both datasets. Existing import and KPI calculations stay unchanged.
+const unifiedTV=(()=>{
+ const KEY='incydenty-unified-tv-v1';
+ const defaultScreens=[{id:'process:all',enabled:true,seconds:20},{id:'workers',enabled:true,seconds:30},{id:'process:norms',enabled:false,seconds:15}];
+ let config={screens:defaultScreens,layout:'auto',cards:10,mode:'slideshow',fixed:'process:all',autohide:true};
+ try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&Array.isArray(saved.screens))config={...config,...saved};}catch{}
+ let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,pageTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='';
+ const isProcess=id=>id.startsWith('process:');
+ const availableScreens=()=>[
+   {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
+   ...data.sections.map(s=>({id:'process:'+s.name,name:processLabel(s.name),description:'Wyniki jednego procesu',available:true})),
+   {id:'workers',name:'Karty pracowników',description:'Wszystkie procesy każdego pracownika',available:!!filtered().length},
+   {id:'process:norms',name:'Tylko normy',description:'Normy procesów bez list pracowników',available:!!data.sections.length}
+ ];
+ const screenName=id=>availableScreens().find(x=>x.id===id)?.name||id;
+ function normalizeScreens(){
+   const valid=availableScreens();const entries=Array.isArray(config.screens)?config.screens:[];
+   const map=new Map(entries.filter(x=>x&&typeof x.id==='string').map(x=>[x.id,x]));
+   const ordered=[...entries.map(x=>valid.find(v=>v.id===x?.id)).filter(Boolean),...valid.filter(x=>!map.has(x.id))];
+   return ordered.map(x=>({id:x.id,enabled:x.available&&!!(map.get(x.id)?.enabled??(x.id==='workers'||x.id==='process:all')),seconds:[10,15,20,30,60].includes(Number(map.get(x.id)?.seconds))?Number(map.get(x.id).seconds):20,available:x.available,name:x.name,description:x.description}));
+ }
+ const dialog=document.createElement('dialog');dialog.id='unifiedTVdialog';dialog.setAttribute('aria-labelledby','unifiedTVtitle');
+ dialog.innerHTML=`<div class="confighead"><div><div class="eyebrow">INCYDENTY · WYŚWIETLANIE</div><h2 id="unifiedTVtitle">Ustawienia TV</h2></div><button type="button" id="unifiedTVclose" aria-label="Zamknij">✕</button></div>
+ <h3>Ekrany pokazu <small id="unifiedTVcount"></small></h3><p class="confighelp">Wybierz ekrany, ich kolejność i czas wyświetlania. Każda zakładka korzysta ze swoich danych.</p><div id="unifiedTVscreens" class="unified-screens"></div>
+ <div class="unified-controls"><div class="unified-group"><h3>Rozmieszczenie kart pracowników</h3><label><input type="radio" name="utLayout" value="auto"> Automatycznie · dopasuj do ekranu</label><label><input type="radio" name="utLayout" value="manual"> Ręcznie · wybierz liczbę</label><div id="unifiedTVmanual" class="unified-counts" hidden>${[5,10,15,20].map(n=>`<label><input type="radio" name="utCount" value="${n}"><span>${n}</span></label>`).join('')}</div><p class="confighelp">Zawsze pokazujemy wszystkie procesy pracownika. Przy małej wysokości więcej kart może wymagać mniejszej czcionki lub nie zmieścić się w całości.</p></div>
+ <div class="unified-group"><h3>Zmiana ekranów</h3><label><input type="radio" name="utMode" value="slideshow"> Automatyczny pokaz</label><label><input type="radio" name="utMode" value="fixed"> Jeden stały ekran</label><label id="unifiedFixedLabel" hidden>Stały ekran <select id="unifiedFixed"></select></label><label><input type="checkbox" id="unifiedHide"> Ukrywaj sterowanie po 3 sekundach</label></div></div>
+ <p id="unifiedTVerror" role="alert" hidden></p><div class="configfoot"><span>Ustawienia zostaną zapisane w tej przeglądarce.</span><button type="button" class="primary" id="unifiedTVstart">Uruchom pokaz</button></div>`;
+ document.body.append(dialog);
+ const bar=document.createElement('div');bar.id='unifiedTVbar';bar.hidden=true;bar.innerHTML='<span id="unifiedTVstatus"></span><button type="button" id="unifiedTVsettings">⚙ Ustawienia</button><button type="button" id="unifiedTVpause">Ⅱ Wstrzymaj</button><button type="button" id="unifiedTVnext">Następny →</button><button type="button" id="unifiedTVexit">Zakończ ✕</button>';document.body.append(bar);
+ const u=id=>document.getElementById(id);
+ const selectedScreens=()=>config.screens.filter(x=>x.enabled&&availableScreens().find(z=>z.id===x.id&&z.available));
+ function drawScreens(){const wrap=u('unifiedTVscreens');wrap.replaceChildren();draft.forEach((screen,i)=>{
+   const row=document.createElement('div');row.className='unified-screen';row.innerHTML=`<label class="unified-screen-main"><input type="checkbox" ${screen.enabled?'checked':''} ${screen.available?'':'disabled'}><span><b>${safe(screen.name)}</b><small>${safe(screen.available?screen.description:'Brak danych do wyświetlenia')}</small></span></label><div class="unified-screen-actions"><select aria-label="Czas wyświetlania ${safe(screen.name)}" ${screen.enabled?'':'disabled'}>${[10,15,20,30,60].map(n=>`<option value="${n}" ${screen.seconds===n?'selected':''}>${n} s</option>`).join('')}</select><button type="button" aria-label="Przesuń w górę" ${i===0?'disabled':''}>↑</button><button type="button" aria-label="Przesuń w dół" ${i===draft.length-1?'disabled':''}>↓</button></div>`;
+   row.querySelector('input').onchange=e=>{screen.enabled=e.target.checked;drawScreens()};
+   row.querySelector('select').onchange=e=>{screen.seconds=Number(e.target.value)};
+   const buttons=row.querySelectorAll('button');buttons[0].onclick=()=>move(i,-1);buttons[1].onclick=()=>move(i,1);wrap.append(row);
+ });u('unifiedTVcount').textContent=draft.filter(x=>x.enabled&&x.available).length+' aktywne';}
+ function move(i,dir){const j=i+dir;if(j<0||j>=draft.length)return;[draft[i],draft[j]]=[draft[j],draft[i]];drawScreens()}
+ function modeUpdate(){u('unifiedTVmanual').hidden=dialog.querySelector('input[name="utLayout"]:checked')?.value!=='manual';u('unifiedFixedLabel').hidden=dialog.querySelector('input[name="utMode"]:checked')?.value!=='fixed'}
+ function open(){
+   if(running)clearTimeout(cycleTimer);
+   draft=normalizeScreens();drawScreens();
+   dialog.querySelector(`input[name="utLayout"][value="${config.layout==='manual'?'manual':'auto'}"]`).checked=true;
+   dialog.querySelector(`input[name="utCount"][value="${[5,10,15,20].includes(config.cards)?config.cards:10}"]`).checked=true;
+   dialog.querySelector(`input[name="utMode"][value="${config.mode==='fixed'?'fixed':'slideshow'}"]`).checked=true;
+   u('unifiedFixed').replaceChildren(...draft.filter(x=>x.available).map(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.name;return o}));
+   u('unifiedFixed').value=draft.some(x=>x.id===config.fixed&&x.available)?config.fixed:draft.find(x=>x.available)?.id;
+   u('unifiedHide').checked=config.autohide!==false;u('unifiedTVerror').hidden=true;u('unifiedTVstart').textContent=running?'Zastosuj i kontynuuj':'Uruchom pokaz';modeUpdate();clearTimeout(controlsTimer);dialog.showModal();
+ }
+ const processRender=()=>window.render();
+ function show(id,reset=true){
+   activeId=id;fitWarning='';clearInterval(pageTimer);
+   if(isProcess(id)){
+     monthlyTV=false;cancelAnimationFrame(raf);clearInterval(timer);q('workerArea').hidden=true;q('norms').hidden=false;q('workerTVbar').hidden=true;
+     q('processView').classList.add('active');q('workerView').classList.remove('active');
+     document.body.classList.remove('monthly-tv');tv=true;
+     if(!savedProcess)savedProcess={onlynorms:q('onlynorms').checked,density:tvConfig.density,mode:tvConfig.mode};
+     q('onlynorms').checked=id==='process:norms';tvConfig.mode='fixed';tvConfig.density='auto';
+     window.selectScreen(id==='process:all'||id==='process:norms'?'all':id.slice(8));
+     if(id!=='process:norms')pageTimer=setInterval(()=>{if(!pausedUnified&&running&&!dialog.open&&isProcess(activeId))window.tick()},Math.max(4000,Math.min(10000,currentSec*500)));
+   }else{
+     tv=false;document.body.removeAttribute('data-tv-density');cancelAnimationFrame(layoutFrame);
+     q('norms').hidden=true;q('workerArea').hidden=false;q('processView').classList.remove('active');q('workerView').classList.add('active');
+     active=true;monthlyTV=true;clearInterval(timer);q('workerTVbar').hidden=true;index=reset?0:index;
+     settings.layout=config.layout;settings.cards=config.cards;
+     document.body.classList.add('monthly-tv');renderTV();
+     if(config.layout==='manual')requestAnimationFrame(checkManualFit);
+   }
+   document.body.classList.add('tv','unified-tv');u('unifiedTVbar').hidden=false;updateStatus();
+ }
+ function checkManualFit(){if(!running||activeId!=='workers'||config.layout!=='manual')return;
+   const cards=[...q('workerCards').querySelectorAll('.employee-card')];if(!cards.length)return;
+   const last=Math.max(...cards.map(el=>el.getBoundingClientRect().bottom));
+   if(last>innerHeight-20&&effectiveCards>5){effectiveCards-=5;fitWarning='Dopasowano do wysokości ekranu';render();requestAnimationFrame(checkManualFit)}
+   else if(last>innerHeight-20){fitWarning='Za dużo procesów na wysokość ekranu';updateStatus()}
+   else updateStatus();
+ }
+ function updateStatus(){const screens=selectedScreens(),screenNo=Math.max(0,screens.findIndex(x=>x.id===activeId))+1;
+   u('unifiedTVstatus').textContent=`${screenName(activeId)} · ${screenNo} / ${screens.length}${pausedUnified?' · Pauza':''}${fitWarning?' · '+fitWarning:''}`;
+   u('unifiedTVpause').textContent=pausedUnified?'▶ Wznów':'Ⅱ Wstrzymaj';}
+ function schedule(){clearTimeout(cycleTimer);if(!running||pausedUnified||config.mode==='fixed'||dialog.open)return;
+   const sec=Math.max(10,currentSec);cycleTimer=setTimeout(()=>advance(),sec*1000);
+ }
+ function advance(){if(!running)return;const screens=selectedScreens();if(!screens.length){stop();return}
+   if(activeId==='workers'&&index+effectiveCards<filtered().length){index+=effectiveCards;show('workers',false);schedule();return}
+   screenCursor=(screenCursor+1)%screens.length;const screen=screens[screenCursor];currentSec=screen.seconds;show(screen.id);schedule();}
+ function start(){const enabled=draft.filter(x=>x.enabled&&x.available);
+   if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
+   config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked};
+   try{localStorage.setItem(KEY,JSON.stringify(config))}catch{}
+   dialog.close();running=true;pausedUnified=false;screenCursor=0;
+   const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
+   q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
+   show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';schedule();revealControls();
+   if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
+ }
+ function revealControls(){if(!running)return;const el=u('unifiedTVbar');el.classList.remove('controls-hidden');clearTimeout(controlsTimer);if(config.autohide&&!dialog.open)controlsTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.classList.add('controls-hidden')},3000)}
+ function stop(skipFullscreen=false){if(!running)return;
+   running=false;pausedUnified=false;clearTimeout(cycleTimer);clearInterval(pageTimer);clearTimeout(controlsTimer);clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
+   monthlyTV=false;tv=false;document.body.classList.remove('tv','monthly-tv','unified-tv','cursor-hidden');document.body.removeAttribute('data-tv-density');
+   u('unifiedTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;q('workerTVbar').hidden=true;
+   if(savedProcess){q('onlynorms').checked=savedProcess.onlynorms;tvConfig.density=savedProcess.density;tvConfig.mode=savedProcess.mode;savedProcess=null}
+   if(activeId==='workers'){q('norms').hidden=true;q('workerArea').hidden=false;active=true;q('upload').textContent='↥ Pliki pracowników';render()}
+   else{q('norms').hidden=false;q('workerArea').hidden=true;active=false;q('upload').textContent='↥ Wczytaj Excel';processRender()}
+   if(!skipFullscreen&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+ }
+ q('tv').onclick=open;q('tvsettings').onclick=open;q('workerTVsettings').onclick=open;
+ u('unifiedTVclose').onclick=()=>dialog.close();u('unifiedTVstart').onclick=start;u('unifiedTVsettings').onclick=open;
+ u('unifiedTVexit').onclick=()=>stop();u('unifiedTVnext').onclick=()=>{if(config.mode==='fixed')return;advance();};
+ u('unifiedTVpause').onclick=()=>{pausedUnified=!pausedUnified;if(pausedUnified)clearTimeout(cycleTimer);else schedule();updateStatus();revealControls()};
+ dialog.querySelectorAll('input[name="utLayout"],input[name="utMode"]').forEach(el=>el.addEventListener('change',modeUpdate));
+ dialog.addEventListener('close',()=>{if(running){schedule();revealControls()}});
+ ['pointermove','pointerdown','touchstart'].forEach(event=>document.addEventListener(event,revealControls,{passive:true}));
+ document.addEventListener('keydown',event=>{if(!running)return;if(event.key==='Escape'&&!dialog.open){event.stopImmediatePropagation();event.preventDefault();stop()}},true);
+ document.addEventListener('fullscreenchange',()=>{if(running&&!document.fullscreenElement)stop(true)},true);
+ // Preserve the single controller even when the user changes tabs during fullscreen.
+ q('processView').addEventListener('click',event=>{if(running){event.stopImmediatePropagation();event.preventDefault();show('process:all')}},true);
+ q('workerView').addEventListener('click',event=>{if(running){event.stopImmediatePropagation();event.preventDefault();show('workers')}},true);
+ const css=document.createElement('style');css.textContent=`
+ #unifiedTVdialog{width:min(760px,calc(100vw - 28px));max-width:760px;max-height:min(90vh,920px);overflow:auto;padding:25px}
+ #unifiedTVdialog h3{font-size:15px;margin:15px 0 8px;color:#293a51}
+ #unifiedTVdialog h3 small{font-weight:500;font-size:11px;color:#7d8aa0;margin-left:8px}
+ #unifiedTVdialog .unified-screens{display:grid;gap:8px;max-height:260px;overflow:auto}
+ #unifiedTVdialog .unified-screen{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #dfe7f0;border-radius:15px;padding:10px 12px;background:#fafcff}
+ #unifiedTVdialog .unified-screen-main{display:flex;gap:10px;min-width:0;flex:1}
+ #unifiedTVdialog .unified-screen-main>span{display:grid;gap:4px;min-width:0}
+ #unifiedTVdialog .unified-screen-main b{font-size:13px;color:#26374b}
+ #unifiedTVdialog .unified-screen-main small{font-size:11px;color:#728197}
+ #unifiedTVdialog .unified-screen-actions{display:flex;align-items:center;gap:4px}
+ #unifiedTVdialog .unified-screen-actions select{border:1px solid #dbe3ef;background:#fff;padding:6px 8px;border-radius:9px;max-width:none;font-size:12px}
+ #unifiedTVdialog .unified-screen-actions button{padding:6px 10px;border-radius:9px}
+ #unifiedTVdialog .unified-controls{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+ #unifiedTVdialog .unified-group{background:#f7f9fd;border:1px solid #e6ebf3;border-radius:16px;padding:14px}
+ #unifiedTVdialog .unified-group h3{margin:0 0 12px}
+ #unifiedTVdialog .unified-group>label{display:flex;gap:8px;font-size:12px;color:#435268;margin:10px 0}
+ #unifiedTVdialog .unified-group>label select{border:1px solid #dbe3ef;padding:6px;border-radius:8px;max-width:175px}
+ #unifiedTVdialog .unified-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+ #unifiedTVdialog .unified-counts label{position:relative;cursor:pointer}
+ #unifiedTVdialog .unified-counts input{position:absolute;opacity:0}
+ #unifiedTVdialog .unified-counts span{display:block;text-align:center;padding:9px 3px;background:white;border:1px solid #dce4ed;border-radius:10px;font-size:13px}
+ #unifiedTVdialog .unified-counts input:checked+span{border-color:#66aaff;background:#e8f3ff;color:#0876d9;font-weight:700}
+ #unifiedTVdialog #unifiedTVerror{color:#b94136;font-size:12px}
+ #unifiedTVbar{position:fixed;z-index:200;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#fffffff0;border:1px solid #e0e6f0;border-radius:999px;padding:8px 12px;box-shadow:0 7px 26px #0002;transition:opacity .2s;white-space:nowrap}
+ #unifiedTVbar button{padding:7px 12px;font-size:12px}
+ #unifiedTVbar span{font-size:12px;color:#53647c}
+ #unifiedTVbar.controls-hidden{opacity:0;pointer-events:none}
+ body.unified-tv #resultViews,body.unified-tv .workerfilters,body.unified-tv .workerheading>button{display:none!important}
+ body.unified-tv #norms #cards .card{min-height:0}
+ body.unified-tv #norms:not(.focused) #cards .norm{margin:8px 0 10px!important;padding-bottom:10px!important}
+ body.unified-tv #norms:not(.focused) #cards .card{padding:clamp(12px,1.0vw,22px)}
+ body.unified-tv #norms:not(.focused) #cards .processname{font-size:clamp(15px,1.1vw,23px)}
+ body.unified-tv #norms:not(.focused) #cards .worker{padding:4px 0!important}
+ @media(max-width:700px){#unifiedTVdialog .unified-controls{grid-template-columns:1fr}#unifiedTVbar span{display:none}#unifiedTVbar{gap:3px}#unifiedTVbar button{padding:7px 9px;font-size:11px}}
+ `;document.head.append(css);
+ return {open,stop,get running(){return running}};
+})();
+
 updatePeriods();render();
 })();
