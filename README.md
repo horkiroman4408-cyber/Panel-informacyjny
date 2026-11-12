@@ -14,6 +14,8 @@ Aplikacja PWA do prezentowania danych działu na komputerze i telewizorze, w jas
 - **Tryb TV** — wszystkie procesy razem lub osobno, wybór i kolejność ekranów, zmiana co 10–60 sekund albo stały ekran. Panel sterowania ukrywa się po 3 sekundach. Automatyczna, komfortowa lub kompaktowa gęstość dopasowuje liczbę wierszy do ekranu; listy procesów zmieniają strony niezależnie. Widok wszystkich procesów pokazuje login, wynik, procent i pasek realizacji. Widok jednego procesu zawiera także sztuki, czas i status normy.
 - **PWA** — instalacja jako aplikacja, praca offline po pierwszym załadowaniu i powiadomienia o aktualizacjach.
 
+- **Karty pracowników** — import do 25 plików `Export` jednocześnie; Login TH i okres z filtrów, miesięczny KPI ważony czasem, dane procesów i osobny pokaz TV (1, 2 lub 4 karty). Raporty są zapisywane oddzielnie od wyników procesów.
+
 ### Jak działa
 
 Przy pierwszym uruchomieniu aplikacja jest pusta. Użytkownik wczytuje Excel w formacie raportu Mr. Robot: arkusz `RAPORT`, sekcje procesów z normą oraz kolumny loginu, liczby sztuk, czasu i wyniku na godzinę.
@@ -32,6 +34,8 @@ PWA-приложение для показа данных отдела на ко
 - **Режим TV** — все процессы вместе или отдельно, выбор и порядок экранов, переключение каждые 10–60 секунд либо постоянный экран. Управление скрывается через 3 секунды. Автоматическая, комфортная и компактная плотность подстраивают вместимость под экран; списки процессов листаются независимо. В общем обзоре видны логин, результат, процент и полоска выполнения. При показе одного процесса дополнительно видны количество штук, время и статус нормы.
 - **PWA** — установка как приложения, офлайн-работа после первой загрузки и уведомления об обновлениях.
 
+- **Карточки работников** — загрузка до 25 файлов `Export` за раз; Login TH и период из фильтров, месячный KPI с учётом времени, данные процессов и отдельный TV-показ (1, 2 или 4 карточки). Данные хранятся отдельно от результатов процессов.
+
 ### Как работает
 
 При первом запуске приложение пустое. Пользователь загружает Excel в формате отчёта Mr. Robot: лист `RAPORT`, блоки процессов с нормой и столбцы логина, количества, времени и результата в час.
@@ -43,7 +47,7 @@ PWA-приложение для показа данных отдела на ко
 | Plik / Файл | Rola / Назначение |
 | --- | --- |
 | `index.html`, `style.css` | Interfejs i wygląd / Интерфейс и оформление |
-| `app.js`, `data.js` | Logika i pusty stan początkowy / Логика и пустое начальное состояние |
+| `app.js`, `workers.js`, `data.js` | Logika i pusty stan początkowy / Логика и пустое начальное состояние |
 | `pwa.js`, `sw.js` | Instalacja, aktualizacje i offline / Установка, обновления и офлайн |
 | `manifest.webmanifest`, `icons/`, `fonts/` | Ustawienia PWA, ikony i czcionki / Настройки PWA, иконки и шрифты |
 | `version.json`, `tools/release.py` | Wersja i przygotowanie aktualizacji / Версия и подготовка обновлений |

@@ -1,6 +1,9 @@
-INCYDENTY v1.0.5 — cumulative patch for v1.0.2–1.0.4
+INCYDENTY v1.1.0 — cumulative patch for v1.0.2–1.0.5
 
-PL: Zastąp pliki w katalogu głównym repozytorium, poczekaj na publikację GitHub Pages i wybierz Aktualizuj. Wszystkie procesy: login, wynik, procent i pasek realizacji. Jeden proces: dodatkowo sztuki, czas i status normy.
-RU: Замени файлы в корне репозитория, дождись публикации GitHub Pages и нажми Aktualizuj. Все процессы: логин, результат, процент и полоска выполнения. Один процесс: дополнительно количество штук, время и статус нормы.
+PL: Zastąp pliki w katalogu głównym tego samego repozytorium, w tym NOWY workers.js. Po publikacji GitHub Pages wybierz Aktualizuj w aplikacji.
+Wyniki i normy → Karty pracowników → Wczytaj pliki Excel. Maksymalnie 25 plików w jednej partii. Login TH i daty pochodzą z filtrów w plikach Export. Ten sam pracownik i okres aktualizują kartę. Wyniki procesów i karty mają osobne dane. TV: 1, 2 lub 4 karty, zmiana co 10–60 sekund.
 
-Dane raportu nie są dołączone. Данные отчёта не включены.
+RU: Замени файлы в корне того же репозитория, включая НОВЫЙ workers.js. После публикации GitHub Pages нажми Aktualizuj.
+Wyniki i normy → Karty pracowników → Wczytaj pliki Excel. До 25 файлов за раз. Login TH и даты читаются из фильтров в файлах Export. Тот же работник за тот же период обновляет карточку. Результаты процессов и карточки хранятся отдельно. TV: 1, 2 или 4 карточки, переключение каждые 10–60 секунд.
+
+Dane pracowników nie są dołączone. Данные работников не включены.
