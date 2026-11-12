@@ -1,0 +1,7 @@
+INCYDENTY v1.0.2 — patch for v1.0.1
+
+PL: Zastąp pliki w głównym katalogu tego samego repozytorium. Poczekaj na publikację GitHub Pages i wybierz Aktualizuj w aplikacji.
+RU: Замени файлы в корне того же репозитория. Дождись публикации GitHub Pages и нажми Aktualizuj в приложении.
+
+NADWE + VAS, pięć procesów na ekranie, okres wyników od/do z opcjonalnymi godzinami. Dane raportu nie są dołączone.
+Пять процессов на экране, период от/до с необязательным временем. Данные отчёта не включены.

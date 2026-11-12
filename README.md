@@ -1,71 +1,49 @@
-# INCYDENTY · PWA v1.0.1
+# INCYDENTY
 
-Panel informacyjny działu: **Przydział do procesów** i **Wyniki i normy**.
-Готовое приложение без сборки, npm и внешних CDN. Все пути относительные: работает на GitHub Pages внутри репозитория с любым названием.
+**Panel informacyjny działu · Информационная панель отдела**
 
-## Публикация через GitHub
+## Polski
 
-1. Создай репозиторий, например `Incydenty-App`.
-2. Распакуй ZIP. Загрузи **содержимое архива** в корень репозитория. `index.html`, `sw.js` и `manifest.webmanifest` должны лежать непосредственно в корне, а не во вложенной папке.
-3. Открой **Settings → Pages → Build and deployment → Deploy from a branch**.
-4. Выбери **main → / (root) → Save**. Дождись успешной публикации Pages.
-5. Открой адрес, который покажет GitHub Pages. Папки `fonts`, `icons`, `tools` загружай целиком. `.nojekyll` также включён в архив; он не обязателен для файлов этой структуры.
+Aplikacja PWA do prezentowania danych działu na komputerze i telewizorze, w jasnym stylu Mr. Robot.
 
-## Установка как приложения
+### Co zawiera
 
-- **Windows / Edge / Chrome:** открой опубликованный HTTPS-адрес. Используй кнопку `Zainstaluj`, если она появилась, или установку приложения в меню браузера.
-- **iPhone / iPad:** Safari → «Поделиться» → «На экран Домой» / «Добавить на экран Домой».
-- **Android:** установка приложения из меню Chrome или кнопкой `Zainstaluj`.
-- Перед первым отключением интернета зайди в `Dane`: дождись **Gotowa do pracy offline**. Офлайн доступен после первой успешной загрузки.
-- Двойной щелчок по `index.html` запускает базовый интерфейс, но PWA и service worker требуют HTTPS или localhost.
-- Установка PWA и полноэкранный режим зависят от браузера. Для рабочего телевизора можно использовать компьютер с HDMI. Браузер телевизора может не поддерживать установку или импорт XLSX.
+- **Wyniki i normy** — wyniki pracowników, normy procesów i procent ich realizacji. Dostępny jest też widok samych norm.
+- **Przydział do procesów** — zakładka przygotowana do dalszej rozbudowy; import przydziału nie jest jeszcze dostępny.
+- **Okres wyników** — daty od/do, opcjonalnie godziny; okres jest zapisywany z raportem. Obsługiwane procesy obejmują Audyt, Scalanie, Rozkładanie, NADWE i VAS.
+- **Tryb TV** — wszystkie procesy razem lub osobno, wybór i kolejność ekranów, zmiana co 10–60 sekund albo stały ekran. Panel sterowania ukrywa się po 3 sekundach.
+- **PWA** — instalacja jako aplikacja, praca offline po pierwszym załadowaniu i powiadomienia o aktualizacjach.
 
-## Что включено
+### Jak działa
 
-- Пустой первый запуск: исходных отчётов, логинов, результатов и норм в коде нет. Экран заполняется после загрузки Excel.
-- Импорт следующего `.xlsx` в том же формате экспорта Mr. Robot, сохранение последнего отчёта в браузере.
-- Нормы, результаты и процент выполнения; режим «Tylko normy».
-- TV: 10 / 20 / 30 / 60 секунд, выбор и порядок экранов, постоянный экран, автоскрытие панели через 3 секунды, сохранение настроек.
-- Полный офлайн-кэш интерфейса, шрифтов и иконок.
-- Обновления PWA с предложением применить новую версию. Во время TV уведомление скрыто; оно появится после выхода из TV.
-- `Przydział do procesów` пока показывает заглушку: нужен файл распределения сотрудников.
+Przy pierwszym uruchomieniu aplikacja jest pusta. Użytkownik wczytuje Excel w formacie raportu Mr. Robot: arkusz `RAPORT`, sekcje procesów z normą oraz kolumny loginu, liczby sztuk, czasu i wyniku na godzinę.
 
-## Обновление патчами
+Plik jest przetwarzany lokalnie. Ostatni raport i ustawienia TV są zapamiętywane w przeglądarce. Dane nie są wysyłane na serwer ani synchronizowane między urządzeniami.
 
-Для готового ZIP-патча распакуй его и замени файлы в корне того же репозитория. Сохраняй пути и имена папок. После commit дождись публикации GitHub Pages. Не создавай новый репозиторий для каждого патча.
+## Русский
 
-**Каждый патч должен иметь новый номер версии в `sw.js`.** Без изменения service worker установленная PWA может продолжить показывать прежний кэш.
+PWA-приложение для показа данных отдела на компьютере и телевизоре, в светлом стиле Mr. Robot.
 
-При самостоятельном редактировании с Python 3 можно выполнить:
+### Что есть
 
-```bash
-python tools/release.py 1.0.2
-```
+- **Wyniki i normy** — результаты сотрудников, нормы процессов и процент выполнения. Есть отдельный показ только норм.
+- **Przydział do procesów** — вкладка для дальнейшего развития; загрузка распределения пока не реализована.
+- **Период результатов** — даты от/до и время по желанию; сохраняется вместе с отчётом. Поддерживаются Audyt, Scalanie, Rozkładanie, NADWE и VAS.
+- **Режим TV** — все процессы вместе или отдельно, выбор и порядок экранов, переключение каждые 10–60 секунд либо постоянный экран. Управление скрывается через 3 секунды.
+- **PWA** — установка как приложения, офлайн-работа после первой загрузки и уведомления об обновлениях.
 
-Скрипт обновит номер в `sw.js`, `pwa.js`, `index.html`, `version.json`. Загрузи эти четыре файла вместе с изменёнными файлами приложения. Можно изменить номер вручную в этих же местах. Для обычного готового патча запуск Python не нужен.
+### Как работает
 
-Если добавляешь новый файл, который нужен офлайн, включи его в `FILES` в `sw.js` перед выпуском версии. Не удаляй кэш вручную при обычном обновлении.
+При первом запуске приложение пустое. Пользователь загружает Excel в формате отчёта Mr. Robot: лист `RAPORT`, блоки процессов с нормой и столбцы логина, количества, времени и результата в час.
 
-После публикации открой приложение при наличии интернета. Браузер загрузит обновление и предложит **Aktualizuj**. Нажатие применит его и перезагрузит приложение. Проверка также выполняется при возвращении в приложение и раз в час, пока оно открыто. Первая проверка браузера может завершиться с небольшой задержкой.
+Файл обрабатывается локально. Последний отчёт и настройки TV сохраняются в браузере. Данные не отправляются на сервер и не синхронизируются между устройствами.
 
-## Данные
+## Pliki / Файлы
 
-Загруженные отчёты и настройки TV хранятся в localStorage текущего браузера. Обновление приложения на том же адресе сохраняет эти данные. Очистка данных сайта, другой браузер, другой адрес или удаление данных приложения может их удалить. Синхронизация между компьютером и телевизором не подключена.
-
-`data.js` содержит только пустое начальное состояние. Загружаемый Excel разбирается локально в браузере и не отправляется на GitHub или другой сервер. Кнопка `Dane → Wyczyść dane raportu` возвращает пустой экран; настройки TV сохраняются. Если в этом браузере уже был загружен отчёт, он восстановится — это ожидаемое сохранение данных.
-
-Время в шапке — Europe/Warsaw. Период и смены не определяются по дате экспорта.
-
-## Структура
-
-- `index.html` — интерфейс.
-- `style.css` — оформление.
-- `app.js` — отчёты, XLSX и TV.
-- `data.js` — исходный отчёт.
-- `pwa.js` — установка и обновления.
-- `sw.js` — офлайн-кэш и версия.
-- `manifest.webmanifest`, `icons/` — параметры установленного приложения.
-- `fonts/` — локальные шрифты и их лицензия.
-- `tools/release.py` — помощник выпуска патча.
-
-Шрифты Noto распространяются по лицензии из `fonts/LICENSE.txt`.
+| Plik / Файл | Rola / Назначение |
+| --- | --- |
+| `index.html`, `style.css` | Interfejs i wygląd / Интерфейс и оформление |
+| `app.js`, `data.js` | Logika i pusty stan początkowy / Логика и пустое начальное состояние |
+| `pwa.js`, `sw.js` | Instalacja, aktualizacje i offline / Установка, обновления и офлайн |
+| `manifest.webmanifest`, `icons/`, `fonts/` | Ustawienia PWA, ikony i czcionki / Настройки PWA, иконки и шрифты |
+| `version.json`, `tools/release.py` | Wersja i przygotowanie aktualizacji / Версия и подготовка обновлений |
