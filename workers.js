@@ -160,6 +160,47 @@ body.monthly-tv .cards-tv-grid .employee-process-line strong{font-size:clamp(9px
  body.monthly-tv .cards-tv-grid .employee-process{padding:7px 0}
 }
 @media(max-width:760px){#workerTVdialog .worker-mode-choices{grid-template-columns:1fr}}
+
+/* v1.1.4: subtle compact treatment for the regular app only. TV remains unchanged. */
+@media(min-width:761px){
+ body:not(.tv) .shell{padding-top:22px;padding-bottom:12px}
+ body:not(.tv) header{min-height:92px}
+ body:not(.tv) .brand h1{font-size:clamp(25px,2vw,32px)}
+ body:not(.tv) .brand p{font-size:12px}
+ body:not(.tv) #clock{font-size:20px}
+ body:not(.tv) nav{margin-top:14px;padding:7px;border-radius:19px}
+ body:not(.tv) nav button{padding:9px 15px;font-size:13px}
+ body:not(.tv) nav .tabs button{padding:9px 16px}
+ body:not(.tv) .titlebar{margin:19px 0 17px}
+ body:not(.tv) .titlebar h2{font-size:clamp(25px,2vw,29px)}
+ body:not(.tv) .resultviews{margin-top:15px;margin-bottom:15px}
+ body:not(.tv) .resultviews button{padding:9px 15px;font-size:13px}
+ body:not(.tv) .workerheading{margin-top:16px;margin-bottom:16px}
+ body:not(.tv) .workerheading h2{font-size:28px}
+ body:not(.tv) .workerheading p{font-size:12px;margin-top:5px}
+ body:not(.tv) .workerfilters{padding:12px 16px;margin-bottom:16px}
+ body:not(.tv) .workerfilters button{padding:9px 14px;font-size:12px}
+ body:not(.tv) .workerfilters input,body:not(.tv) .workerfilters select{font-size:12px}
+ body:not(.tv) .employee-card{border-radius:22px}
+ body:not(.tv) .employee-head h3{font-size:23px}
+ body:not(.tv) .employee-summary{margin:14px 0 16px;padding:11px 0}
+ body:not(.tv) .employee-process{padding:8px 0}
+ body:not(.tv) .employee-track{margin-top:5px}
+ body:not(.tv) .employee-foot{margin-top:10px}
+ body:not(.tv) .toolbar{margin-bottom:14px}
+ body:not(.tv) .card{padding:20px;min-height:0}
+ body:not(.tv) .card .norm{margin:16px 0 13px;padding-bottom:13px}
+ body:not(.tv) .card .norm strong{font-size:clamp(35px,2.6vw,48px)}
+ body:not(.tv) .card .processname{font-size:19px}
+ body:not(.tv) .card .worker{padding:10px 0}
+}
+@media(min-width:761px) and (max-width:1199px){
+ body:not(.tv) .employee-card{padding:19px}
+}
+@media(min-width:1200px){
+ body:not(.tv) .employee-card{padding:18px}
+ body:not(.tv) .workercards{gap:14px}
+}
 `;
 document.head.appendChild(workerLayoutStyles);
 
