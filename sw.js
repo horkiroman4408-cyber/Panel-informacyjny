@@ -1,8 +1,8 @@
 /* Bump VERSION with every patch; paths work beneath any GitHub Pages repository. */
-const VERSION = '1.1.1';
+const VERSION = '1.1.2';
 const PREFIX = 'incydenty-' + new URL(self.registration.scope).pathname + '-';
 const CACHE = PREFIX + VERSION;
-const FILES = ['./','index.html','style.css','tv5.css','data.js','app.js','workers.js','pwa.js','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
+const FILES = ['./','index.html','style.css','data.js','app.js','workers.js','pwa.js','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(path => new Request(new URL(path,self.registration.scope),{cache:'reload'})))));
 });
