@@ -1,6 +1,6 @@
-INCYDENTY v1.0.4 — patch for v1.0.2 / v1.0.3
+INCYDENTY v1.0.5 — cumulative patch for v1.0.2–1.0.4
 
-PL: Zastąp pliki w katalogu głównym repozytorium. Po publikacji GitHub Pages wybierz Aktualizuj. Pełne dane pracowników są widoczne w każdym wariancie gęstości TV.
-RU: Замени файлы в корне репозитория. После публикации GitHub Pages нажми Aktualizuj. Полные данные работников видны при любой плотности TV.
+PL: Zastąp pliki w katalogu głównym repozytorium, poczekaj na publikację GitHub Pages i wybierz Aktualizuj. Wszystkie procesy: login, wynik, procent i pasek realizacji. Jeden proces: dodatkowo sztuki, czas i status normy.
+RU: Замени файлы в корне репозитория, дождись публикации GitHub Pages и нажми Aktualizuj. Все процессы: логин, результат, процент и полоска выполнения. Один процесс: дополнительно количество штук, время и статус нормы.
 
 Dane raportu nie są dołączone. Данные отчёта не включены.
