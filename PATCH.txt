@@ -1,7 +1,6 @@
-INCYDENTY v1.0.2 — patch for v1.0.1
+INCYDENTY v1.0.3 — patch for v1.0.2
 
-PL: Zastąp pliki w głównym katalogu tego samego repozytorium. Poczekaj na publikację GitHub Pages i wybierz Aktualizuj w aplikacji.
-RU: Замени файлы в корне того же репозитория. Дождись публикации GitHub Pages и нажми Aktualizuj в приложении.
+PL: Zastąp pliki w katalogu głównym repozytorium. Po publikacji GitHub Pages wybierz Aktualizuj. W Tryb TV wybierz Gęstość danych: Automatyczna, Komfortowa lub Kompaktowa.
+RU: Замени файлы в корне репозитория. После публикации GitHub Pages нажми Aktualizuj. В Tryb TV выбери Gęstość danych: Automatyczna, Komfortowa или Kompaktowa.
 
-NADWE + VAS, pięć procesów na ekranie, okres wyników od/do z opcjonalnymi godzinami. Dane raportu nie są dołączone.
-Пять процессов на экране, период от/до с необязательным временем. Данные отчёта не включены.
+Dane raportu nie są dołączone. Данные отчёта не включены.
