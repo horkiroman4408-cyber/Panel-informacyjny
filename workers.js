@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.24</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.26</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,9 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.24</strong> · Przerwy i usuwanie widżetów</summary><p>Import PRZERWY AGENCJE.xlsx: zmiany I/II, grupy przerw i SPM. Usuwanie widżetów z tablicy i TV, możliwość przywrócenia.</p></details>
+  <details open><summary><strong>v1.1.26</strong> · Swobodny edytor widżetów</summary><p>Przeciąganie widżetów w dowolne wolne miejsce, zmiana szerokości i wysokości za narożnik, zapis pozycji i zachowanie układu w TV.</p></details>
+  <details><summary><strong>v1.1.25</strong> · Data STAN w trybie TV</summary><p>Data załadowanego grafiku STAN jest wyświetlana pod nagłówkiem Harmonogram pracy tylko wtedy, gdy na ekranie są widżety tego grafiku.</p></details>
+  <details><summary><strong>v1.1.24</strong> · Przerwy i usuwanie widżetów</summary><p>Import PRZERWY AGENCJE.xlsx: zmiany I/II, grupy przerw i SPM. Usuwanie widżetów z tablicy i TV, możliwość przywrócenia.</p></details>
   <details><summary><strong>v1.1.23</strong> · Układ widżetów harmonogramu</summary><p>Dwie strefy importu: Grafik na jutro i Przerwy. Układ tabel można przestawiać i zmieniać szerokości przed TV.</p></details>
   <details><summary><strong>v1.1.22</strong> · Widoczność harmonogramu TV</summary><p>Wybieraj zespoły i pracowników bezpośrednio w tabelach przez ikony oka. Ukryci pozostają przyciemnieni w widoku zwykłym, bez okna filtrów.</p></details>
   <details><summary><strong>v1.1.21</strong> · Czytelniejszy nagłówek STAN w TV</summary><p>W widoku TV ukryto podwójny napis INCYDENTY i oznaczenie numeru strony. Zwiększono rozmiar daty STAN.</p></details>

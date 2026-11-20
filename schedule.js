@@ -130,8 +130,8 @@ function rosterView(plan,tables,dateText){
 const BOARD_KEY='incydenty-schedule-widgets-v2';
 const BREAK_KEY='incydenty-breaks-v1';
 const TOMORROW_KEY='incydenty-tomorrow-plan-v1';
-let board={order:[],widths:{},removed:[]};
-try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[]}}catch{}
+let board={order:[],widths:{},removed:[],positions:{}};
+try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[],positions:b.positions&&typeof b.positions==='object'?b.positions:{}}}catch{}
 let tomorrow=null;
 try{const t=JSON.parse(localStorage.getItem(TOMORROW_KEY));if(t&&Array.isArray(t.tables))tomorrow=t}catch{}
 let breaks=null;
@@ -139,14 +139,14 @@ try{const b=JSON.parse(localStorage.getItem(BREAK_KEY));if(b&&(Array.isArray(b.r
 // Historical local plans are preserved, but never silently treated as tomorrow's upload.
 const section=$('assign');section.className='schedule-area schedule-workspace';
 section.innerHTML=`
-<div class="schedule-board-top"><div><div class="eyebrow">INCYDENTY · PLAN OBSADY</div><h2>Harmonogram pracy</h2><p>Wczytaj dwa źródła i ułóż widżety tak, jak mają wyglądać na TV.</p></div><button id="scheduleResetLayout" type="button" title="Przywróć szerokości i kolejność">↺ Przywróć układ</button></div>
+<div class="schedule-board-top"><div><div class="eyebrow">INCYDENTY · PLAN OBSADY</div><h2>Harmonogram pracy</h2><div id="scheduleTVPlanDate" class="schedule-tv-plan-date" hidden></div><p>Wczytaj dwa źródła i ułóż widżety tak, jak mają wyglądać na TV.</p></div><button id="scheduleResetLayout" type="button" title="Przywróć szerokości i kolejność">↺ Przywróć układ</button></div>
 <div class="schedule-drop-grid">
  <div class="schedule-drop" id="schedulePlanDrop" role="button" tabindex="0" aria-label="Wczytaj grafik na jutro"><span class="schedule-drop-icon">📅</span><div><strong>Grafik na jutro</strong><small id="schedulePlanSource">Przeciągnij Excel lub kliknij, aby wybrać plik</small></div><span class="schedule-drop-action">Wczytaj</span></div>
  <div class="schedule-drop" id="scheduleBreakDrop" role="button" tabindex="0" aria-label="Wczytaj przerwy"><span class="schedule-drop-icon">☕</span><div><strong>Przerwy</strong><small id="scheduleBreakSource">Przeciągnij Excel lub kliknij, aby wybrać plik</small></div><span class="schedule-drop-action">Wczytaj</span></div>
 </div>
 <input id="schedulePlanFile" type="file" accept=".xlsx" hidden><input id="scheduleBreakFile" type="file" accept=".xlsx" hidden>
-<div class="schedule-board-info"><span>Układ TV · przeciągaj widżety za uchwyt <b>⠿</b> · zmieniaj szerokość przyciskiem w nagłówku</span><span id="scheduleBoardStatus" role="status"></span></div>
-<div id="scheduleWidgetCanvas" class="schedule-widget-canvas" aria-label="Układ widżetów TV"></div>`;
+<div class="schedule-board-info"><span>Układ TV · przesuń widżet za <b>⠿</b> · zmień szerokość i wysokość, przeciągając prawy dolny róg</span><span id="scheduleBoardStatus" role="status"></span></div>
+<div id="scheduleWidgetViewport" class="schedule-widget-viewport"><div id="scheduleWidgetCanvas" class="schedule-widget-canvas" aria-label="Układ widżetów TV"></div></div>`;
 $('assignment').textContent='Harmonogram pracy';
 const css=document.createElement('style');css.id='schedule-widget-styles';css.textContent=`
 .schedule-workspace{min-width:0}.schedule-board-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 18px}
@@ -159,15 +159,15 @@ const css=document.createElement('style');css.id='schedule-widget-styles';css.te
 .schedule-drop>div{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.schedule-drop strong{font-size:16px;color:#243b4a}.schedule-drop small{font-size:12px;color:#758597;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .schedule-drop-action{padding:8px 13px;border:1px solid #d1e2e6;border-radius:999px;background:#fff;color:#347e84;font-size:12px;font-weight:700}
 .schedule-board-info{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:19px 0 13px;font-size:12px;color:#68798b}
-.schedule-widget-canvas{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-items:start;min-height:160px}
-.schedule-widget{grid-column:span 4;min-width:0;border:1px solid #d9e3ec;border-radius:17px;overflow:hidden;background:white;box-shadow:0 7px 24px #2b436012}
-.schedule-widget[data-span="6"]{grid-column:span 6}.schedule-widget[data-span="12"]{grid-column:span 12}
+.schedule-widget-viewport{position:relative;width:100%;min-height:160px;overflow:hidden;border-radius:18px}.schedule-widget-canvas{position:relative;width:1200px;min-height:160px;transform-origin:top left;background-image:linear-gradient(to right,#42637e0b 1px,transparent 1px),linear-gradient(to bottom,#42637e0b 1px,transparent 1px);background-size:20px 20px}
+.schedule-widget{position:absolute;min-width:0;border:1px solid #d9e3ec;border-radius:17px;overflow:hidden;background:white;box-shadow:0 7px 24px #2b436012;display:flex;flex-direction:column;touch-action:auto}.schedule-widget-body{min-height:0;flex:1}
+
 .schedule-widget-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;background:#e9eef4;border-bottom:1px solid #d9e3ec;color:#173956}
 .schedule-widget-header strong{font-size:14px}.schedule-widget-actions{display:flex;align-items:center;gap:5px}
 .schedule-widget-header button{display:grid;place-items:center;border:1px solid transparent;border-radius:9px;background:transparent;color:#64798d;width:29px;height:29px;padding:0;font-size:14px;flex:0 0 auto;box-shadow:none}
 .schedule-widget-header button:hover{border-color:#c6d8e3;background:white}
 .schedule-widget-handle{cursor:grab!important;font-weight:800;font-size:21px!important;touch-action:none}
-.schedule-widget-handle:active{cursor:grabbing!important}
+.schedule-widget-handle:active{cursor:grabbing!important}.schedule-widget-resize{position:absolute;z-index:5;right:2px;bottom:2px;width:24px;height:24px;cursor:nwse-resize;touch-action:none;border-radius:0 0 14px 0;background:linear-gradient(135deg,transparent 55%,#90a4b7 55%,#90a4b7 60%,transparent 60%,transparent 69%,#90a4b7 69%,#90a4b7 74%,transparent 74%)}.schedule-widget-resize:hover{background-color:#dff4f3}.schedule-widget.is-interacting{z-index:10;box-shadow:0 14px 34px #173e5f2a;outline:2px solid #43adad}.schedule-widget-blocked{outline:2px solid #d96969!important}
 .schedule-widget.dragging{opacity:.32}.schedule-widget.drop-target{outline:3px solid #39b2a5;outline-offset:3px}
 .schedule-widget .schedule-person-row{display:grid;grid-template-columns:minmax(92px,33%) minmax(0,1fr) 34px;min-height:42px;border-bottom:1px solid #e2e9f0}
 .schedule-widget .schedule-person-row:last-child{border-bottom:0}
@@ -189,15 +189,16 @@ const css=document.createElement('style');css.id='schedule-widget-styles';css.te
 body.unified-tv #assign .schedule-drop-grid,body.unified-tv #assign .schedule-board-info,body.unified-tv #assign .schedule-board-top>button{display:none!important}
 body.unified-tv #assign .schedule-board-top{justify-content:center;text-align:center;margin:8px 0 18px}
 body.unified-tv #assign .schedule-board-top h2{font-size:clamp(25px,2.4vw,42px)}
+body.unified-tv #assign .schedule-tv-plan-date:not([hidden]){display:block;margin:7px 0 0;font-size:clamp(19px,1.65vw,30px);line-height:1.15;font-weight:750;letter-spacing:.015em;color:#294867;font-variant-numeric:tabular-nums}
 body.unified-tv #assign .schedule-board-top p,body.unified-tv #assign .schedule-board-top .eyebrow{display:none!important}
 body.unified-tv #assign .schedule-widget-header button,body.unified-tv #assign .schedule-person-eye{display:none!important}
 body.unified-tv #assign .schedule-widget .schedule-person-row{grid-template-columns:minmax(80px,33%) minmax(0,1fr)}
-body.unified-tv #assign .schedule-widget{animation:incCloudRise .68s cubic-bezier(.2,.75,.22,1) both}
+body.unified-tv #assign .schedule-widget{animation:incCloudRise .68s cubic-bezier(.2,.75,.22,1) both}body.unified-tv #assign .schedule-widget-canvas{background-image:none}
 body.unified-tv #assign .schedule-widget .schedule-person-login{font-size:clamp(12px,.8vw,19px)}
 body.unified-tv #assign .schedule-widget .schedule-person-assignment{font-size:clamp(11px,.72vw,17px)}
 body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95vw,22px)}
-@media(max-width:1040px){.schedule-widget[data-span="4"]{grid-column:span 6}}
-@media(max-width:700px){.schedule-drop-grid{grid-template-columns:1fr}.schedule-widget[data-span]{grid-column:span 12}.schedule-board-top{flex-wrap:wrap}.schedule-board-info{flex-wrap:wrap}}
+
+@media(max-width:700px){.schedule-drop-grid{grid-template-columns:1fr}.schedule-board-top{flex-wrap:wrap}.schedule-board-info{flex-wrap:wrap}}
 .schedule-widget-remove{border:0!important;background:transparent!important;color:#8b98aa!important;width:27px;height:27px;padding:0!important;font-size:20px!important;line-height:1!important;border-radius:8px!important}
 .schedule-widget-remove:hover{background:#fff0f0!important;color:#c43a40!important}
 .schedule-break-shift{margin:0 0 16px;min-width:0}.schedule-break-shift:last-child{margin-bottom:0}
@@ -231,27 +232,120 @@ function breakMarkup(){if(!breaks)return '<div class="schedule-empty">Nie znalez
  const header=Array.from({length:n},(_,j)=>`<th>${esc(heads[j]??'')}</th>`).join('');
  return `<div style="overflow-x:auto"><table class="schedule-break-table"><thead><tr>${header}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${Array.from({length:n},(_,j)=>`<td>${esc(r[j]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
-function render(){sourceLabels();const el=$('scheduleWidgetCanvas');const list=orderedItems();
- if(!list.length){el.innerHTML='<div class="schedule-empty" style="grid-column:span 12">Wczytaj grafik na jutro lub przerwy. Każdy plik stanie się widżetem, który możesz przestawiać przed pokazem TV.</div>';return}
- el.innerHTML=list.map(item=>{const span=[4,6,12].includes(Number(board.widths[item.id]))?Number(board.widths[item.id]):(item.kind==='breaks'?6:4);
- const isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
- return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-span="${span}"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${item.kind==='team'&&!tv?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${!tv?`<button class="schedule-width" title="Zmień szerokość" aria-label="Zmień szerokość: ${esc(item.title)}"><span style="font-size:12px">${span===4?'⅓':span===6?'½':'↔'}</span></button><button class="schedule-widget-handle" draggable="true" title="Przeciągnij widżet" aria-label="Przeciągnij ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:''}</div></div>${item.kind==='team'?teamMarkup(item):breakMarkup()}</section>`}).join('');
+// Free, snap-to-grid TV board. Coordinates are in a stable 1200px design space;
+// the entire composed board scales together when the PWA/TV viewport changes.
+const DESIGN_W=1200, SNAP=10, GAP=12;
+let boardScale=1,dragSession=null,autoSaved=false;
+const snap=n=>Math.round(n/SNAP)*SNAP;
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+function measuredMinimum(el){
+ const body=el.querySelector('.schedule-widget-body');
+ return Math.max(90,Math.ceil((el.querySelector('.schedule-widget-header')?.offsetHeight||42)+(body?.scrollHeight||0)+4));
+}
+function defaultGeometry(item,sequence){
+ const prev=board.positions||{};
+ const stored=prev[item.id];
+ if(stored&&['x','y','w','h'].every(k=>Number.isFinite(Number(stored[k]))))return {x:clamp(snap(Number(stored.x)),0,1080),y:Math.max(0,snap(Number(stored.y))),w:clamp(snap(Number(stored.w)),180,DESIGN_W),h:Math.max(90,snap(Number(stored.h)))};
+ // Retain the old width preference when upgrading from the 3-width layout.
+ const old=Number(board.widths[item.id]);
+ const w=old===12?DESIGN_W:old===6?590:item.kind==='breaks'?390:390;
+ let x=0,y=0;
+ if(sequence.length){
+  const last=sequence[sequence.length-1];x=last.x+last.w+GAP;y=last.y;
+  if(x+w>DESIGN_W){x=0;y=Math.max(...sequence.map(p=>p.y+p.h))+GAP}
+ }
+ return {x,y,w,h:item.kind==='breaks'?690:Math.max(190,60+(item.table?.entries?.length||0)*51)};
+}
+function overlaps(a,b){return a.x<b.x+b.w+GAP&&a.x+a.w+GAP>b.x&&a.y<b.y+b.h+GAP&&a.y+a.h+GAP>b.y}
+function placeNew(p,sequence){
+ p.w=clamp(p.w,180,DESIGN_W);p.x=clamp(p.x,0,DESIGN_W-p.w);
+ while(sequence.some(v=>overlaps(p,v))){p.x+=SNAP;if(p.x+p.w>DESIGN_W){p.x=0;p.y=Math.max(...sequence.map(v=>v.y+v.h))+GAP}if(p.y>20000)break}
+ return p;
+}
+function geometryFor(items){
+ const geom={};const placed=[];
+ for(const item of items){const stored=board.positions?.[item.id];const p=defaultGeometry(item,placed);
+  p.w=clamp(p.w,180,DESIGN_W);p.x=clamp(p.x,0,DESIGN_W-p.w);
+  if(!stored)placeNew(p,placed);
+  geom[item.id]=p;placed.push(p);
+ }
+ return geom;
+}
+function syncBoardHeight(){
+ const canvas=$('scheduleWidgetCanvas'),viewport=$('scheduleWidgetViewport');
+ const max=Math.max(160,...[...canvas.querySelectorAll('.schedule-widget')].map(el=>Number(el.style.top.replace('px',''))+Number(el.style.height.replace('px',''))+16));
+ canvas.style.height=max+'px';
+ const availableWidth=viewport.clientWidth||DESIGN_W;
+ const tvHeight=window.innerHeight - Math.ceil(viewport.getBoundingClientRect().top)-25;
+ const s=tv?Math.min(availableWidth/DESIGN_W,Math.max(.25,tvHeight/max)):availableWidth/DESIGN_W;
+ boardScale=Math.max(.15,s);canvas.style.transform=`scale(${boardScale})`;
+ canvas.style.marginLeft=tv?Math.max(0,Math.round((availableWidth-DESIGN_W*boardScale)/2))+'px':'0px';
+ viewport.style.height=Math.ceil(max*boardScale)+'px';
+}
+function persistPositions(){if(tv)return;board.positions=board.positions||{};for(const el of $('scheduleWidgetCanvas').querySelectorAll('.schedule-widget')){const id=el.dataset.id;board.positions[id]={x:Math.round(parseFloat(el.style.left)),y:Math.round(parseFloat(el.style.top)),w:Math.round(parseFloat(el.style.width)),h:Math.round(parseFloat(el.style.height))}}saveBoard()}
+function render(){
+ sourceLabels();const el=$('scheduleWidgetCanvas'),list=orderedItems();
+ const dateLabel=$('scheduleTVPlanDate');dateLabel.hidden=!(tv&&tomorrow&&list.some(item=>item.kind==='team'));dateLabel.textContent=dateLabel.hidden?'':`STAN · ${formatDate(tomorrow.date)}`;
+ if(!list.length){el.innerHTML='<div class="schedule-empty" style="padding:30px;text-align:center">Wczytaj grafik na jutro lub przerwy, aby ułożyć widżety do TV.</div>';syncBoardHeight();return}
+ const geom=geometryFor(list);
+ el.innerHTML=list.map(item=>{
+  const g=geom[item.id],isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
+  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}<button class="schedule-widget-handle" type="button" title="Przesuń widżet. Strzałki klawiatury też działają." aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
+  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" style="left:${g.x}px;top:${g.y}px;width:${g.w}px;height:${g.h}px"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div>${tv?'':'<div class="schedule-widget-resize" role="button" tabindex="0" aria-label="Zmień rozmiar widżetu" title="Przeciągnij, aby zmienić szerokość i wysokość"></div>'}</section>`;
+ }).join('');
+ // Establish the minimum safe height after the table has actually been laid out.
+ let changed=false;
+ for(const w of el.querySelectorAll('.schedule-widget')){const g=geom[w.dataset.id],min=measuredMinimum(w);
+  if(g.h<min){g.h=Math.ceil(min/SNAP)*SNAP;w.style.height=g.h+'px';changed=true;}
+ }
+ // Initial layout collision repair after minimum-height measurement.
+ const placed=[];
+ for(const w of el.querySelectorAll('.schedule-widget')){const g=geom[w.dataset.id],had=!!board.positions?.[w.dataset.id];
+  if(!had&&placed.some(v=>overlaps(g,v))){placeNew(g,placed);w.style.left=g.x+'px';w.style.top=g.y+'px';changed=true}
+  placed.push(g);
+ }
+ syncBoardHeight();
+ if(!tv&&changed)persistPositions();
 }
 $('scheduleWidgetCanvas').addEventListener('click',e=>{if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
  const id=widget.dataset.id,item=items().find(x=>x.id===id);
- if(b.classList.contains('schedule-widget-remove')){board.removed=[...new Set([...board.removed,id])];saveBoard();render();status(`Usunięto widżet ${item.title} z tablicy i TV. Przywróć układ, aby go odzyskać.`)}
- else if(b.classList.contains('schedule-width')){const old=Number(board.widths[id]||(item.kind==='breaks'?6:4));board.widths[id]=old===4?6:old===6?12:4;saveBoard();render()}
+ if(b.classList.contains('schedule-widget-remove')){board.removed=[...new Set([...board.removed,id])];saveBoard();render();status(`Usunięto widżet ${item.title} z tablicy i TV.`)}
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
  else if(b.classList.contains('schedule-person-eye')&&tomorrow)toggleVisibility(tomorrow,b.dataset.team,b.dataset.person);
 });
-// Drag handles only; do not inadvertently start moving when scrolling a table.
-let dragging=null;
-$('scheduleWidgetCanvas').addEventListener('dragstart',e=>{if(tv)return;const handle=e.target.closest('.schedule-widget-handle'),w=handle?.closest('.schedule-widget');if(!w){e.preventDefault();return}dragging=w.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragging);w.classList.add('dragging')});
-$('scheduleWidgetCanvas').addEventListener('dragover',e=>{if(!dragging)return;const w=e.target.closest('.schedule-widget');if(!w)return;e.preventDefault();e.dataTransfer.dropEffect='move';w.classList.add('drop-target')});
-$('scheduleWidgetCanvas').addEventListener('dragleave',e=>{const w=e.target.closest('.schedule-widget');if(w&&!w.contains(e.relatedTarget))w.classList.remove('drop-target')});
-$('scheduleWidgetCanvas').addEventListener('drop',e=>{if(!dragging)return;const w=e.target.closest('.schedule-widget');if(!w)return;e.preventDefault();const target=w.dataset.id;if(target!==dragging){const order=orderedItems().map(x=>x.id).filter(id=>id!==dragging);order.splice(order.indexOf(target),0,dragging);board.order=order;saveBoard()}dragging=null;render()});
-$('scheduleWidgetCanvas').addEventListener('dragend',()=>{dragging=null;document.querySelectorAll('.schedule-widget').forEach(w=>w.classList.remove('dragging','drop-target'))});
-$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[]};saveBoard();render();status('Przywrócono wszystkie widżety i domyślny układ.')};
+const canvas=$('scheduleWidgetCanvas');
+function geomEl(el){return {x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)}}
+function collides(el,p){return [...canvas.querySelectorAll('.schedule-widget')].some(other=>other!==el&&overlaps(p,geomEl(other)))}
+function updateGeometry(el,p){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px'}
+canvas.addEventListener('pointerdown',e=>{
+ if(tv||e.button!==0)return;
+ const handle=e.target.closest('.schedule-widget-handle,.schedule-widget-resize');if(!handle)return;
+ const el=handle.closest('.schedule-widget'),original=geomEl(el),mode=handle.classList.contains('schedule-widget-resize')?'resize':'move';
+ dragSession={el,handle,mode,startX:e.clientX,startY:e.clientY,original,last:original};
+ handle.setPointerCapture(e.pointerId);el.classList.add('is-interacting');e.preventDefault();
+});
+canvas.addEventListener('pointermove',e=>{
+ if(!dragSession)return;const {el,mode,startX,startY,original}=dragSession;
+ const dx=snap((e.clientX-startX)/boardScale),dy=snap((e.clientY-startY)/boardScale);let p={...original};
+ if(mode==='move'){p.x=clamp(snap(original.x+dx),0,DESIGN_W-p.w);p.y=Math.max(0,snap(original.y+dy));}
+ else{p.w=clamp(snap(original.w+dx),180,DESIGN_W-p.x);el.style.width=p.w+'px';p.h=Math.max(measuredMinimum(el),snap(original.h+dy));p.h=Math.ceil(p.h/SNAP)*SNAP;}
+ updateGeometry(el,p);dragSession.last=p;el.classList.toggle('schedule-widget-blocked',collides(el,p));syncBoardHeight();
+});
+function endPointer(e){if(!dragSession)return;const {el,original,last}=dragSession;
+ if(collides(el,last)){updateGeometry(el,original);status('Widżety nie mogą na siebie nachodzić. Wybierz wolne miejsce.');}
+ else{persistPositions();status('Zapisano układ TV.');}
+ el.classList.remove('is-interacting','schedule-widget-blocked');dragSession=null;syncBoardHeight();
+}
+canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);
+canvas.addEventListener('keydown',e=>{
+ const h=e.target.closest('.schedule-widget-handle,.schedule-widget-resize');if(!h||tv||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
+ const el=h.closest('.schedule-widget'),p=geomEl(el),old={...p},delta=e.shiftKey?40:10,sign=['ArrowLeft','ArrowUp'].includes(e.key)?-1:1;
+ if(h.classList.contains('schedule-widget-resize')){if(['ArrowLeft','ArrowRight'].includes(e.key))p.w=clamp(p.w+sign*delta,180,DESIGN_W-p.x);else p.h=Math.max(measuredMinimum(el),p.h+sign*delta)}
+ else{if(['ArrowLeft','ArrowRight'].includes(e.key))p.x=clamp(p.x+sign*delta,0,DESIGN_W-p.w);else p.y=Math.max(0,p.y+sign*delta)}
+ if(!collides(el,p)){updateGeometry(el,p);persistPositions();syncBoardHeight()}else updateGeometry(el,old);
+});
+let boardResizeTimer;window.addEventListener('resize',()=>{clearTimeout(boardResizeTimer);boardResizeTimer=setTimeout(syncBoardHeight,80)});
+$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{}};saveBoard();render();status('Przywrócono wszystkie widżety i domyślny układ.')};
 function attachDrop(kind){const zone=$(kind==='plan'?'schedulePlanDrop':'scheduleBreakDrop'),input=$(kind==='plan'?'schedulePlanFile':'scheduleBreakFile');
  zone.addEventListener('click',()=>input.click());zone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click()}});
  for(const evt of ['dragenter','dragover'])zone.addEventListener(evt,e=>{e.preventDefault();zone.classList.add('is-over')});
