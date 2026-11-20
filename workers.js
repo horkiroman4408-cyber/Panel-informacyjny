@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.16</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.17</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.16</strong> · Poprawa czasu wyświetlania TV</summary><p>Usunięto dodatkowy timer przewijania procesów. Każda strona pozostaje widoczna przez wybrany czas, a pojedynczy ekran bez kolejnych stron nie animuje się ponownie.</p></details>
+  <details open><summary><strong>v1.1.17</strong> · Czas na cały ekran TV</summary><p>Ustawiony czas ekranu jest dzielony równo między jego strony, również dla kart pracowników. Bez ponownej animacji tej samej zawartości.</p></details>
+  <details><summary><strong>v1.1.16</strong> · Poprawa czasu wyświetlania TV</summary><p>Usunięto dodatkowy timer przewijania procesów. Każda strona pozostaje widoczna przez wybrany czas, a pojedynczy ekran bez kolejnych stron nie animuje się ponownie.</p></details>
   <details open><summary><strong>v1.1.15</strong> · Nowa identyfikacja INC</summary><p>Nowa zaokrąglona ikona INC w wielu rozmiarach, bezpieczny wariant maskable i grafitowo-turkusowy kolor okna PWA.</p></details>
   <details><summary><strong>v1.1.14</strong> · Wyraźniejsze, płynne pojawianie się kart</summary><p>Przywrócono spokojny efekt unoszenia i delikatny kaskadowy start kart bez kosztownego rozmycia.</p></details>
   <details><summary><strong>v1.1.13</strong> · Płynniejsza animacja kart</summary><p>Uproszczono efekt pojawiania się kart TV: bez kosztownego rozmycia i bez pomiarów podczas ruchu, z krótszymi opóźnieniami.</p></details>
@@ -424,21 +425,56 @@ const unifiedTV=(()=>{
  function updateStatus(){const screens=selectedScreens(),screenNo=Math.max(0,screens.findIndex(x=>x.id===activeId))+1;
    u('unifiedTVstatus').textContent=`${screenName(activeId)} · ${screenNo} / ${screens.length}${pausedUnified?' · Pauza':''}${fitWarning?' · '+fitWarning:''}`;
    u('unifiedTVpause').textContent=pausedUnified?'▶ Wznów':'Ⅱ Wstrzymaj';}
- function schedule(){clearTimeout(cycleTimer);if(!running||pausedUnified||config.mode==='fixed'||dialog.open)return;
-   const sec=Math.max(10,currentSec);cycleTimer=setTimeout(()=>advance(),sec*1000);
+ // One duration per selected screen, shared equally by its internal pages.
+ // No independent short process timer and no redraw when there is only one page.
+ function activePageCount(){
+   if(isProcess(activeId))return Math.max(1,window.pages());
+   if(activeId==='workers')return Math.max(1,Math.ceil(filtered().length/Math.max(1,effectiveCards)));
+   return 1;
  }
- function advance(){if(!running)return;const screens=selectedScreens();if(!screens.length){stop();return}
-   // Advance only after the selected screen's full duration. Never redraw identical cards in between.
-   if(isProcess(activeId)){
-     const count=Math.max(1,window.pages());
-     if(processPageIndex+1<count){processPageIndex++;window.tick();schedule();return}
-     // When just one process screen is selected, rotate only if it has real additional pages.
-     if(screens.length===1){if(count>1){processPageIndex=0;window.tick();schedule()}return}
+ function activePageNumber(){
+   if(isProcess(activeId))return processPageIndex;
+   return activeId==='workers'?Math.floor(index/Math.max(1,effectiveCards)):0;
+ }
+ function schedule(){
+   clearTimeout(cycleTimer);
+   if(!running||pausedUnified||dialog.open)return;
+   const screens=selectedScreens();
+   const count=activePageCount();
+   // Nothing to change: don't re-animate the same page after an interval.
+   if(count===1&&(config.mode==='fixed'||screens.length===1))return;
+   const seconds=Math.max(0.25,currentSec/count);
+   cycleTimer=setTimeout(advance,seconds*1000);
+ }
+ function advance(){
+   if(!running||pausedUnified||dialog.open)return;
+   const screens=selectedScreens();if(!screens.length){stop();return}
+   const count=activePageCount();
+   const nextPage=activePageNumber()+1;
+   if(nextPage<count){
+     if(isProcess(activeId)){
+       processPageIndex=nextPage;
+       window.tick(); // Actual next page, not a redundant render.
+     }else if(activeId==='workers'){
+       index=Math.min(filtered().length-1,index+effectiveCards);
+       show('workers',false);
+     }
+     schedule();return;
    }
-   if(activeId==='workers'&&index+effectiveCards<filtered().length){index+=effectiveCards;show('workers',false);schedule();return}
-   // A single worker screen with one page is static; avoid restarting its entrance animation.
-   if(screens.length===1)return;
-   screenCursor=(screenCursor+1)%screens.length;const screen=screens[screenCursor];currentSec=screen.seconds;show(screen.id);schedule();}
+   // The entire configured screen duration has elapsed.
+   if(config.mode==='fixed'||screens.length===1){
+     if(count<=1)return;
+     if(isProcess(activeId)){
+       processPageIndex=0;window.tick(); // Last page -> first (only if different).
+     }else if(activeId==='workers'){
+       index=0;show('workers',false);
+     }
+   }else{
+     screenCursor=(screenCursor+1)%screens.length;
+     const screen=screens[screenCursor];currentSec=screen.seconds;show(screen.id);
+   }
+   requestAnimationFrame(()=>requestAnimationFrame(schedule));
+ }
  function start(){const enabled=draft.filter(x=>x.enabled&&x.available);
    if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
    config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked};
@@ -446,7 +482,7 @@ const unifiedTV=(()=>{
    dialog.close();running=true;pausedUnified=false;screenCursor=0;
    const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
    q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
-   window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';schedule();revealControls();
+   window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';requestAnimationFrame(()=>requestAnimationFrame(schedule));revealControls();
    if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
  }
  function revealControls(){if(!running)return;const el=u('unifiedTVbar');el.classList.remove('controls-hidden');clearTimeout(controlsTimer);if(config.autohide&&!dialog.open)controlsTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.classList.add('controls-hidden')},3000)}
