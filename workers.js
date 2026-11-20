@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.18</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.19</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.18</strong> · Harmonogram pracy z importem Excel STAN / Arkusz1</summary><p>Dodano dzisiejszy i jutrzejszy harmonogram, grupowanie pracowników według procesów, wolne i urlopy oraz ekrany TV.</p></details>
+  <details open><summary><strong>v1.1.19</strong> · Tabelaryczny harmonogram STAN</summary><p>Jedna osoba w jednym wierszu, wszystkie procesy w tej samej komórce, a nieobecności w drugiej tabeli. Ten sam widok w TV.</p></details>
+  <details><summary><strong>v1.1.18</strong> · Harmonogram pracy z importem Excel STAN / Arkusz1</summary><p>Dodano dzisiejszy i jutrzejszy harmonogram, grupowanie pracowników według procesów, wolne i urlopy oraz ekrany TV.</p></details>
   <details><summary><strong>v1.1.17</strong> · Czas na cały ekran TV</summary><p>Ustawiony czas ekranu jest dzielony równo między jego strony, również dla kart pracowników. Bez ponownej animacji tej samej zawartości.</p></details>
   <details><summary><strong>v1.1.16</strong> · Poprawa czasu wyświetlania TV</summary><p>Usunięto dodatkowy timer przewijania procesów. Każda strona pozostaje widoczna przez wybrany czas, a pojedynczy ekran bez kolejnych stron nie animuje się ponownie.</p></details>
   <details open><summary><strong>v1.1.15</strong> · Nowa identyfikacja INC</summary><p>Nowa zaokrąglona ikona INC w wielu rozmiarach, bezpieczny wariant maskable i grafitowo-turkusowy kolor okna PWA.</p></details>
