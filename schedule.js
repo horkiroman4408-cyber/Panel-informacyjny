@@ -130,12 +130,12 @@ function rosterView(plan,tables,dateText){
 const BOARD_KEY='incydenty-schedule-widgets-v2';
 const BREAK_KEY='incydenty-breaks-v1';
 const TOMORROW_KEY='incydenty-tomorrow-plan-v1';
-let board={order:[],widths:{}};
-try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{}}}catch{}
+let board={order:[],widths:{},removed:[]};
+try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[]}}catch{}
 let tomorrow=null;
 try{const t=JSON.parse(localStorage.getItem(TOMORROW_KEY));if(t&&Array.isArray(t.tables))tomorrow=t}catch{}
 let breaks=null;
-try{const b=JSON.parse(localStorage.getItem(BREAK_KEY));if(b&&Array.isArray(b.rows))breaks=b}catch{}
+try{const b=JSON.parse(localStorage.getItem(BREAK_KEY));if(b&&(Array.isArray(b.rows)||Array.isArray(b.shifts)))breaks=b}catch{}
 // Historical local plans are preserved, but never silently treated as tomorrow's upload.
 const section=$('assign');section.className='schedule-area schedule-workspace';
 section.innerHTML=`
@@ -198,6 +198,12 @@ body.unified-tv #assign .schedule-widget .schedule-person-assignment{font-size:c
 body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95vw,22px)}
 @media(max-width:1040px){.schedule-widget[data-span="4"]{grid-column:span 6}}
 @media(max-width:700px){.schedule-drop-grid{grid-template-columns:1fr}.schedule-widget[data-span]{grid-column:span 12}.schedule-board-top{flex-wrap:wrap}.schedule-board-info{flex-wrap:wrap}}
+.schedule-widget-remove{border:0!important;background:transparent!important;color:#8b98aa!important;width:27px;height:27px;padding:0!important;font-size:20px!important;line-height:1!important;border-radius:8px!important}
+.schedule-widget-remove:hover{background:#fff0f0!important;color:#c43a40!important}
+.schedule-break-shift{margin:0 0 16px;min-width:0}.schedule-break-shift:last-child{margin-bottom:0}
+.schedule-break-shift h4{font-size:13px;color:#24425b;background:#edf5f4;border-radius:9px;padding:9px 11px;margin:0 0 8px}
+.schedule-break-table{table-layout:fixed}.schedule-break-table th:first-child{width:25%}
+.schedule-break-spm{font-size:12px;padding:8px 10px;border-bottom:1px solid #e1e8ee;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){body.unified-tv #assign .schedule-widget{animation:none!important}}
 `;document.head.append(css);
 const iconEye=(off)=>off?'◌':'◉';
@@ -205,7 +211,7 @@ function saveBoard(){try{localStorage.setItem(BOARD_KEY,JSON.stringify(board))}c
 function status(msg){$('scheduleBoardStatus').textContent=msg}
 function sourceLabels(){
  $('schedulePlanSource').textContent=tomorrow?`${tomorrow.source||'Excel'} · ${formatDate(tomorrow.date)} · ${tomorrow.shift}`:'Przeciągnij Excel lub kliknij, aby wybrać plik';
- $('scheduleBreakSource').textContent=breaks?`${breaks.source||'Excel'} · ${breaks.rows.length} wierszy`:'Przeciągnij Excel lub kliknij, aby wybrać plik';
+ $('scheduleBreakSource').textContent=breaks?`${breaks.source||'Excel'} · ${(breaks.rows?.length||breaks.shifts?.length||0)} sekcje`:'Przeciągnij Excel lub kliknij, aby wybrać plik';
 }
 function items(){
  const result=[];
@@ -213,12 +219,14 @@ function items(){
  if(breaks)result.push({id:'breaks',title:'Przerwy',kind:'breaks'});
  return result;
 }
-function orderedItems(){const list=items(),ids=new Set(list.map(x=>x.id));return [...board.order.filter(id=>ids.has(id)),...list.map(x=>x.id).filter(id=>!board.order.includes(id))].map(id=>list.find(x=>x.id===id));}
+function orderedItems(){const list=items().filter(x=>!board.removed.includes(x.id)),ids=new Set(list.map(x=>x.id));return [...board.order.filter(id=>ids.has(id)),...list.map(x=>x.id).filter(id=>!board.order.includes(id))].map(id=>list.find(x=>x.id===id));}
 function teamMarkup(item){const t=item.table,off=isHidden(tomorrow,t.name);
  return (t.entries||[]).filter(entry=>!tv||!isHidden(tomorrow,t.name,entry.login)).map(entry=>{const hidden=isHidden(tomorrow,t.name,entry.login);
  return `<div class="schedule-person-row${hidden?' schedule-muted':''}"><div class="schedule-person-login">${esc(entry.login)}</div><div class="schedule-person-assignment">${entry.processes.map(x=>`<span>${esc(x)}</span>`).join('')}</div>${tv?'':`<button class="schedule-person-eye" data-person="${esc(entry.login)}" data-team="${esc(t.name)}" type="button" title="${hidden?'Pokaż':'Ukryj'} w TV" aria-label="Widoczność TV: ${esc(entry.login)}">${iconEye(!hidden)}</button>`}</div>`}).join('')||'<div class="schedule-person-empty">Brak pracowników</div>';
 }
-function breakMarkup(){if(!breaks||!breaks.rows.length)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
+function breakMarkup(){if(!breaks)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
+ if(Array.isArray(breaks.shifts)){return breaks.shifts.map(shift=>`<div class="schedule-break-shift"><h4>${esc(shift.name)}</h4><table class="schedule-break-table"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${shift.rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')+(breaks.people?.length?`<div class="schedule-break-shift"><h4>Przydział do przerw</h4><table class="schedule-break-table"><thead><tr><th>Grupa</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${breaks.people.map(r=>`<tr><th>${esc(r.label||'')}</th>${r.logins.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'')+(breaks.spm?.length?`<div class="schedule-break-shift"><h4>SPM</h4>${breaks.spm.map(r=>`<div class="schedule-break-spm">${esc(r)}</div>`).join('')}</div>`:'');}
+ if(!breaks.rows?.length)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
  const rows=breaks.rows,heads=rows[0]||[],n=Math.max(1,...rows.map(r=>r.length));
  const header=Array.from({length:n},(_,j)=>`<th>${esc(heads[j]??'')}</th>`).join('');
  return `<div style="overflow-x:auto"><table class="schedule-break-table"><thead><tr>${header}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${Array.from({length:n},(_,j)=>`<td>${esc(r[j]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -227,11 +235,12 @@ function render(){sourceLabels();const el=$('scheduleWidgetCanvas');const list=o
  if(!list.length){el.innerHTML='<div class="schedule-empty" style="grid-column:span 12">Wczytaj grafik na jutro lub przerwy. Każdy plik stanie się widżetem, który możesz przestawiać przed pokazem TV.</div>';return}
  el.innerHTML=list.map(item=>{const span=[4,6,12].includes(Number(board.widths[item.id]))?Number(board.widths[item.id]):(item.kind==='breaks'?6:4);
  const isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
- return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-span="${span}"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${item.kind==='team'&&!tv?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${!tv?`<button class="schedule-width" title="Zmień szerokość" aria-label="Zmień szerokość: ${esc(item.title)}"><span style="font-size:12px">${span===4?'⅓':span===6?'½':'↔'}</span></button><button class="schedule-widget-handle" draggable="true" title="Przeciągnij widżet" aria-label="Przeciągnij ${esc(item.title)}">⠿</button>`:''}</div></div>${item.kind==='team'?teamMarkup(item):breakMarkup()}</section>`}).join('');
+ return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-span="${span}"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${item.kind==='team'&&!tv?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${!tv?`<button class="schedule-width" title="Zmień szerokość" aria-label="Zmień szerokość: ${esc(item.title)}"><span style="font-size:12px">${span===4?'⅓':span===6?'½':'↔'}</span></button><button class="schedule-widget-handle" draggable="true" title="Przeciągnij widżet" aria-label="Przeciągnij ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:''}</div></div>${item.kind==='team'?teamMarkup(item):breakMarkup()}</section>`}).join('');
 }
 $('scheduleWidgetCanvas').addEventListener('click',e=>{if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
  const id=widget.dataset.id,item=items().find(x=>x.id===id);
- if(b.classList.contains('schedule-width')){const old=Number(board.widths[id]||(item.kind==='breaks'?6:4));board.widths[id]=old===4?6:old===6?12:4;saveBoard();render()}
+ if(b.classList.contains('schedule-widget-remove')){board.removed=[...new Set([...board.removed,id])];saveBoard();render();status(`Usunięto widżet ${item.title} z tablicy i TV. Przywróć układ, aby go odzyskać.`)}
+ else if(b.classList.contains('schedule-width')){const old=Number(board.widths[id]||(item.kind==='breaks'?6:4));board.widths[id]=old===4?6:old===6?12:4;saveBoard();render()}
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
  else if(b.classList.contains('schedule-person-eye')&&tomorrow)toggleVisibility(tomorrow,b.dataset.team,b.dataset.person);
 });
@@ -242,7 +251,7 @@ $('scheduleWidgetCanvas').addEventListener('dragover',e=>{if(!dragging)return;co
 $('scheduleWidgetCanvas').addEventListener('dragleave',e=>{const w=e.target.closest('.schedule-widget');if(w&&!w.contains(e.relatedTarget))w.classList.remove('drop-target')});
 $('scheduleWidgetCanvas').addEventListener('drop',e=>{if(!dragging)return;const w=e.target.closest('.schedule-widget');if(!w)return;e.preventDefault();const target=w.dataset.id;if(target!==dragging){const order=orderedItems().map(x=>x.id).filter(id=>id!==dragging);order.splice(order.indexOf(target),0,dragging);board.order=order;saveBoard()}dragging=null;render()});
 $('scheduleWidgetCanvas').addEventListener('dragend',()=>{dragging=null;document.querySelectorAll('.schedule-widget').forEach(w=>w.classList.remove('dragging','drop-target'))});
-$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{}};saveBoard();render();status('Przywrócono układ domyślny.')};
+$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[]};saveBoard();render();status('Przywrócono wszystkie widżety i domyślny układ.')};
 function attachDrop(kind){const zone=$(kind==='plan'?'schedulePlanDrop':'scheduleBreakDrop'),input=$(kind==='plan'?'schedulePlanFile':'scheduleBreakFile');
  zone.addEventListener('click',()=>input.click());zone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click()}});
  for(const evt of ['dragenter','dragover'])zone.addEventListener(evt,e=>{e.preventDefault();zone.classList.add('is-over')});
@@ -250,25 +259,43 @@ function attachDrop(kind){const zone=$(kind==='plan'?'schedulePlanDrop':'schedul
  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('is-over');const f=[...e.dataTransfer.files].find(x=>/\.xlsx$/i.test(x.name));if(f)load(kind,f);else status('Wybierz plik .xlsx')});
  input.onchange=e=>{const f=e.target.files[0];if(f)load(kind,f);e.target.value=''};
 }
-async function parseBreaks(file){const names=['PRZERWY','Przerwy','przerwy','Arkusz1','STAN','Sheet1','Export'];let rows=null,found='';
- for(const sheet of names){try{rows=await xlsxRows(await file.arrayBuffer(),sheet);found=sheet;break}catch(e){if(!/Brak arkusza/.test(e.message))throw e}}
- if(!rows)throw Error('Nie znaleziono obsługiwanego arkusza. Prześlij przykład pliku Przerwy.');
- const cleaned=rows.map(r=>r.map(v=>v==null?'':String(v).trim())).filter(r=>r.some(x=>x));
- if(!cleaned.length)throw Error('Arkusz jest pusty.');
- if(cleaned.length>400)throw Error('Plik ma ponad 400 wierszy. Wymaga dopasowania importu.');
- return {source:file.name,sheet:found,rows:cleaned,importedAt:new Date().toISOString()};
+async function parseBreaks(file){
+ const buffer=await file.arrayBuffer();let rows;
+ // The supplied PRZERWY AGENCJE.xlsx uses the tab named Sheet2.
+ for(const sheet of ['Sheet2','PRZERWY','Przerwy','przerwy','Arkusz1','Sheet1']){
+  try{rows=await xlsxRows(buffer,sheet);break}catch(e){if(!/Brak arkusza/.test(e.message))throw e}
+ }
+ if(!rows)throw Error('Nie znaleziono arkusza z przerwami.');
+ const value=(row,col)=>String(row?.[col]??'').trim();
+ const shifts=[],people=[];let current=null,inPeople=false;
+ for(const row of rows){
+  const first=value(row,0).toUpperCase();
+  if(/^(I|II)\s+ZMIANA$/.test(first)){current={name:first,rows:[]};shifts.push(current);inPeople=false;continue}
+  if(first==='PD'){inPeople=true;continue}
+  if(inPeople){const cells=[value(row,1),value(row,3),value(row,5)];if(cells.some(Boolean))people.push({label:'',logins:cells});continue}
+  if(!current||!(/^(8|10|12)H$/i.test(first)||(!first&&[1,3,5].some(j=>value(row,j)))))continue;
+  const times=[1,3,5].map(j=>value(row,j));if(times.some(Boolean))current.rows.push({hours:first,times});
+ }
+ if(!shifts.length||!shifts.some(x=>x.rows.length)){
+  const cleaned=rows.map(r=>r.map(v=>v==null?'':String(v).trim())).filter(r=>r.some(Boolean));
+  if(!cleaned.length)throw Error('Arkusz jest pusty.');
+  return {source:file.name,rows:cleaned,importedAt:new Date().toISOString()};
+ }
+ let spm=[];try{const spmRows=await xlsxRows(buffer,'SPM');spm=spmRows.flat().map(x=>String(x??'').trim()).filter(x=>/PRZERWA/i.test(x))}catch(e){if(!/Brak arkusza/.test(e.message))throw e}
+ return {source:file.name,shifts,people,spm,importedAt:new Date().toISOString()};
 }
+
 async function load(kind,file){if(file.size>10_000_000){status('Plik przekracza 10 MB.');return}status(`Odczyt: ${file.name}…`);
  try{if(kind==='plan'){
  const buffer=await file.arrayBuffer();let rows;try{rows=await xlsxRows(buffer,'STAN')}catch(err){if(!/Brak arkusza STAN/.test(err.message))throw err;rows=await xlsxRows(buffer,'Arkusz1')}
- const plan=parse(rows,file.name);tomorrow=plan;plans[key(plan.date,plan.shift)]=plan;
+ const plan=parse(rows,file.name);tomorrow=plan;plans[key(plan.date,plan.shift)]=plan;board.removed=board.removed.filter(id=>!id.startsWith('team:'));saveBoard();
  localStorage.setItem(TOMORROW_KEY,JSON.stringify(tomorrow));localStorage.setItem(KEY,JSON.stringify(plans));status(`Wczytano grafik: ${formatDate(plan.date)} · ${planTables(plan).length} tabel.`)
- }else{breaks=await parseBreaks(file);localStorage.setItem(BREAK_KEY,JSON.stringify(breaks));status(`Wczytano przerwy: ${breaks.rows.length} wierszy. Sprawdź układ tabeli.`)}
+ }else{breaks=await parseBreaks(file);board.removed=board.removed.filter(id=>id!=='breaks');saveBoard();localStorage.setItem(BREAK_KEY,JSON.stringify(breaks));status(`Wczytano przerwy: ${(breaks.rows?.length||breaks.shifts?.length||0)} sekcje. Sprawdź układ tabeli.`)}
  render();
  }catch(e){status('Błąd odczytu: '+e.message)}
 }
 attachDrop('plan');attachDrop('break');
-function count(){return items().length?1:0}
+function count(){return orderedItems().length?1:0}
 function tvRender(){tv=true;section.hidden=false;render()}
 window.incSchedule={has:()=>count()>0,count,show:tvRender,restore(){tv=false;render()},isSchedule:()=>!section.hidden};
 $('assignment').addEventListener('click',()=>{tv=false;render();$('tv').disabled=false});
