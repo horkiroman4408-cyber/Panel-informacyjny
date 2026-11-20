@@ -261,6 +261,10 @@ function breakMarkup(){
  }
  return '<div class="schedule-empty">Nie znaleziono harmonogramu zmian w pliku Excel.</div>';
 }
+// Widget grid constants and drag state, required before first render.
+const DESIGN_W=1200;
+const SIZES=['S','M','L'];
+let boardScale=1,draggingId=null,targetId=null;
 function widgetSize(item){
  const stored=board.sizes?.[item.id];if(SIZES.includes(stored))return stored;
  // One-time migration of the old freely resized positions and widths.
