@@ -17,19 +17,42 @@ function details(rows,name){
  if(!date)throw Error('Nie znaleziono daty. Wpisz datę w nagłówku lub nazwie pliku.');
  return {date,shift:sh||'Nieokreślona'};
 }
-function parse(rows,name){const d=details(rows,name),people=[],absence=[];const seen=new Set();
+function parse(rows,name){
+ const d=details(rows,name),tables=[],byColumn=new Map(),people=[],absence=[];
+ const kindName=v=>String(v??'').trim().replace(/\s+/g,' ');
+ function headerFor(col,firstRow){
+  for(let k=firstRow-1;k>=Math.max(0,firstRow-7);k--){
+   const text=kindName(rows[k]?.[col]);
+   if(/^(AGENCJA|LPP|WOLNE I URLOPY|NIEOBECNI|PRACOWNICY)$/i.test(text))return text;
+  }
+  return 'Pracownicy';
+ }
  for(let i=0;i<rows.length;i++){
   const row=rows[i].map(v=>String(v??'').trim());
   for(let j=0;j<row.length-1;j++){
    if(!isLogin(row[j])||!row[j+1])continue;
-   const login=row[j].toUpperCase(),process=row[j+1].replace(/\r/g,'').trim(),key=login+'|'+process;
-   if(seen.has(key))continue;seen.add(key);
-   if(/^(WOLNY|WOLNE|URLOP|URLOPY|W DOMU|NIEOBECNY|ZWOLNIENIE|L4)$/i.test(process))absence.push({login,status:process});
-   else people.push({login,process});
+   let table=byColumn.get(j);
+   if(!table){
+    const title=headerFor(j,i),abs=/^(WOLNE I URLOPY|NIEOBECNI)$/i.test(title);
+    table={name:title,kind:abs?'absence':'team',column:j,entries:[]};
+    byColumn.set(j,table);tables.push(table);
+   }
+   const login=row[j].toUpperCase(),raw=row[j+1].replace(/\r/g,'').trim();
+   const values=raw.split(/\n|\s*;\s*/).map(x=>x.trim()).filter(Boolean);
+   const inferredAbs=/^(WOLNY|WOLNE|URLOP|URLOPY|W DOMU|NIEOBECNY|ZWOLNIENIE|L4)$/i.test(raw);
+   if(inferredAbs&&table.entries.length===0&&table.kind==='team'){table.kind='absence';if(table.name==='Pracownicy')table.name='Nieobecni'}
+   const existing=table.entries.find(x=>x.login===login);
+   if(existing){for(const value of values)if(!existing.processes.includes(value))existing.processes.push(value)}
+   else table.entries.push({login,processes:values});
   }
  }
- if(!people.length&&!absence.length)throw Error('Brak par Login TH / Proces. Sprawdź arkusz STAN lub Arkusz1.');
- return {...d,people,absence,source:name,importedAt:new Date().toISOString()};
+ if(!tables.length)throw Error('Brak par Login TH / Proces. Sprawdź arkusz STAN lub Arkusz1.');
+ for(const table of tables)for(const entry of table.entries){
+  const str=entry.processes.join('\n');
+  if(table.kind==='absence')absence.push({login:entry.login,status:str,team:table.name});
+  else people.push({login:entry.login,process:str,team:table.name});
+ }
+ return {...d,tables,people,absence,source:name,importedAt:new Date().toISOString()};
 }
 const key=(d,s)=>d+'|'+s;
 function dates(){return [...new Set(Object.values(plans).map(x=>x.date))].sort((a,b)=>b.localeCompare(a))}
@@ -66,10 +89,23 @@ function rosterTable(title,meta,rows,absence=false){
  const rendered=rows.length?rows.map((p,i)=>`<div class="schedule-person-row"><div class="schedule-person-login">${esc(p.login)}</div><div class="schedule-person-assignment">${(absence?p.statuses:p.processes).map(x=>`<span>${esc(x)}</span>`).join('')}</div></div>`).join(''):`<div class="schedule-person-empty">Brak ${absence?'nieobecności':'przydziałów'}</div>`;
  return `<section class="schedule-roster-panel${absence?' schedule-roster-absence':''}"><div class="schedule-roster-panel-head"><strong>${esc(title)}</strong>${meta?`<span>${esc(meta)}</span>`:''}</div><div class="schedule-person-list">${rendered}</div></section>`;
 }
-function rosterView(plan,people,absence,dateText){
- const team=plan.team||'Pracownicy';
- const shiftText=plan.hours||plan.shift||'';
- return `<div class="schedule-sheet"><div class="schedule-sheet-head"><strong>INCYDENTY</strong><h3>STAN · ${esc(dateText)}</h3><div class="schedule-sheet-line"></div></div><div class="schedule-roster-grid">${rosterTable(team,shiftText,people)}${rosterTable('Nieobecni','',absence,true)}</div></div>`;
+// New imports keep the Excel column groups. Older locally stored plans remain
+// readable, but need reimporting to recover their original team boundaries.
+function planTables(plan){
+ if(Array.isArray(plan?.tables)&&plan.tables.length)return plan.tables;
+ if(!plan)return [];
+ const working=workerRows(plan),missing=absenceRows(plan);
+ return [working.length?{name:plan.team||'Pracownicy',kind:'team',entries:working}:null,
+         missing.length?{name:'Nieobecni',kind:'absence',entries:missing.map(x=>({login:x.login,processes:x.statuses}))}:null].filter(Boolean);
+}
+let tvFilter={teams:[],excludedLogins:[]};
+function tvTables(plan){
+ const excludedTeams=new Set(tvFilter.teams||[]),excludedLogins=new Set(tvFilter.excludedLogins||[]);
+ return planTables(plan).filter(t=>!excludedTeams.has(t.name)).map(t=>({...t,entries:t.entries.filter(x=>!excludedLogins.has(x.login))})).filter(t=>t.entries.length);
+}
+function rosterView(plan,tables,dateText){
+ const contents=tables.map(t=>rosterTable(t.name,t.hours||'',t.entries.map(p=>({login:p.login,processes:p.processes,statuses:p.processes})),t.kind==='absence')).join('');
+ return `<div class="schedule-sheet"><div class="schedule-sheet-head"><strong>INCYDENTY</strong><h3>STAN · ${esc(dateText)}</h3><div class="schedule-sheet-line"></div></div><div class="schedule-roster-grid${tables.length===1?' schedule-roster-single':''}">${contents||'<div class="schedule-person-empty">Brak osób dla wybranego filtra TV.</div>'}</div></div>`;
 }
 
 const section=$('assign');section.className='schedule-area';section.innerHTML=`
@@ -81,12 +117,12 @@ const style=document.createElement('style');style.textContent=`
 .schedule-area{display:block;min-width:0}.schedule-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:27px 0 20px}.schedule-title h2{font-size:clamp(27px,2.4vw,36px)}.schedule-title p{font-size:13px;margin:7px 0 0}.schedule-tools{display:flex;align-items:center;gap:17px;padding:12px 16px;flex-wrap:wrap;margin-bottom:20px}.schedule-tools label{font-size:12px;color:#53647c;font-weight:650}.schedule-tools input,.schedule-tools select{border:1px solid #dce4ef;background:#fff;border-radius:10px;padding:9px 11px;font-size:13px;color:#31445b;max-width:none}.schedule-daytabs{display:flex;background:#edf2fa;padding:4px;border-radius:14px;gap:3px}.schedule-daytabs button{border:0;background:transparent;padding:9px 17px;border-radius:11px;font-size:13px}.schedule-daytabs button.selected{background:white;color:#0876d9;box-shadow:0 2px 8px #0001}.schedule-tools #scheduleSummary{margin-left:auto;font-size:12px;color:#718096}.schedule-status{padding:12px 15px;margin-bottom:14px;border-radius:13px;background:#eff7ff;color:#344e70;font-size:13px}.schedule-meta{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:16px 0}.schedule-meta strong{color:#304257;font-size:16px}.schedule-meta small{font-size:12px;color:#718096}.schedule-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}.schedule-process{background:rgba(255,255,255,.80);border:1px solid #e5eaf3;border-radius:20px;padding:17px 17px 15px;box-shadow:0 7px 25px #1f268509;min-width:0}.schedule-process h3{margin:0;font-size:14px;line-height:1.3;color:#2f4259;overflow-wrap:anywhere}.schedule-process header{min-height:0!important;display:flex!important;justify-content:space-between!important;gap:6px!important;align-items:center!important;margin-bottom:12px}.schedule-process header:before{display:none!important}.schedule-process header span{padding:3px 9px;background:#eaf4ff;color:#2771b5;border-radius:999px;font-size:11px;font-weight:800}.schedule-logins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.schedule-login{display:block;text-align:center;padding:9px 3px;background:#f3f6fb;border:1px solid #ecf0f6;border-radius:10px;font-size:clamp(11px,.8vw,14px);font-weight:750;color:#344960;white-space:nowrap}.schedule-absences{margin-top:16px;background:#fff9f0;border:1px solid #f2e6d7;border-radius:17px;padding:15px}.schedule-absences h3{font-size:13px;margin:0 0 10px}.schedule-absences-list{display:flex;gap:7px;flex-wrap:wrap}.schedule-absences-list span{padding:7px 10px;background:#fff;border-radius:10px;font-size:12px;font-weight:650;color:#655742}.schedule-empty{text-align:center;background:rgba(255,255,255,.72);border:1px solid #e5eaf3;border-radius:23px;padding:55px 25px;color:#607086}.schedule-empty h3{color:#304257;font-size:21px}.schedule-bottom{text-align:right;padding:15px 0}.schedule-bottom button{font-size:12px;padding:9px 14px}body.unified-tv #assign .schedule-tools,body.unified-tv #assign .schedule-title>button,body.unified-tv #assign .schedule-bottom,body.unified-tv #assign .schedule-status{display:none!important}body.unified-tv #assign .schedule-title{justify-content:center;text-align:center;margin:12px 0 14px}body.unified-tv #assign .schedule-title h2{font-size:clamp(24px,2.1vw,38px)}body.unified-tv #assign .schedule-title p{display:none}body.unified-tv #assign .schedule-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,.75vw,18px)}body.unified-tv #assign .schedule-process{padding:clamp(12px,.8vw,20px)}body.unified-tv #assign .schedule-login{font-size:clamp(12px,.8vw,17px)}body.unified-tv #assign .schedule-absences{margin-top:12px}body.unified-tv #assign .schedule-process{animation:incCloudRise .68s cubic-bezier(.2,.75,.22,1) both}body.unified-tv #assign .schedule-process:nth-child(2){animation-delay:55ms}body.unified-tv #assign .schedule-process:nth-child(3){animation-delay:110ms}@media(max-width:1260px){.schedule-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:880px){.schedule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.schedule-grid{grid-template-columns:1fr}.schedule-title{flex-wrap:wrap}}
 `;style.textContent+=`
 /* STAN layout: employee rows with all assignments, just like the exported staff sheet. */
-.schedule-sheet{width:100%;max-width:1160px;margin:0 auto 20px}
+.schedule-sheet{width:100%;max-width:1540px;margin:0 auto 20px}
 .schedule-sheet-head{text-align:center;margin:12px auto 28px;color:#112e50}
 .schedule-sheet-head>strong{display:block;font-size:clamp(22px,2vw,30px);font-weight:800;letter-spacing:.015em;line-height:1.18}
 .schedule-sheet-head h3{font-size:clamp(18px,1.6vw,25px);font-weight:780;margin:4px 0 10px;color:#173657}
 .schedule-sheet-line{height:3px;width:44px;background:#9cacc0;border-radius:3px;margin:0 auto}
-.schedule-roster-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.schedule-roster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
 .schedule-roster-panel{border:1px solid #d5e0eb;border-radius:15px;overflow:hidden;background:#fff;min-width:0}
 .schedule-roster-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#e9eef4;padding:13px 15px;color:#102f4e;font-size:14px;min-height:48px}
 .schedule-roster-panel-head strong{font-weight:800}
@@ -98,22 +134,34 @@ const style=document.createElement('style');style.textContent=`
 .schedule-roster-absence .schedule-person-assignment{font-weight:500;font-size:12px}
 .schedule-person-empty{text-align:center;padding:25px 12px;color:#8694a7;font-size:13px}
 .schedule-tv-page{text-align:right;max-width:1160px;margin:5px auto 0;font-size:12px;color:#718096}
-body.unified-tv .schedule-sheet{max-width:min(1550px,96vw)}
+body.unified-tv .schedule-sheet{max-width:min(1850px,96vw)}
 body.unified-tv .schedule-sheet-head{margin:0 auto clamp(12px,1.5vh,24px)}
 body.unified-tv .schedule-roster-grid{gap:clamp(10px,.8vw,22px)}
 body.unified-tv .schedule-person-login{font-size:clamp(13px,1.05vw,21px)}
 body.unified-tv .schedule-person-assignment{font-size:clamp(12px,.9vw,18px)}
 body.unified-tv .schedule-person-row{min-height:clamp(38px,4.2vh,68px)}
 body.unified-tv .schedule-roster-panel-head{font-size:clamp(14px,1vw,20px)}
+.schedule-roster-single{grid-template-columns:minmax(0,540px);justify-content:center}
+body.unified-tv .schedule-roster-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.unified-tv .schedule-roster-single{grid-template-columns:minmax(0,620px)}
 body.unified-tv .schedule-sheet{animation:incCloudRise .68s cubic-bezier(.2,.75,.22,1) both}
+@media(max-width:1050px){.schedule-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.schedule-roster-grid{grid-template-columns:1fr}.schedule-roster-panel-head{min-height:42px}.schedule-sheet-head{margin-bottom:18px}}
+
+/* TV keeps its own INCYDENTY brand in the fixed application header.
+   The roster title focuses on the date; avoid duplicated titles and page numbers. */
+body.unified-tv #assign .schedule-sheet-head>strong{display:none!important}
+body.unified-tv #assign .schedule-sheet-head h3{font-size:clamp(30px,2.8vw,54px);font-weight:800;letter-spacing:-.025em;line-height:1.12;margin:0 0 clamp(8px,1vh,16px)}
+body.unified-tv #assign .schedule-sheet-head{margin:0 auto clamp(14px,1.6vh,26px)}
+body.unified-tv #assign .schedule-tv-page{display:none!important}
+
 @media(prefers-reduced-motion:reduce){body.unified-tv .schedule-sheet{animation:none!important}}
 `;document.head.append(style);
 function status(t){$('scheduleStatus').hidden=false;$('scheduleStatus').textContent=t}
 function render(){const plan=selectedPlan();$('scheduleDate').value=currentDate;const s=shifts(currentDate);$('scheduleShift').replaceChildren(...s.map(x=>{const e=document.createElement('option');e.value=x;e.textContent=x;return e}));if(shift)$('scheduleShift').value=shift;$('scheduleShift').disabled=!s.length;for(const b of section.querySelectorAll('[data-offset]'))b.classList.toggle('selected',currentDate===addDay(today(),Number(b.dataset.offset)));$('scheduleDelete').disabled=!plan;
- $('scheduleSummary').textContent=plan?`${workerRows(plan).length} pracowników · ${groups(plan).length} procesów`:'Brak danych';
+ $('scheduleSummary').textContent=plan?planTables(plan).map(t=>`${t.name}: ${t.entries.length}`).join(' · '):'Brak danych';
  if(!plan){$('scheduleContent').innerHTML=`<div class="schedule-empty"><div style="font-size:34px">📅</div><h3>Brak harmonogramu na ${esc(formatDate(currentDate))}</h3><p>Wczytaj plik Excel STAN lub Arkusz1 dla wybranej daty. Możesz wczytać kilka dni naraz.</p></div>`;return}
- $('scheduleContent').innerHTML=rosterView(plan,workerRows(plan),absenceRows(plan),formatDate(plan.date));
+ $('scheduleContent').innerHTML=rosterView(plan,planTables(plan),formatDate(plan.date));
 }
 $('scheduleImport').onclick=()=>$('scheduleFiles').click();
 $('scheduleFiles').onchange=async e=>{const files=[...e.target.files];if(!files.length)return;let ok=0;let last=null;const errors=[];for(const file of files){try{if(file.size>10_000_000)throw Error('Plik większy niż 10 MB');const buffer=await file.arrayBuffer();let rows;try{rows=await xlsxRows(buffer,'STAN')}catch(err){if(!/Brak arkusza STAN/.test(err.message))throw err;rows=await xlsxRows(buffer,'Arkusz1')}
@@ -126,20 +174,25 @@ function pageSize(){
  return h<750?6:h<1050?9:h<1500?12:18;
 }
 function pageSets(plan){
- const people=workerRows(plan),absence=absenceRows(plan),per=pageSize();
- // Keep all processes for each worker together; only paginate between workers.
- const count=Math.max(1,Math.ceil(people.length/per),Math.ceil(absence.length/per));
- return Array.from({length:count},(_,i)=>({people:people.slice(i*per,(i+1)*per),absence:absence.slice(i*per,(i+1)*per)}));
+ const tables=tvTables(plan),per=pageSize();
+ if(!tables.length)return [];
+ // Each Excel block has its own column; paginate rows together without
+ // splitting a worker's assignment across pages.
+ const count=Math.max(1,...tables.map(t=>Math.ceil(t.entries.length/per)));
+ return Array.from({length:count},(_,i)=>tables.map(t=>({...t,entries:t.entries.slice(i*per,(i+1)*per)})).filter(t=>t.entries.length));
 }
 function plansFor(offset){const d=addDay(today(),offset);return Object.values(plans).filter(x=>x.date===d).sort((a,b)=>a.shift.localeCompare(b.shift,'pl'))}
 function count(offset){return plansFor(offset).reduce((n,p)=>n+pageSets(p).length,0)}
 function tvRender(offset,page=0){tv=true;tvDay=offset?'tomorrow':'today';tvPage=page;$('assign').hidden=false;
- const list=plansFor(offset);if(!list.length){$('scheduleContent').innerHTML='<div class="schedule-empty">Brak harmonogramu</div>';return}
+ const list=plansFor(offset).filter(p=>pageSets(p).length);if(!list.length){$('scheduleContent').innerHTML='<div class="schedule-empty">Brak harmonogramu dla wybranego filtra.</div>';return}
  const total=count(offset),absolutePage=Math.min(Math.max(0,page),total-1);let local=absolutePage,p=list[0];
  for(const candidate of list){const pc=pageSets(candidate).length;p=candidate;if(local<pc)break;local-=pc}
  const selected=pageSets(p)[local];
- $('scheduleContent').innerHTML=rosterView(p,selected.people,selected.absence,formatDate(p.date))+`<div class="schedule-tv-page">${absolutePage+1} / ${total} · ${esc(p.shift)}</div>`;
+ $('scheduleContent').innerHTML=rosterView(p,selected,formatDate(p.date));
 }
-window.incSchedule={has:offset=>plansFor(offset).length>0,count,show:tvRender,restore(){tv=false;render()},isSchedule:()=>!$('assign').hidden};
+window.incSchedule={has:offset=>plansFor(offset).length>0,count,show:tvRender,
+  setTVFilter(filter){tvFilter={teams:[...(filter?.teams||[])],excludedLogins:[...(filter?.excludedLogins||[])]}},
+  tvOptions(){const teamSet=new Set(),loginSet=new Set();for(const p of Object.values(plans))for(const t of planTables(p)){teamSet.add(t.name);for(const e of t.entries)loginSet.add(e.login)}return {teams:[...teamSet],logins:[...loginSet].sort()};},
+  restore(){tv=false;render()},isSchedule:()=>!$('assign').hidden};
 $('assignment').addEventListener('click',()=>{render();$('tv').disabled=false});$('back').addEventListener('click',()=>{tv=false});render();
 })();
