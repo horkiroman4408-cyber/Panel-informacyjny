@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.21</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.22</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.21</strong> · Czytelniejszy nagłówek STAN w TV</summary><p>W widoku TV ukryto podwójny napis INCYDENTY i oznaczenie numeru strony. Zwiększono rozmiar daty STAN.</p></details>
+  <details open><summary><strong>v1.1.22</strong> · Widoczność harmonogramu TV</summary><p>Wybieraj zespoły i pracowników bezpośrednio w tabelach przez ikony oka. Ukryci pozostają przyciemnieni w widoku zwykłym, bez okna filtrów.</p></details>
+  <details><summary><strong>v1.1.21</strong> · Czytelniejszy nagłówek STAN w TV</summary><p>W widoku TV ukryto podwójny napis INCYDENTY i oznaczenie numeru strony. Zwiększono rozmiar daty STAN.</p></details>
   <details><summary><strong>v1.1.20</strong> · Zespoły i filtr TV</summary><p>Oddzielne tabele Agencja, LPP i Nieobecni, oraz wybór zespołów i pracowników do pokazu TV.</p></details>
   <details open><summary><strong>v1.1.19</strong> · Tabelaryczny harmonogram STAN</summary><p>Jedna osoba w jednym wierszu, wszystkie procesy w tej samej komórce, a nieobecności w drugiej tabeli. Ten sam widok w TV.</p></details>
   <details><summary><strong>v1.1.18</strong> · Harmonogram pracy z importem Excel STAN / Arkusz1</summary><p>Dodano dzisiejszy i jutrzejszy harmonogram, grupowanie pracowników według procesów, wolne i urlopy oraz ekrany TV.</p></details>
@@ -352,12 +353,12 @@ document.head.appendChild(workerLayoutStyles);
 const unifiedTV=(()=>{
  const KEY='incydenty-unified-tv-v1';
  const defaultScreens=[{id:'process:all',enabled:true,seconds:20},{id:'workers',enabled:true,seconds:30}];
- let config={screens:defaultScreens,layout:'auto',cards:10,mode:'slideshow',fixed:'process:all',autohide:true,scheduleHiddenTeams:[],scheduleHiddenLogins:[]};
+ let config={screens:defaultScreens,layout:'auto',cards:10,mode:'slideshow',fixed:'process:all',autohide:true};
  try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&Array.isArray(saved.screens))config={...config,...saved};}catch{}
  // Remove obsolete norms-only screen from previously saved playlists.
  config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms');
  if(config.fixed==='process:norms')config.fixed='process:all';
- let draft=[],draftHiddenTeams=new Set(),draftHiddenLogins=new Set(),running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false;
+ let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false;
  const isProcess=id=>id.startsWith('process:');
  const availableScreens=()=>[
    {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
@@ -378,7 +379,6 @@ const unifiedTV=(()=>{
  <h3>Ekrany pokazu <small id="unifiedTVcount"></small></h3><p class="confighelp">Wybierz ekrany, ich kolejność i czas wyświetlania. Każda zakładka korzysta ze swoich danych.</p><div id="unifiedTVscreens" class="unified-screens"></div>
  <div class="unified-controls"><div class="unified-group"><h3>Rozmieszczenie kart pracowników</h3><label class="unified-layout-option"><input type="radio" name="utLayout" value="auto"><span><b>Automatycznie</b><small>Dopasuj do rozmiaru ekranu</small></span></label><label class="unified-layout-option"><input type="radio" name="utLayout" value="manual"><span><b>Ręcznie</b><small>Wybierz liczbę kart</small></span></label><div id="unifiedTVmanual" class="unified-counts" role="radiogroup" aria-label="Liczba kart na ekranie" hidden>${[5,10,15,20].map(n=>`<label><input type="radio" name="utCount" value="${n}"><span>${n}</span></label>`).join('')}</div><p class="confighelp">Zawsze pokazujemy wszystkie procesy pracownika. Przy małej wysokości więcej kart może wymagać mniejszej czcionki lub nie zmieścić się w całości.</p></div>
  <div class="unified-group"><h3>Zmiana ekranów</h3><label><input type="radio" name="utMode" value="slideshow"> Automatyczny pokaz</label><label><input type="radio" name="utMode" value="fixed"> Jeden stały ekran</label><label id="unifiedFixedLabel" hidden>Stały ekran <select id="unifiedFixed"></select></label><label><input type="checkbox" id="unifiedHide"> Ukrywaj sterowanie po 3 sekundach</label></div></div>
-   <div id="unifiedScheduleFilters" class="unified-schedule-filter" hidden><div class="unified-schedule-filter-title"><h3>Filtry harmonogramu TV</h3><small>Wybierz zespoły i pracowników widocznych w pokazie. Nie wpływa to na zwykłe tabele.</small></div><div class="unified-filter-tools"><button id="utSelectAll" type="button">Zaznacz wszystkich</button><button id="utSelectNone" type="button">Odznacz wszystkich</button></div><div class="unified-filter-title">Zespoły i nieobecni</div><div id="utTeamChoices" class="unified-filter-options"></div><div class="unified-filter-title">Pracownicy</div><input id="utEmployeeSearch" type="search" autocomplete="off" placeholder="Szukaj loginu TH"><div id="utEmployeeChoices" class="unified-filter-options unified-filter-people"></div><small id="utFilterCount"></small></div>
   <p id="unifiedTVerror" role="alert" hidden></p><div class="configfoot"><span>Ustawienia zostaną zapisane w tej przeglądarce.</span><button type="button" class="primary" id="unifiedTVstart">Uruchom pokaz</button></div>`;
  document.body.append(dialog);
  const bar=document.createElement('div');bar.id='unifiedTVbar';bar.hidden=true;bar.innerHTML='<span id="unifiedTVstatus"></span><button type="button" id="unifiedTVsettings">⚙ Ustawienia</button><button type="button" id="unifiedTVpause">Ⅱ Wstrzymaj</button><button type="button" id="unifiedTVnext">Następny →</button><button type="button" id="unifiedTVexit">Zakończ ✕</button>';document.body.append(bar);
@@ -389,27 +389,12 @@ const unifiedTV=(()=>{
    row.querySelector('input').onchange=e=>{screen.enabled=e.target.checked;drawScreens()};
    row.querySelector('select').onchange=e=>{screen.seconds=Number(e.target.value)};
    const buttons=row.querySelectorAll('button');buttons[0].onclick=()=>move(i,-1);buttons[1].onclick=()=>move(i,1);wrap.append(row);
- });u('unifiedTVcount').textContent=draft.filter(x=>x.enabled&&x.available).length+' aktywne';if(document.getElementById('utTeamChoices'))drawTVFilters();}
+ });u('unifiedTVcount').textContent=draft.filter(x=>x.enabled&&x.available).length+' aktywne';}
  function move(i,dir){const j=i+dir;if(j<0||j>=draft.length)return;[draft[i],draft[j]]=[draft[j],draft[i]];drawScreens()}
  function modeUpdate(){u('unifiedTVmanual').hidden=dialog.querySelector('input[name="utLayout"]:checked')?.value!=='manual';u('unifiedFixedLabel').hidden=dialog.querySelector('input[name="utMode"]:checked')?.value!=='fixed'}
-  function filterOptions(){return window.incSchedule?.tvOptions()||{teams:[],logins:[]}}
-  function drawTVFilters(){
-    const choices=filterOptions(),area=u('unifiedScheduleFilters');
-    area.hidden=!draft.some(s=>s.enabled&&s.available&&s.id.startsWith('schedule:'));
-    const teamWrap=u('utTeamChoices'),peopleWrap=u('utEmployeeChoices');
-    teamWrap.replaceChildren();peopleWrap.replaceChildren();
-    for(const name of choices.teams){const label=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=!draftHiddenTeams.has(name);cb.onchange=()=>{cb.checked?draftHiddenTeams.delete(name):draftHiddenTeams.add(name);updateFilterCount()};label.append(cb,document.createTextNode(name));teamWrap.append(label)}
-    const query=u('utEmployeeSearch').value.trim().toUpperCase();
-    for(const name of choices.logins.filter(v=>v.toUpperCase().includes(query))){const label=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=!draftHiddenLogins.has(name);cb.onchange=()=>{cb.checked?draftHiddenLogins.delete(name):draftHiddenLogins.add(name);updateFilterCount()};label.append(cb,document.createTextNode(name));peopleWrap.append(label)}
-    updateFilterCount();
-  }
-  function updateFilterCount(){const o=filterOptions();u('utFilterCount').textContent=`Wybrano ${o.teams.filter(t=>!draftHiddenTeams.has(t)).length} / ${o.teams.length} bloków i ${o.logins.filter(t=>!draftHiddenLogins.has(t)).length} / ${o.logins.length} loginów.`}
-  u('utEmployeeSearch').oninput=drawTVFilters;
-  u('utSelectAll').onclick=()=>{draftHiddenTeams.clear();draftHiddenLogins.clear();drawTVFilters()};
-  u('utSelectNone').onclick=()=>{const o=filterOptions();draftHiddenTeams=new Set(o.teams);draftHiddenLogins=new Set(o.logins);drawTVFilters()};
   function open(){
    if(running)clearTimeout(cycleTimer);
-   draft=normalizeScreens();draftHiddenTeams=new Set(config.scheduleHiddenTeams||[]);draftHiddenLogins=new Set(config.scheduleHiddenLogins||[]);u('utEmployeeSearch').value='';drawScreens();
+   draft=normalizeScreens();drawScreens();
    dialog.querySelector(`input[name="utLayout"][value="${config.layout==='manual'?'manual':'auto'}"]`).checked=true;
    dialog.querySelector(`input[name="utCount"][value="${[5,10,15,20].includes(config.cards)?config.cards:10}"]`).checked=true;
    dialog.querySelector(`input[name="utMode"][value="${config.mode==='fixed'?'fixed':'slideshow'}"]`).checked=true;
@@ -510,9 +495,9 @@ const unifiedTV=(()=>{
  }
  function start(){const enabled=draft.filter(x=>x.enabled&&x.available);
    if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
-   config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked,scheduleHiddenTeams:[...draftHiddenTeams],scheduleHiddenLogins:[...draftHiddenLogins]};
+   config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked};
    try{localStorage.setItem(KEY,JSON.stringify(config))}catch{}
-   window.incSchedule?.setTVFilter({teams:config.scheduleHiddenTeams,excludedLogins:config.scheduleHiddenLogins});wasAssignment=!q('assign').hidden;dialog.close();running=true;pausedUnified=false;screenCursor=0;
+   wasAssignment=!q('assign').hidden;dialog.close();running=true;pausedUnified=false;screenCursor=0;
    const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
    q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
    window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';requestAnimationFrame(()=>requestAnimationFrame(schedule));revealControls();

@@ -85,9 +85,16 @@ function absenceRows(plan){
  }
  return [...byLogin.values()];
 }
-function rosterTable(title,meta,rows,absence=false){
- const rendered=rows.length?rows.map((p,i)=>`<div class="schedule-person-row"><div class="schedule-person-login">${esc(p.login)}</div><div class="schedule-person-assignment">${(absence?p.statuses:p.processes).map(x=>`<span>${esc(x)}</span>`).join('')}</div></div>`).join(''):`<div class="schedule-person-empty">Brak ${absence?'nieobecności':'przydziałów'}</div>`;
- return `<section class="schedule-roster-panel${absence?' schedule-roster-absence':''}"><div class="schedule-roster-panel-head"><strong>${esc(title)}</strong>${meta?`<span>${esc(meta)}</span>`:''}</div><div class="schedule-person-list">${rendered}</div></section>`;
+function rosterTable(title,meta,rows,absence=false,plan=null){
+ const disabled=!!(plan&&!tv&&isHidden(plan,title));
+ const teamEye=plan&&!tv?`<button type="button" class="schedule-eye schedule-team-eye" data-eye-team="${esc(title)}" aria-label="${disabled?'Pokaż':'Ukryj'} zespół ${esc(title)} w TV" title="${disabled?'Pokaż':'Ukryj'} zespół w TV">${disabled?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3 21 21M10.5 5.7A10 10 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a16 16 0 0 1-3.3 4.1M6.2 6.5C3.6 8.2 2 12 2 12s3.6 6.5 10 6.5c1.3 0 2.5-.3 3.6-.8"/><path d="M10 10a3 3 0 0 0 4 4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'}</button>`:'';
+ const rendered=rows.length?rows.map(p=>{
+   const hidden=!!(plan&&!tv&&isHidden(plan,title,p.login));
+   const ownHidden=!!(plan&&!tv&&(visibility(plan).logins||[]).includes(p.login));
+   const eye=plan&&!tv?`<button type="button" class="schedule-eye schedule-person-eye${hidden?' is-off':''}" data-eye-login="${esc(p.login)}" data-eye-team="${esc(title)}" aria-label="${ownHidden?'Pokaż':'Ukryj'} ${esc(p.login)} w TV" title="${ownHidden?'Pokaż':'Ukryj'} w TV">${ownHidden?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3 21 21M10.5 5.7A10 10 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a16 16 0 0 1-3.3 4.1M6.2 6.5C3.6 8.2 2 12 2 12s3.6 6.5 10 6.5c1.3 0 2.5-.3 3.6-.8"/><path d="M10 10a3 3 0 0 0 4 4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'}</button>`:'';
+   return `<div class="schedule-person-row${hidden?' schedule-muted':''}"><div class="schedule-person-login">${esc(p.login)}</div><div class="schedule-person-assignment">${(absence?p.statuses:p.processes).map(x=>`<span>${esc(x)}</span>`).join('')}</div>${eye}</div>`
+ }).join(''):`<div class="schedule-person-empty">Brak ${absence?'nieobecności':'przydziałów'}</div>`;
+ return `<section class="schedule-roster-panel${absence?' schedule-roster-absence':''}${disabled?' schedule-team-muted':''}"><div class="schedule-roster-panel-head"><strong>${esc(title)}</strong><div class="schedule-head-actions">${meta?`<span>${esc(meta)}</span>`:''}${teamEye}</div></div><div class="schedule-person-list">${rendered}</div></section>`;
 }
 // New imports keep the Excel column groups. Older locally stored plans remain
 // readable, but need reimporting to recover their original team boundaries.
@@ -98,13 +105,23 @@ function planTables(plan){
  return [working.length?{name:plan.team||'Pracownicy',kind:'team',entries:working}:null,
          missing.length?{name:'Nieobecni',kind:'absence',entries:missing.map(x=>({login:x.login,processes:x.statuses}))}:null].filter(Boolean);
 }
-let tvFilter={teams:[],excludedLogins:[]};
+const EYE_KEY='incydenty-schedule-tv-visibility-v1';
+let eyeFilters={};try{const saved=JSON.parse(localStorage.getItem(EYE_KEY));if(saved&&typeof saved==='object'&&!Array.isArray(saved))eyeFilters=saved}catch{}
+function visibility(plan){return eyeFilters[key(plan.date,plan.shift)]||{teams:[],logins:[]}}
+function isHidden(plan,team,login){const f=visibility(plan);return (f.teams||[]).includes(team)||(login&&(f.logins||[]).includes(login))}
+function toggleVisibility(plan,team,login){
+ const planKey=key(plan.date,plan.shift),f=visibility(plan),field=login?'logins':'teams',value=login||team,values=new Set(f[field]||[]);
+ if(values.has(value))values.delete(value);else values.add(value);
+ eyeFilters[planKey]={...f,[field]:[...values]};
+ try{localStorage.setItem(EYE_KEY,JSON.stringify(eyeFilters))}catch{status('Nie udało się zapisać ustawień widoczności TV.')}
+ render();
+}
 function tvTables(plan){
- const excludedTeams=new Set(tvFilter.teams||[]),excludedLogins=new Set(tvFilter.excludedLogins||[]);
+ const filter=visibility(plan);const excludedTeams=new Set(filter.teams||[]),excludedLogins=new Set(filter.logins||[]);
  return planTables(plan).filter(t=>!excludedTeams.has(t.name)).map(t=>({...t,entries:t.entries.filter(x=>!excludedLogins.has(x.login))})).filter(t=>t.entries.length);
 }
 function rosterView(plan,tables,dateText){
- const contents=tables.map(t=>rosterTable(t.name,t.hours||'',t.entries.map(p=>({login:p.login,processes:p.processes,statuses:p.processes})),t.kind==='absence')).join('');
+ const contents=tables.map(t=>rosterTable(t.name,t.hours||'',t.entries.map(p=>({login:p.login,processes:p.processes,statuses:p.processes})),t.kind==='absence',tv?null:plan)).join('');
  return `<div class="schedule-sheet"><div class="schedule-sheet-head"><strong>INCYDENTY</strong><h3>STAN · ${esc(dateText)}</h3><div class="schedule-sheet-line"></div></div><div class="schedule-roster-grid${tables.length===1?' schedule-roster-single':''}">${contents||'<div class="schedule-person-empty">Brak osób dla wybranego filtra TV.</div>'}</div></div>`;
 }
 
@@ -156,6 +173,19 @@ body.unified-tv #assign .schedule-sheet-head{margin:0 auto clamp(14px,1.6vh,26px
 body.unified-tv #assign .schedule-tv-page{display:none!important}
 
 @media(prefers-reduced-motion:reduce){body.unified-tv .schedule-sheet{animation:none!important}}
+
+/* TV visibility toggles live directly in each source roster. */
+body:not(.tv) #assign .schedule-person-row{grid-template-columns:minmax(105px,32%) minmax(0,1fr) 38px}
+body:not(.tv) #assign .schedule-person-row .schedule-person-assignment{border-right:1px solid #dbe3ed}
+.schedule-head-actions{display:flex;align-items:center;gap:10px}
+.schedule-eye{display:grid;place-items:center;flex:0 0 auto;border:1px solid #d5dfe9;border-radius:9px;background:#fff;color:#447088;padding:0;width:29px;height:29px;font-size:17px;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.schedule-eye:hover{background:#e2f2f1;border-color:#8ed3cf;color:#087b70}
+.schedule-eye:focus-visible{outline:2px solid #0a84ff;outline-offset:2px}
+.schedule-eye.is-off,.schedule-team-muted .schedule-team-eye{color:#8c99aa;background:#e8ecf1}
+.schedule-muted .schedule-person-login,.schedule-muted .schedule-person-assignment{opacity:.34}
+.schedule-team-muted .schedule-roster-panel-head,.schedule-team-muted .schedule-person-list{opacity:.58}
+.schedule-person-row .schedule-person-eye{align-self:center;justify-self:center;margin:0 4px}
+body.unified-tv #assign .schedule-eye{display:none!important}
 `;document.head.append(style);
 function status(t){$('scheduleStatus').hidden=false;$('scheduleStatus').textContent=t}
 function render(){const plan=selectedPlan();$('scheduleDate').value=currentDate;const s=shifts(currentDate);$('scheduleShift').replaceChildren(...s.map(x=>{const e=document.createElement('option');e.value=x;e.textContent=x;return e}));if(shift)$('scheduleShift').value=shift;$('scheduleShift').disabled=!s.length;for(const b of section.querySelectorAll('[data-offset]'))b.classList.toggle('selected',currentDate===addDay(today(),Number(b.dataset.offset)));$('scheduleDelete').disabled=!plan;
@@ -163,6 +193,12 @@ function render(){const plan=selectedPlan();$('scheduleDate').value=currentDate;
  if(!plan){$('scheduleContent').innerHTML=`<div class="schedule-empty"><div style="font-size:34px">📅</div><h3>Brak harmonogramu na ${esc(formatDate(currentDate))}</h3><p>Wczytaj plik Excel STAN lub Arkusz1 dla wybranej daty. Możesz wczytać kilka dni naraz.</p></div>`;return}
  $('scheduleContent').innerHTML=rosterView(plan,planTables(plan),formatDate(plan.date));
 }
+$('scheduleContent').addEventListener('click',e=>{
+ if(tv)return;
+ const btn=e.target.closest('button.schedule-eye');if(!btn)return;
+ const plan=selectedPlan();if(!plan)return;
+ toggleVisibility(plan,btn.dataset.eyeTeam||'',btn.classList.contains('schedule-person-eye')?btn.dataset.eyeLogin:null);
+});
 $('scheduleImport').onclick=()=>$('scheduleFiles').click();
 $('scheduleFiles').onchange=async e=>{const files=[...e.target.files];if(!files.length)return;let ok=0;let last=null;const errors=[];for(const file of files){try{if(file.size>10_000_000)throw Error('Plik większy niż 10 MB');const buffer=await file.arrayBuffer();let rows;try{rows=await xlsxRows(buffer,'STAN')}catch(err){if(!/Brak arkusza STAN/.test(err.message))throw err;rows=await xlsxRows(buffer,'Arkusz1')}
  const plan=parse(rows,file.name);plans[key(plan.date,plan.shift)]=plan;ok++;last=plan;
@@ -191,7 +227,6 @@ function tvRender(offset,page=0){tv=true;tvDay=offset?'tomorrow':'today';tvPage=
  $('scheduleContent').innerHTML=rosterView(p,selected,formatDate(p.date));
 }
 window.incSchedule={has:offset=>plansFor(offset).length>0,count,show:tvRender,
-  setTVFilter(filter){tvFilter={teams:[...(filter?.teams||[])],excludedLogins:[...(filter?.excludedLogins||[])]}},
   tvOptions(){const teamSet=new Set(),loginSet=new Set();for(const p of Object.values(plans))for(const t of planTables(p)){teamSet.add(t.name);for(const e of t.entries)loginSet.add(e.login)}return {teams:[...teamSet],logins:[...loginSet].sort()};},
   restore(){tv=false;render()},isSchedule:()=>!$('assign').hidden};
 $('assignment').addEventListener('click',()=>{render();$('tv').disabled=false});$('back').addEventListener('click',()=>{tv=false});render();
