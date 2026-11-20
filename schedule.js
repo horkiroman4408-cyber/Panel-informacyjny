@@ -167,7 +167,7 @@ const css=document.createElement('style');css.id='schedule-widget-styles';css.te
 .schedule-widget-header button{display:grid;place-items:center;border:1px solid transparent;border-radius:9px;background:transparent;color:#64798d;width:29px;height:29px;padding:0;font-size:14px;flex:0 0 auto;box-shadow:none}
 .schedule-widget-header button:hover{border-color:#c6d8e3;background:white}
 .schedule-widget-handle{cursor:grab!important;font-weight:800;font-size:21px!important;touch-action:none}
-.schedule-widget-handle:active{cursor:grabbing!important}.schedule-widget-resize{position:absolute;z-index:5;right:2px;bottom:2px;width:24px;height:24px;cursor:nwse-resize;touch-action:none;border-radius:0 0 14px 0;background:linear-gradient(135deg,transparent 55%,#90a4b7 55%,#90a4b7 60%,transparent 60%,transparent 69%,#90a4b7 69%,#90a4b7 74%,transparent 74%)}.schedule-widget-resize:hover{background-color:#dff4f3}.schedule-widget.is-interacting{z-index:10;box-shadow:0 14px 34px #173e5f2a;outline:2px solid #43adad}.schedule-widget-blocked{outline:2px solid #d96969!important}
+.schedule-widget-handle:active{cursor:grabbing!important}.schedule-widget-resize{position:absolute;z-index:6;right:0;bottom:0;width:34px;height:34px;cursor:nwse-resize;touch-action:none;user-select:none;border-radius:0 0 14px 0;background:linear-gradient(135deg,transparent 55%,#90a4b7 55%,#90a4b7 60%,transparent 60%,transparent 69%,#90a4b7 69%,#90a4b7 74%,transparent 74%)}.schedule-widget-resize:hover{background-color:#dff4f3}.schedule-widget.is-interacting{z-index:10;box-shadow:0 14px 34px #173e5f2a;outline:2px solid #43adad}.schedule-widget-blocked{outline:2px solid #d96969!important}
 .schedule-widget.dragging{opacity:.32}.schedule-widget.drop-target{outline:3px solid #39b2a5;outline-offset:3px}
 .schedule-widget .schedule-person-row{display:grid;grid-template-columns:minmax(92px,33%) minmax(0,1fr) 34px;min-height:42px;border-bottom:1px solid #e2e9f0}
 .schedule-widget .schedule-person-row:last-child{border-bottom:0}
@@ -239,8 +239,15 @@ let boardScale=1,dragSession=null,autoSaved=false;
 const snap=n=>Math.round(n/SNAP)*SNAP;
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 function measuredMinimum(el){
+ // Measure natural content height. A flex:1 body reports the *assigned* widget
+ // height as scrollHeight, which previously made shrinking impossible.
  const body=el.querySelector('.schedule-widget-body');
- return Math.max(90,Math.ceil((el.querySelector('.schedule-widget-header')?.offsetHeight||42)+(body?.scrollHeight||0)+4));
+ if(!body)return 90;
+ const previousHeight=el.style.height,previousFlex=body.style.flex;
+ el.style.height='auto';body.style.flex='0 0 auto';
+ const natural=Math.ceil((el.querySelector('.schedule-widget-header')?.offsetHeight||42)+body.scrollHeight+4);
+ body.style.flex=previousFlex;el.style.height=previousHeight;
+ return Math.max(90,natural);
 }
 function defaultGeometry(item,sequence){
  const prev=board.positions||{};
@@ -317,23 +324,58 @@ const canvas=$('scheduleWidgetCanvas');
 function geomEl(el){return {x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)}}
 function collides(el,p){return [...canvas.querySelectorAll('.schedule-widget')].some(other=>other!==el&&overlaps(p,geomEl(other)))}
 function updateGeometry(el,p){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px'}
+// When the resized widget needs room, move neighbours out of its way instead
+// of reverting the resize. Recalculate from pointer-down geometry each frame
+// so neighbours never drift after multiple pointermove events.
+function settleNeighbors(active,baseline){
+ const others=[...canvas.querySelectorAll('.schedule-widget')].filter(el=>el!==active);
+ for(const el of others)updateGeometry(el,baseline.get(el));
+ const placed=[geomEl(active)];
+ others.sort((a,b)=>{const A=baseline.get(a),B=baseline.get(b);return A.y-B.y||A.x-B.x});
+ for(const el of others){
+  const p={...baseline.get(el)};let attempts=0;
+  while(placed.some(other=>overlaps(p,other))&&attempts++<200){
+   const collisions=placed.filter(other=>overlaps(p,other));
+   const right=Math.max(...collisions.map(v=>v.x+v.w+GAP));
+   if(right+p.w<=DESIGN_W){p.x=Math.ceil(right/SNAP)*SNAP;}
+   else{p.x=Math.min(p.x,DESIGN_W-p.w);p.y=Math.ceil(Math.max(...collisions.map(v=>v.y+v.h+GAP))/SNAP)*SNAP;}
+  }
+  updateGeometry(el,p);placed.push(p);
+ }
+}
 canvas.addEventListener('pointerdown',e=>{
  if(tv||e.button!==0)return;
  const handle=e.target.closest('.schedule-widget-handle,.schedule-widget-resize');if(!handle)return;
  const el=handle.closest('.schedule-widget'),original=geomEl(el),mode=handle.classList.contains('schedule-widget-resize')?'resize':'move';
- dragSession={el,handle,mode,startX:e.clientX,startY:e.clientY,original,last:original};
+ const baseline=new Map([...canvas.querySelectorAll('.schedule-widget')].map(w=>[w,geomEl(w)]));
+ dragSession={el,handle,mode,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,scale:boardScale,original,last:original,baseline};
  handle.setPointerCapture(e.pointerId);el.classList.add('is-interacting');e.preventDefault();
 });
 canvas.addEventListener('pointermove',e=>{
- if(!dragSession)return;const {el,mode,startX,startY,original}=dragSession;
- const dx=snap((e.clientX-startX)/boardScale),dy=snap((e.clientY-startY)/boardScale);let p={...original};
+ if(!dragSession||e.pointerId!==dragSession.pointerId)return;
+ const {el,mode,startX,startY,scale,original,baseline}=dragSession;
+ const dx=snap((e.clientX-startX)/scale),dy=snap((e.clientY-startY)/scale);let p={...original};
  if(mode==='move'){p.x=clamp(snap(original.x+dx),0,DESIGN_W-p.w);p.y=Math.max(0,snap(original.y+dy));}
- else{p.w=clamp(snap(original.w+dx),180,DESIGN_W-p.x);el.style.width=p.w+'px';p.h=Math.max(measuredMinimum(el),snap(original.h+dy));p.h=Math.ceil(p.h/SNAP)*SNAP;}
- updateGeometry(el,p);dragSession.last=p;el.classList.toggle('schedule-widget-blocked',collides(el,p));syncBoardHeight();
+ else{
+  p.w=clamp(snap(original.w+dx),180,DESIGN_W-p.x);
+  // Width must be applied before reading the natural minimum height.
+  el.style.width=p.w+'px';
+  p.h=Math.ceil(Math.max(measuredMinimum(el),snap(original.h+dy))/SNAP)*SNAP;
+ }
+ updateGeometry(el,p);dragSession.last=p;
+ if(mode==='resize'){settleNeighbors(el,baseline);el.classList.remove('schedule-widget-blocked')}
+ else el.classList.toggle('schedule-widget-blocked',collides(el,p));
+ syncBoardHeight();
 });
-function endPointer(e){if(!dragSession)return;const {el,original,last}=dragSession;
- if(collides(el,last)){updateGeometry(el,original);status('Widżety nie mogą na siebie nachodzić. Wybierz wolne miejsce.');}
- else{persistPositions();status('Zapisano układ TV.');}
+function endPointer(e){if(!dragSession||e.pointerId!==dragSession.pointerId)return;
+ const {el,mode,original,last,baseline}=dragSession;
+ if(e.type==='pointercancel'){
+  for(const [widget,geometry] of baseline)updateGeometry(widget,geometry);
+ }else if(mode==='move'&&collides(el,last)){
+  updateGeometry(el,original);status('Widżety nie mogą na siebie nachodzić. Wybierz wolne miejsce.');
+ }else{
+  persistPositions();status('Zapisano układ TV.');
+ }
  el.classList.remove('is-interacting','schedule-widget-blocked');dragSession=null;syncBoardHeight();
 }
 canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);
@@ -342,7 +384,7 @@ canvas.addEventListener('keydown',e=>{
  const el=h.closest('.schedule-widget'),p=geomEl(el),old={...p},delta=e.shiftKey?40:10,sign=['ArrowLeft','ArrowUp'].includes(e.key)?-1:1;
  if(h.classList.contains('schedule-widget-resize')){if(['ArrowLeft','ArrowRight'].includes(e.key))p.w=clamp(p.w+sign*delta,180,DESIGN_W-p.x);else p.h=Math.max(measuredMinimum(el),p.h+sign*delta)}
  else{if(['ArrowLeft','ArrowRight'].includes(e.key))p.x=clamp(p.x+sign*delta,0,DESIGN_W-p.w);else p.y=Math.max(0,p.y+sign*delta)}
- if(!collides(el,p)){updateGeometry(el,p);persistPositions();syncBoardHeight()}else updateGeometry(el,old);
+ if(h.classList.contains('schedule-widget-resize')){const baseline=new Map([...canvas.querySelectorAll('.schedule-widget')].filter(w=>w!==el).map(w=>[w,geomEl(w)]));updateGeometry(el,p);settleNeighbors(el,baseline);persistPositions();syncBoardHeight()}else if(!collides(el,p)){updateGeometry(el,p);persistPositions();syncBoardHeight()}else updateGeometry(el,old);
 });
 let boardResizeTimer;window.addEventListener('resize',()=>{clearTimeout(boardResizeTimer);boardResizeTimer=setTimeout(syncBoardHeight,80)});
 $('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{}};saveBoard();render();status('Przywrócono wszystkie widżety i domyślny układ.')};
