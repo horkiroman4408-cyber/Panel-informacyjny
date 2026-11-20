@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.22</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.23</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.22</strong> · Widoczność harmonogramu TV</summary><p>Wybieraj zespoły i pracowników bezpośrednio w tabelach przez ikony oka. Ukryci pozostają przyciemnieni w widoku zwykłym, bez okna filtrów.</p></details>
+  <details open><summary><strong>v1.1.23</strong> · Układ widżetów harmonogramu</summary><p>Dwie strefy importu: Grafik na jutro i Przerwy. Układ tabel można przestawiać i zmieniać szerokości przed TV.</p></details>
+  <details><summary><strong>v1.1.22</strong> · Widoczność harmonogramu TV</summary><p>Wybieraj zespoły i pracowników bezpośrednio w tabelach przez ikony oka. Ukryci pozostają przyciemnieni w widoku zwykłym, bez okna filtrów.</p></details>
   <details><summary><strong>v1.1.21</strong> · Czytelniejszy nagłówek STAN w TV</summary><p>W widoku TV ukryto podwójny napis INCYDENTY i oznaczenie numeru strony. Zwiększono rozmiar daty STAN.</p></details>
   <details><summary><strong>v1.1.20</strong> · Zespoły i filtr TV</summary><p>Oddzielne tabele Agencja, LPP i Nieobecni, oraz wybór zespołów i pracowników do pokazu TV.</p></details>
   <details open><summary><strong>v1.1.19</strong> · Tabelaryczny harmonogram STAN</summary><p>Jedna osoba w jednym wierszu, wszystkie procesy w tej samej komórce, a nieobecności w drugiej tabeli. Ten sam widok w TV.</p></details>
@@ -356,16 +357,16 @@ const unifiedTV=(()=>{
  let config={screens:defaultScreens,layout:'auto',cards:10,mode:'slideshow',fixed:'process:all',autohide:true};
  try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&Array.isArray(saved.screens))config={...config,...saved};}catch{}
  // Remove obsolete norms-only screen from previously saved playlists.
- config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms');
+ config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms'&&x.id!=='schedule:today'&&x.id!=='schedule:tomorrow');
  if(config.fixed==='process:norms')config.fixed='process:all';
+ if(config.fixed==='schedule:today'||config.fixed==='schedule:tomorrow')config.fixed='schedule:board';
  let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false;
  const isProcess=id=>id.startsWith('process:');
  const availableScreens=()=>[
    {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
    ...data.sections.map(s=>({id:'process:'+s.name,name:processLabel(s.name),description:'Wyniki jednego procesu',available:true})),
    {id:'workers',name:'Karty pracowników',description:'Wszystkie procesy każdego pracownika',available:!!filtered().length},
-    {id:'schedule:today',name:'Harmonogram · Dzisiaj',description:'Dzisiejszy plan pracy',available:!!window.incSchedule?.has(0)},
-    {id:'schedule:tomorrow',name:'Harmonogram · Jutro',description:'Plan pracy na jutro',available:!!window.incSchedule?.has(1)}
+    {id:'schedule:board',name:'Harmonogram pracy',description:'Grafik na jutro i przerwy · układ widżetów',available:!!window.incSchedule?.has()}
  ];
  const screenName=id=>availableScreens().find(x=>x.id===id)?.name||id;
  function normalizeScreens(){
@@ -428,7 +429,7 @@ const unifiedTV=(()=>{
      tv=false;monthlyTV=false;clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
      document.body.classList.remove('monthly-tv');document.body.removeAttribute('data-tv-density');
      q('norms').hidden=true;q('workerArea').hidden=true;q('assign').hidden=false;q('workerTVbar').hidden=true;
-     window.incSchedule?.show(id==='schedule:tomorrow'?1:0,schedulePageIndex);
+     window.incSchedule?.show();
    }
    u('unifiedTVbar').hidden=false;updateStatus();
  }
@@ -442,7 +443,7 @@ const unifiedTV=(()=>{
  function activePageCount(){
    if(isProcess(activeId))return Math.max(1,window.pages());
    if(activeId==='workers')return Math.max(1,Math.ceil(filtered().length/Math.max(1,effectiveCards)));
-   if(activeId.startsWith('schedule:'))return Math.max(1,window.incSchedule?.count(activeId==='schedule:tomorrow'?1:0)||1);
+   if(activeId.startsWith('schedule:'))return Math.max(1,window.incSchedule?.count()||1);
    return 1;
  }
  function activePageNumber(){
@@ -473,7 +474,7 @@ const unifiedTV=(()=>{
        index=Math.min(filtered().length-1,index+effectiveCards);
        show('workers',false);
      }else if(activeId.startsWith('schedule:')){
-       schedulePageIndex=nextPage;window.incSchedule?.show(activeId==='schedule:tomorrow'?1:0,schedulePageIndex);
+       schedulePageIndex=nextPage;window.incSchedule?.show();
      }
      schedule();return;
    }
@@ -485,7 +486,7 @@ const unifiedTV=(()=>{
      }else if(activeId==='workers'){
        index=0;show('workers',false);
      }else if(activeId.startsWith('schedule:')){
-       schedulePageIndex=0;window.incSchedule?.show(activeId==='schedule:tomorrow'?1:0,0);
+       schedulePageIndex=0;window.incSchedule?.show();
      }
    }else{
      screenCursor=(screenCursor+1)%screens.length;
