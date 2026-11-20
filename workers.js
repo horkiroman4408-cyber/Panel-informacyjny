@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.15</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.16</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,6 +117,7 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
+  <details open><summary><strong>v1.1.16</strong> · Poprawa czasu wyświetlania TV</summary><p>Usunięto dodatkowy timer przewijania procesów. Każda strona pozostaje widoczna przez wybrany czas, a pojedynczy ekran bez kolejnych stron nie animuje się ponownie.</p></details>
   <details open><summary><strong>v1.1.15</strong> · Nowa identyfikacja INC</summary><p>Nowa zaokrąglona ikona INC w wielu rozmiarach, bezpieczny wariant maskable i grafitowo-turkusowy kolor okna PWA.</p></details>
   <details><summary><strong>v1.1.14</strong> · Wyraźniejsze, płynne pojawianie się kart</summary><p>Przywrócono spokojny efekt unoszenia i delikatny kaskadowy start kart bez kosztownego rozmycia.</p></details>
   <details><summary><strong>v1.1.13</strong> · Płynniejsza animacja kart</summary><p>Uproszczono efekt pojawiania się kart TV: bez kosztownego rozmycia i bez pomiarów podczas ruchu, z krótszymi opóźnieniami.</p></details>
@@ -351,7 +352,7 @@ const unifiedTV=(()=>{
  // Remove obsolete norms-only screen from previously saved playlists.
  config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms');
  if(config.fixed==='process:norms')config.fixed='process:all';
- let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,pageTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='';
+ let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0;
  const isProcess=id=>id.startsWith('process:');
  const availableScreens=()=>[
    {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
@@ -395,7 +396,7 @@ const unifiedTV=(()=>{
  }
  const processRender=()=>window.render();
  function show(id,reset=true){
-   activeId=id;fitWarning='';clearInterval(pageTimer);
+   activeId=id;fitWarning='';if(reset)processPageIndex=0;
    // Reserve the TV geometry BEFORE measuring cards, not after rendering them.
    document.body.classList.add('tv','unified-tv');
    document.documentElement.scrollTop=0;document.body.scrollTop=0;
@@ -407,7 +408,7 @@ const unifiedTV=(()=>{
      if(!savedProcess)savedProcess={onlynorms:q('onlynorms').checked,density:tvConfig.density,mode:tvConfig.mode};
      q('onlynorms').checked=false;tvConfig.mode='fixed';tvConfig.density='auto';
      window.selectScreen(id==='process:all'?'all':id.slice(8));
-     pageTimer=setInterval(()=>{if(!pausedUnified&&running&&!dialog.open&&isProcess(activeId))window.tick()},Math.max(4000,Math.min(10000,currentSec*500)));
+     // Process pages advance through the main slide timer, never a second fast timer.
    }else{
      tv=false;document.body.removeAttribute('data-tv-density');cancelAnimationFrame(layoutFrame);
      q('norms').hidden=true;q('workerArea').hidden=false;q('processView').classList.remove('active');q('workerView').classList.add('active');
@@ -427,7 +428,16 @@ const unifiedTV=(()=>{
    const sec=Math.max(10,currentSec);cycleTimer=setTimeout(()=>advance(),sec*1000);
  }
  function advance(){if(!running)return;const screens=selectedScreens();if(!screens.length){stop();return}
+   // Advance only after the selected screen's full duration. Never redraw identical cards in between.
+   if(isProcess(activeId)){
+     const count=Math.max(1,window.pages());
+     if(processPageIndex+1<count){processPageIndex++;window.tick();schedule();return}
+     // When just one process screen is selected, rotate only if it has real additional pages.
+     if(screens.length===1){if(count>1){processPageIndex=0;window.tick();schedule()}return}
+   }
    if(activeId==='workers'&&index+effectiveCards<filtered().length){index+=effectiveCards;show('workers',false);schedule();return}
+   // A single worker screen with one page is static; avoid restarting its entrance animation.
+   if(screens.length===1)return;
    screenCursor=(screenCursor+1)%screens.length;const screen=screens[screenCursor];currentSec=screen.seconds;show(screen.id);schedule();}
  function start(){const enabled=draft.filter(x=>x.enabled&&x.available);
    if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
@@ -441,7 +451,7 @@ const unifiedTV=(()=>{
  }
  function revealControls(){if(!running)return;const el=u('unifiedTVbar');el.classList.remove('controls-hidden');clearTimeout(controlsTimer);if(config.autohide&&!dialog.open)controlsTimer=setTimeout(()=>{if(!el.contains(document.activeElement))el.classList.add('controls-hidden')},3000)}
  function stop(skipFullscreen=false){if(!running)return;
-   running=false;pausedUnified=false;clearTimeout(cycleTimer);clearInterval(pageTimer);clearTimeout(controlsTimer);clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
+   running=false;pausedUnified=false;clearTimeout(cycleTimer);clearTimeout(controlsTimer);clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
    monthlyTV=false;tv=false;document.body.classList.remove('tv','monthly-tv','unified-tv','cursor-hidden');document.body.removeAttribute('data-tv-density');
    u('unifiedTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;q('workerTVbar').hidden=true;
    if(savedProcess){q('onlynorms').checked=false;tvConfig.density=savedProcess.density;tvConfig.mode=savedProcess.mode;savedProcess=null}
