@@ -130,8 +130,8 @@ function rosterView(plan,tables,dateText){
 const BOARD_KEY='incydenty-schedule-widgets-v2';
 const BREAK_KEY='incydenty-breaks-v1';
 const TOMORROW_KEY='incydenty-tomorrow-plan-v1';
-let board={order:[],widths:{},removed:[],positions:{}};
-try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[],positions:b.positions&&typeof b.positions==='object'?b.positions:{}}}catch{}
+let board={order:[],widths:{},removed:[],positions:{},sizes:{}};
+try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[],positions:b.positions&&typeof b.positions==='object'?b.positions:{},sizes:b.sizes&&typeof b.sizes==='object'?b.sizes:{}}}catch{}
 let tomorrow=null;
 try{const t=JSON.parse(localStorage.getItem(TOMORROW_KEY));if(t&&Array.isArray(t.tables))tomorrow=t}catch{}
 let breaks=null;
@@ -145,7 +145,7 @@ section.innerHTML=`
  <div class="schedule-drop" id="scheduleBreakDrop" role="button" tabindex="0" aria-label="Wczytaj przerwy"><span class="schedule-drop-icon">☕</span><div><strong>Przerwy</strong><small id="scheduleBreakSource">Przeciągnij Excel lub kliknij, aby wybrać plik</small></div><span class="schedule-drop-action">Wczytaj</span></div>
 </div>
 <input id="schedulePlanFile" type="file" accept=".xlsx" hidden><input id="scheduleBreakFile" type="file" accept=".xlsx" hidden>
-<div class="schedule-board-info"><span>Układ TV · przesuń widżet za <b>⠿</b> · zmień szerokość i wysokość, przeciągając prawy dolny róg</span><span id="scheduleBoardStatus" role="status"></span></div>
+<div class="schedule-board-info"><span>Układ TV · przeciągnij za <b>⠿</b>, aby zamienić widżety miejscami · rozmiar <b>S / M / L</b></span><span id="scheduleBoardStatus" role="status"></span></div>
 <div id="scheduleWidgetViewport" class="schedule-widget-viewport"><div id="scheduleWidgetCanvas" class="schedule-widget-canvas" aria-label="Układ widżetów TV"></div></div>`;
 $('assignment').textContent='Harmonogram pracy';
 const css=document.createElement('style');css.id='schedule-widget-styles';css.textContent=`
@@ -205,6 +205,24 @@ body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95v
 .schedule-break-shift h4{font-size:13px;color:#24425b;background:#edf5f4;border-radius:9px;padding:9px 11px;margin:0 0 8px}
 .schedule-break-table{table-layout:fixed}.schedule-break-table th:first-child{width:25%}
 .schedule-break-spm{font-size:12px;padding:8px 10px;border-bottom:1px solid #e1e8ee;overflow-wrap:anywhere}
+
+/* iPhone-style widgets: a predictable 6-column auto-flowing grid. */
+.schedule-widget-viewport{overflow:visible;min-height:140px}
+.schedule-widget-canvas{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-flow:row;gap:12px;align-content:start;align-items:start;min-height:140px;height:auto!important;background-size:20px 20px}
+.schedule-widget{position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;grid-column:span 2;align-self:start;min-height:0!important;overflow:hidden;transition:box-shadow .2s ease,opacity .15s ease}
+.schedule-widget[data-size="M"]{grid-column:span 3}
+.schedule-widget[data-size="L"]{grid-column:span 6}
+.schedule-widget-body{flex:0 0 auto;min-height:0}
+.schedule-widget-size-group{display:flex;gap:2px;padding:2px;background:#e2e9f0;border-radius:9px}
+.schedule-widget-size-group button{width:23px!important;height:24px!important;border-radius:7px!important;font-size:10px!important;font-weight:750!important;padding:0!important;color:#62768a!important}
+.schedule-widget-size-group button[aria-pressed="true"]{background:white!important;color:#0876d9!important;box-shadow:0 1px 5px #18395a18!important}
+.schedule-widget.is-dragging{opacity:.45;box-shadow:0 5px 12px #173e5f1a!important}
+.schedule-widget.drop-target{outline:2px solid #2aaca9!important;outline-offset:3px;background:#f4fffe}
+.schedule-widget-handle{cursor:grab!important}
+body.unified-tv #assign .schedule-widget{transition:none}
+body.unified-tv #assign .schedule-widget-size-group{display:none!important}
+@media(prefers-reduced-motion:reduce){.schedule-widget{transition:none!important}}
+
 @media(prefers-reduced-motion:reduce){body.unified-tv #assign .schedule-widget{animation:none!important}}
 `;document.head.append(css);
 const iconEye=(off)=>off?'◌':'◉';
@@ -232,162 +250,95 @@ function breakMarkup(){if(!breaks)return '<div class="schedule-empty">Nie znalez
  const header=Array.from({length:n},(_,j)=>`<th>${esc(heads[j]??'')}</th>`).join('');
  return `<div style="overflow-x:auto"><table class="schedule-break-table"><thead><tr>${header}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${Array.from({length:n},(_,j)=>`<td>${esc(r[j]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
-// Free, snap-to-grid TV board. Coordinates are in a stable 1200px design space;
-// the entire composed board scales together when the PWA/TV viewport changes.
-const DESIGN_W=1200, SNAP=10, GAP=12;
-let boardScale=1,dragSession=null,autoSaved=false;
-const snap=n=>Math.round(n/SNAP)*SNAP;
-const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
-function measuredMinimum(el){
- // Measure natural content height. A flex:1 body reports the *assigned* widget
- // height as scrollHeight, which previously made shrinking impossible.
- const body=el.querySelector('.schedule-widget-body');
- if(!body)return 90;
- const previousHeight=el.style.height,previousFlex=body.style.flex;
- el.style.height='auto';body.style.flex='0 0 auto';
- const natural=Math.ceil((el.querySelector('.schedule-widget-header')?.offsetHeight||42)+body.scrollHeight+4);
- body.style.flex=previousFlex;el.style.height=previousHeight;
- return Math.max(90,natural);
+// iPhone-style widget board: fixed S / M / L sizes, natural table height,
+// and drag-to-reorder grid. TV and editor share the same markup/order.
+const DESIGN_W=1200;
+let boardScale=1, draggingId=null, targetId=null;
+const SIZES=['S','M','L'];
+function widgetSize(item){
+ const stored=board.sizes?.[item.id];if(SIZES.includes(stored))return stored;
+ // One-time migration of the old freely resized positions and widths.
+ const width=Number(board.positions?.[item.id]?.w)||Number(board.widths?.[item.id])*(DESIGN_W/12);
+ if(Number.isFinite(width)&&width>0)return width>=850?'L':width>=490?'M':'S';
+ return item.kind==='breaks'?'M':'S';
 }
-function defaultGeometry(item,sequence){
- const prev=board.positions||{};
- const stored=prev[item.id];
- if(stored&&['x','y','w','h'].every(k=>Number.isFinite(Number(stored[k]))))return {x:clamp(snap(Number(stored.x)),0,1080),y:Math.max(0,snap(Number(stored.y))),w:clamp(snap(Number(stored.w)),180,DESIGN_W),h:Math.max(90,snap(Number(stored.h)))};
- // Retain the old width preference when upgrading from the 3-width layout.
- const old=Number(board.widths[item.id]);
- const w=old===12?DESIGN_W:old===6?590:item.kind==='breaks'?390:390;
- let x=0,y=0;
- if(sequence.length){
-  const last=sequence[sequence.length-1];x=last.x+last.w+GAP;y=last.y;
-  if(x+w>DESIGN_W){x=0;y=Math.max(...sequence.map(p=>p.y+p.h))+GAP}
- }
- return {x,y,w,h:item.kind==='breaks'?690:Math.max(190,60+(item.table?.entries?.length||0)*51)};
-}
-function overlaps(a,b){return a.x<b.x+b.w+GAP&&a.x+a.w+GAP>b.x&&a.y<b.y+b.h+GAP&&a.y+a.h+GAP>b.y}
-function placeNew(p,sequence){
- p.w=clamp(p.w,180,DESIGN_W);p.x=clamp(p.x,0,DESIGN_W-p.w);
- while(sequence.some(v=>overlaps(p,v))){p.x+=SNAP;if(p.x+p.w>DESIGN_W){p.x=0;p.y=Math.max(...sequence.map(v=>v.y+v.h))+GAP}if(p.y>20000)break}
- return p;
-}
-function geometryFor(items){
- const geom={};const placed=[];
- for(const item of items){const stored=board.positions?.[item.id];const p=defaultGeometry(item,placed);
-  p.w=clamp(p.w,180,DESIGN_W);p.x=clamp(p.x,0,DESIGN_W-p.w);
-  if(!stored)placeNew(p,placed);
-  geom[item.id]=p;placed.push(p);
- }
- return geom;
+function saveSize(item,size){
+ board.sizes=board.sizes||{};board.sizes[item.id]=size;
+ saveBoard();render();status(`Rozmiar widżetu ${item.title}: ${size}.`);
 }
 function syncBoardHeight(){
  const canvas=$('scheduleWidgetCanvas'),viewport=$('scheduleWidgetViewport');
- const max=Math.max(160,...[...canvas.querySelectorAll('.schedule-widget')].map(el=>Number(el.style.top.replace('px',''))+Number(el.style.height.replace('px',''))+16));
- canvas.style.height=max+'px';
  const availableWidth=viewport.clientWidth||DESIGN_W;
- const tvHeight=window.innerHeight - Math.ceil(viewport.getBoundingClientRect().top)-25;
- const s=tv?Math.min(availableWidth/DESIGN_W,Math.max(.25,tvHeight/max)):availableWidth/DESIGN_W;
- boardScale=Math.max(.15,s);canvas.style.transform=`scale(${boardScale})`;
- canvas.style.marginLeft=tv?Math.max(0,Math.round((availableWidth-DESIGN_W*boardScale)/2))+'px':'0px';
- viewport.style.height=Math.ceil(max*boardScale)+'px';
+ // Always measure natural grid height without previously applied transform.
+ canvas.style.transform='none';canvas.style.marginLeft='0px';
+ const naturalHeight=Math.max(140,canvas.scrollHeight);
+ const top=viewport.getBoundingClientRect().top;
+ const availableHeight=Math.max(140,window.innerHeight-top-24);
+ const widthScale=availableWidth/DESIGN_W;
+ boardScale=tv?Math.min(widthScale,availableHeight/naturalHeight):widthScale;
+ // Never force a minimum scale which would crop bottom rows in TV.
+ boardScale=Math.max(.05,boardScale);
+ canvas.style.transform=`scale(${boardScale})`;
+ canvas.style.marginLeft=tv?Math.max(0,(availableWidth-DESIGN_W*boardScale)/2)+'px':'0px';
+ viewport.style.height=Math.ceil(naturalHeight*boardScale)+'px';
 }
-function persistPositions(){if(tv)return;board.positions=board.positions||{};for(const el of $('scheduleWidgetCanvas').querySelectorAll('.schedule-widget')){const id=el.dataset.id;board.positions[id]={x:Math.round(parseFloat(el.style.left)),y:Math.round(parseFloat(el.style.top)),w:Math.round(parseFloat(el.style.width)),h:Math.round(parseFloat(el.style.height))}}saveBoard()}
 function render(){
  sourceLabels();const el=$('scheduleWidgetCanvas'),list=orderedItems();
  const dateLabel=$('scheduleTVPlanDate');dateLabel.hidden=!(tv&&tomorrow&&list.some(item=>item.kind==='team'));dateLabel.textContent=dateLabel.hidden?'':`STAN · ${formatDate(tomorrow.date)}`;
- if(!list.length){el.innerHTML='<div class="schedule-empty" style="padding:30px;text-align:center">Wczytaj grafik na jutro lub przerwy, aby ułożyć widżety do TV.</div>';syncBoardHeight();return}
- const geom=geometryFor(list);
+ if(!list.length){el.innerHTML='<div class="schedule-empty" style="grid-column:span 6;padding:30px;text-align:center">Wczytaj grafik na jutro lub przerwy, aby ułożyć widżety do TV.</div>';syncBoardHeight();return}
  el.innerHTML=list.map(item=>{
-  const g=geom[item.id],isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
-  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}<button class="schedule-widget-handle" type="button" title="Przesuń widżet. Strzałki klawiatury też działają." aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
-  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" style="left:${g.x}px;top:${g.y}px;width:${g.w}px;height:${g.h}px"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div>${tv?'':'<div class="schedule-widget-resize" role="button" tabindex="0" aria-label="Zmień rozmiar widżetu" title="Przeciągnij, aby zmienić szerokość i wysokość"></div>'}</section>`;
+  const size=widgetSize(item),isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
+  const sizeBtns=!tv?`<div class="schedule-widget-size-group" role="group" aria-label="Rozmiar ${esc(item.title)}">${SIZES.map(v=>`<button type="button" class="schedule-size" data-size-choice="${v}" aria-pressed="${v===size}" title="Rozmiar ${v}">${v}</button>`).join('')}</div>`:'';
+  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${sizeBtns}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij, aby zmienić kolejność" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
+  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-size="${size}"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div></section>`;
  }).join('');
- // Establish the minimum safe height after the table has actually been laid out.
- let changed=false;
- for(const w of el.querySelectorAll('.schedule-widget')){const g=geom[w.dataset.id],min=measuredMinimum(w);
-  if(g.h<min){g.h=Math.ceil(min/SNAP)*SNAP;w.style.height=g.h+'px';changed=true;}
- }
- // Initial layout collision repair after minimum-height measurement.
- const placed=[];
- for(const w of el.querySelectorAll('.schedule-widget')){const g=geom[w.dataset.id],had=!!board.positions?.[w.dataset.id];
-  if(!had&&placed.some(v=>overlaps(g,v))){placeNew(g,placed);w.style.left=g.x+'px';w.style.top=g.y+'px';changed=true}
-  placed.push(g);
- }
- syncBoardHeight();
- if(!tv&&changed)persistPositions();
+ requestAnimationFrame(syncBoardHeight);
 }
-$('scheduleWidgetCanvas').addEventListener('click',e=>{if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
- const id=widget.dataset.id,item=items().find(x=>x.id===id);
+$('scheduleWidgetCanvas').addEventListener('click',e=>{
+ if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
+ const id=widget.dataset.id,item=items().find(x=>x.id===id);if(!item)return;
  if(b.classList.contains('schedule-widget-remove')){board.removed=[...new Set([...board.removed,id])];saveBoard();render();status(`Usunięto widżet ${item.title} z tablicy i TV.`)}
+ else if(b.classList.contains('schedule-size'))saveSize(item,b.dataset.sizeChoice);
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
  else if(b.classList.contains('schedule-person-eye')&&tomorrow)toggleVisibility(tomorrow,b.dataset.team,b.dataset.person);
 });
 const canvas=$('scheduleWidgetCanvas');
-function geomEl(el){return {x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)}}
-function collides(el,p){return [...canvas.querySelectorAll('.schedule-widget')].some(other=>other!==el&&overlaps(p,geomEl(other)))}
-function updateGeometry(el,p){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px'}
-// When the resized widget needs room, move neighbours out of its way instead
-// of reverting the resize. Recalculate from pointer-down geometry each frame
-// so neighbours never drift after multiple pointermove events.
-function settleNeighbors(active,baseline){
- const others=[...canvas.querySelectorAll('.schedule-widget')].filter(el=>el!==active);
- for(const el of others)updateGeometry(el,baseline.get(el));
- const placed=[geomEl(active)];
- others.sort((a,b)=>{const A=baseline.get(a),B=baseline.get(b);return A.y-B.y||A.x-B.x});
- for(const el of others){
-  const p={...baseline.get(el)};let attempts=0;
-  while(placed.some(other=>overlaps(p,other))&&attempts++<200){
-   const collisions=placed.filter(other=>overlaps(p,other));
-   const right=Math.max(...collisions.map(v=>v.x+v.w+GAP));
-   if(right+p.w<=DESIGN_W){p.x=Math.ceil(right/SNAP)*SNAP;}
-   else{p.x=Math.min(p.x,DESIGN_W-p.w);p.y=Math.ceil(Math.max(...collisions.map(v=>v.y+v.h+GAP))/SNAP)*SNAP;}
-  }
-  updateGeometry(el,p);placed.push(p);
- }
-}
-canvas.addEventListener('pointerdown',e=>{
- if(tv||e.button!==0)return;
- const handle=e.target.closest('.schedule-widget-handle,.schedule-widget-resize');if(!handle)return;
- const el=handle.closest('.schedule-widget'),original=geomEl(el),mode=handle.classList.contains('schedule-widget-resize')?'resize':'move';
- const baseline=new Map([...canvas.querySelectorAll('.schedule-widget')].map(w=>[w,geomEl(w)]));
- dragSession={el,handle,mode,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,scale:boardScale,original,last:original,baseline};
- handle.setPointerCapture(e.pointerId);el.classList.add('is-interacting');e.preventDefault();
+// Native HTML drag initiates only on the handle. Widgets swap positions like
+// iPhone home-screen tiles; no overlap and no arbitrary pixel coordinates.
+canvas.addEventListener('dragstart',e=>{
+ if(tv)return;const handle=e.target.closest('.schedule-widget-handle');
+ const widget=handle?.closest('.schedule-widget');if(!widget){e.preventDefault();return}
+ draggingId=widget.dataset.id;targetId=null;
+ e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggingId);
+ widget.classList.add('is-dragging');
 });
-canvas.addEventListener('pointermove',e=>{
- if(!dragSession||e.pointerId!==dragSession.pointerId)return;
- const {el,mode,startX,startY,scale,original,baseline}=dragSession;
- const dx=snap((e.clientX-startX)/scale),dy=snap((e.clientY-startY)/scale);let p={...original};
- if(mode==='move'){p.x=clamp(snap(original.x+dx),0,DESIGN_W-p.w);p.y=Math.max(0,snap(original.y+dy));}
- else{
-  p.w=clamp(snap(original.w+dx),180,DESIGN_W-p.x);
-  // Width must be applied before reading the natural minimum height.
-  el.style.width=p.w+'px';
-  p.h=Math.ceil(Math.max(measuredMinimum(el),snap(original.h+dy))/SNAP)*SNAP;
- }
- updateGeometry(el,p);dragSession.last=p;
- if(mode==='resize'){settleNeighbors(el,baseline);el.classList.remove('schedule-widget-blocked')}
- else el.classList.toggle('schedule-widget-blocked',collides(el,p));
- syncBoardHeight();
+canvas.addEventListener('dragover',e=>{
+ if(!draggingId)return;
+ e.preventDefault();e.dataTransfer.dropEffect='move';
+ const w=e.target.closest('.schedule-widget');
+ canvas.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));
+ targetId=w&&w.dataset.id!==draggingId?w.dataset.id:null;
+ if(targetId)w.classList.add('drop-target');
 });
-function endPointer(e){if(!dragSession||e.pointerId!==dragSession.pointerId)return;
- const {el,mode,original,last,baseline}=dragSession;
- if(e.type==='pointercancel'){
-  for(const [widget,geometry] of baseline)updateGeometry(widget,geometry);
- }else if(mode==='move'&&collides(el,last)){
-  updateGeometry(el,original);status('Widżety nie mogą na siebie nachodzić. Wybierz wolne miejsce.');
- }else{
-  persistPositions();status('Zapisano układ TV.');
+canvas.addEventListener('drop',e=>{
+ if(!draggingId)return;e.preventDefault();
+ const target=e.target.closest('.schedule-widget');const to=target?.dataset.id;
+ if(to&&to!==draggingId){
+  const order=orderedItems().map(x=>x.id),a=order.indexOf(draggingId),b=order.indexOf(to);
+  if(a>=0&&b>=0){[order[a],order[b]]=[order[b],order[a]];board.order=order;saveBoard();status('Zamieniono widżety miejscami.');}
  }
- el.classList.remove('is-interacting','schedule-widget-blocked');dragSession=null;syncBoardHeight();
-}
-canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);
+ draggingId=null;targetId=null;render();
+});
+canvas.addEventListener('dragend',()=>{draggingId=null;targetId=null;canvas.querySelectorAll('.schedule-widget').forEach(w=>w.classList.remove('is-dragging','drop-target'))});
+// Keyboard support: arrows on grip swap with adjacent widget.
 canvas.addEventListener('keydown',e=>{
- const h=e.target.closest('.schedule-widget-handle,.schedule-widget-resize');if(!h||tv||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
- const el=h.closest('.schedule-widget'),p=geomEl(el),old={...p},delta=e.shiftKey?40:10,sign=['ArrowLeft','ArrowUp'].includes(e.key)?-1:1;
- if(h.classList.contains('schedule-widget-resize')){if(['ArrowLeft','ArrowRight'].includes(e.key))p.w=clamp(p.w+sign*delta,180,DESIGN_W-p.x);else p.h=Math.max(measuredMinimum(el),p.h+sign*delta)}
- else{if(['ArrowLeft','ArrowRight'].includes(e.key))p.x=clamp(p.x+sign*delta,0,DESIGN_W-p.w);else p.y=Math.max(0,p.y+sign*delta)}
- if(h.classList.contains('schedule-widget-resize')){const baseline=new Map([...canvas.querySelectorAll('.schedule-widget')].filter(w=>w!==el).map(w=>[w,geomEl(w)]));updateGeometry(el,p);settleNeighbors(el,baseline);persistPositions();syncBoardHeight()}else if(!collides(el,p)){updateGeometry(el,p);persistPositions();syncBoardHeight()}else updateGeometry(el,old);
+ const handle=e.target.closest('.schedule-widget-handle');if(!handle||tv||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+ e.preventDefault();const w=handle.closest('.schedule-widget'),order=orderedItems().map(x=>x.id),idx=order.indexOf(w.dataset.id),sign=['ArrowLeft','ArrowUp'].includes(e.key)?-1:1,next=idx+sign;
+ if(next<0||next>=order.length)return;[order[idx],order[next]]=[order[next],order[idx]];board.order=order;saveBoard();render();
+ const nextHandle=[...canvas.querySelectorAll('.schedule-widget')].find(x=>x.dataset.id===w.dataset.id)?.querySelector('.schedule-widget-handle');nextHandle?.focus();
 });
-let boardResizeTimer;window.addEventListener('resize',()=>{clearTimeout(boardResizeTimer);boardResizeTimer=setTimeout(syncBoardHeight,80)});
-$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{}};saveBoard();render();status('Przywrócono wszystkie widżety i domyślny układ.')};
+let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(syncBoardHeight,90)});
+$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{},sizes:{}};saveBoard();render();status('Przywrócono widżety i domyślny układ S / M / L.')};
 function attachDrop(kind){const zone=$(kind==='plan'?'schedulePlanDrop':'scheduleBreakDrop'),input=$(kind==='plan'?'schedulePlanFile':'scheduleBreakFile');
  zone.addEventListener('click',()=>input.click());zone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click()}});
  for(const evt of ['dragenter','dragover'])zone.addEventListener(evt,e=>{e.preventDefault();zone.classList.add('is-over')});
