@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.17</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.18</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -111,13 +111,14 @@ infoPanel.innerHTML=`
  <section class="inc-info-section" id="incTabApp" role="tabpanel" hidden>
   <div class="inc-info-item"><strong>Wersja aplikacji</strong><b id="incAppVersion">1.1.8</b></div>
   <div class="inc-info-item"><strong>Status PWA</strong><span id="incPwaStatus">Sprawdzanie…</span></div>
-  <h3>Funkcje</h3><p>Wyniki procesów, karty pracowników, import Excel i niezależne pokazy TV w osobnych oknach aplikacji.</p>
+  <h3>Funkcje</h3><p>Wyniki procesów, karty pracowników, harmonogram pracy, import Excel i niezależne pokazy TV w osobnych oknach aplikacji.</p>
   <h3>Tryb TV</h3><p>Wybór ekranów, kolejności, czasu wyświetlania i automatycznego lub ręcznego dopasowania kart do ekranu.</p>
-  <p class="inc-muted">Przydział do procesów jest przygotowany do rozbudowy. Import przydziałów nie jest jeszcze dostępny.</p>
+  <p class="inc-muted">Harmonogram pracy obsługuje import STAN / Arkusz1, podział na procesy oraz ekrany TV dla dzisiaj i jutra.</p>
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.17</strong> · Czas na cały ekran TV</summary><p>Ustawiony czas ekranu jest dzielony równo między jego strony, również dla kart pracowników. Bez ponownej animacji tej samej zawartości.</p></details>
+  <details open><summary><strong>v1.1.18</strong> · Harmonogram pracy z importem Excel STAN / Arkusz1</summary><p>Dodano dzisiejszy i jutrzejszy harmonogram, grupowanie pracowników według procesów, wolne i urlopy oraz ekrany TV.</p></details>
+  <details><summary><strong>v1.1.17</strong> · Czas na cały ekran TV</summary><p>Ustawiony czas ekranu jest dzielony równo między jego strony, również dla kart pracowników. Bez ponownej animacji tej samej zawartości.</p></details>
   <details><summary><strong>v1.1.16</strong> · Poprawa czasu wyświetlania TV</summary><p>Usunięto dodatkowy timer przewijania procesów. Każda strona pozostaje widoczna przez wybrany czas, a pojedynczy ekran bez kolejnych stron nie animuje się ponownie.</p></details>
   <details open><summary><strong>v1.1.15</strong> · Nowa identyfikacja INC</summary><p>Nowa zaokrąglona ikona INC w wielu rozmiarach, bezpieczny wariant maskable i grafitowo-turkusowy kolor okna PWA.</p></details>
   <details><summary><strong>v1.1.14</strong> · Wyraźniejsze, płynne pojawianie się kart</summary><p>Przywrócono spokojny efekt unoszenia i delikatny kaskadowy start kart bez kosztownego rozmycia.</p></details>
@@ -353,12 +354,14 @@ const unifiedTV=(()=>{
  // Remove obsolete norms-only screen from previously saved playlists.
  config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms');
  if(config.fixed==='process:norms')config.fixed='process:all';
- let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0;
+ let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false;
  const isProcess=id=>id.startsWith('process:');
  const availableScreens=()=>[
    {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
    ...data.sections.map(s=>({id:'process:'+s.name,name:processLabel(s.name),description:'Wyniki jednego procesu',available:true})),
-   {id:'workers',name:'Karty pracowników',description:'Wszystkie procesy każdego pracownika',available:!!filtered().length}
+   {id:'workers',name:'Karty pracowników',description:'Wszystkie procesy każdego pracownika',available:!!filtered().length},
+    {id:'schedule:today',name:'Harmonogram · Dzisiaj',description:'Dzisiejszy plan pracy',available:!!window.incSchedule?.has(0)},
+    {id:'schedule:tomorrow',name:'Harmonogram · Jutro',description:'Plan pracy na jutro',available:!!window.incSchedule?.has(1)}
  ];
  const screenName=id=>availableScreens().find(x=>x.id===id)?.name||id;
  function normalizeScreens(){
@@ -397,26 +400,31 @@ const unifiedTV=(()=>{
  }
  const processRender=()=>window.render();
  function show(id,reset=true){
-   activeId=id;fitWarning='';if(reset)processPageIndex=0;
+   activeId=id;fitWarning='';if(reset){processPageIndex=0;schedulePageIndex=0;}
    // Reserve the TV geometry BEFORE measuring cards, not after rendering them.
    document.body.classList.add('tv','unified-tv');
    document.documentElement.scrollTop=0;document.body.scrollTop=0;
    window.scrollTo(0,0);
    if(isProcess(id)){
-     monthlyTV=false;cancelAnimationFrame(raf);clearInterval(timer);q('workerArea').hidden=true;q('norms').hidden=false;q('workerTVbar').hidden=true;
+     q('assign').hidden=true;monthlyTV=false;cancelAnimationFrame(raf);clearInterval(timer);q('workerArea').hidden=true;q('norms').hidden=false;q('workerTVbar').hidden=true;
      q('processView').classList.add('active');q('workerView').classList.remove('active');
      document.body.classList.remove('monthly-tv');tv=true;
      if(!savedProcess)savedProcess={onlynorms:q('onlynorms').checked,density:tvConfig.density,mode:tvConfig.mode};
      q('onlynorms').checked=false;tvConfig.mode='fixed';tvConfig.density='auto';
      window.selectScreen(id==='process:all'?'all':id.slice(8));
      // Process pages advance through the main slide timer, never a second fast timer.
-   }else{
-     tv=false;document.body.removeAttribute('data-tv-density');cancelAnimationFrame(layoutFrame);
+   }else if(id==='workers'){
+     q('assign').hidden=true;tv=false;document.body.removeAttribute('data-tv-density');cancelAnimationFrame(layoutFrame);
      q('norms').hidden=true;q('workerArea').hidden=false;q('processView').classList.remove('active');q('workerView').classList.add('active');
      active=true;monthlyTV=true;clearInterval(timer);q('workerTVbar').hidden=true;index=reset?0:index;
      settings.layout=config.layout;settings.cards=config.cards;
      document.body.classList.add('monthly-tv');renderTV();
      requestAnimationFrame(checkManualFit);
+   }else if(id.startsWith('schedule:')){
+     tv=false;monthlyTV=false;clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
+     document.body.classList.remove('monthly-tv');document.body.removeAttribute('data-tv-density');
+     q('norms').hidden=true;q('workerArea').hidden=true;q('assign').hidden=false;q('workerTVbar').hidden=true;
+     window.incSchedule?.show(id==='schedule:tomorrow'?1:0,schedulePageIndex);
    }
    u('unifiedTVbar').hidden=false;updateStatus();
  }
@@ -430,10 +438,12 @@ const unifiedTV=(()=>{
  function activePageCount(){
    if(isProcess(activeId))return Math.max(1,window.pages());
    if(activeId==='workers')return Math.max(1,Math.ceil(filtered().length/Math.max(1,effectiveCards)));
+   if(activeId.startsWith('schedule:'))return Math.max(1,window.incSchedule?.count(activeId==='schedule:tomorrow'?1:0)||1);
    return 1;
  }
  function activePageNumber(){
    if(isProcess(activeId))return processPageIndex;
+   if(activeId.startsWith('schedule:'))return schedulePageIndex;
    return activeId==='workers'?Math.floor(index/Math.max(1,effectiveCards)):0;
  }
  function schedule(){
@@ -458,6 +468,8 @@ const unifiedTV=(()=>{
      }else if(activeId==='workers'){
        index=Math.min(filtered().length-1,index+effectiveCards);
        show('workers',false);
+     }else if(activeId.startsWith('schedule:')){
+       schedulePageIndex=nextPage;window.incSchedule?.show(activeId==='schedule:tomorrow'?1:0,schedulePageIndex);
      }
      schedule();return;
    }
@@ -468,6 +480,8 @@ const unifiedTV=(()=>{
        processPageIndex=0;window.tick(); // Last page -> first (only if different).
      }else if(activeId==='workers'){
        index=0;show('workers',false);
+     }else if(activeId.startsWith('schedule:')){
+       schedulePageIndex=0;window.incSchedule?.show(activeId==='schedule:tomorrow'?1:0,0);
      }
    }else{
      screenCursor=(screenCursor+1)%screens.length;
@@ -479,7 +493,7 @@ const unifiedTV=(()=>{
    if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
    config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked};
    try{localStorage.setItem(KEY,JSON.stringify(config))}catch{}
-   dialog.close();running=true;pausedUnified=false;screenCursor=0;
+   wasAssignment=!q('assign').hidden;dialog.close();running=true;pausedUnified=false;screenCursor=0;
    const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
    q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
    window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';requestAnimationFrame(()=>requestAnimationFrame(schedule));revealControls();
@@ -491,8 +505,9 @@ const unifiedTV=(()=>{
    monthlyTV=false;tv=false;document.body.classList.remove('tv','monthly-tv','unified-tv','cursor-hidden');document.body.removeAttribute('data-tv-density');
    u('unifiedTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;q('workerTVbar').hidden=true;
    if(savedProcess){q('onlynorms').checked=false;tvConfig.density=savedProcess.density;tvConfig.mode=savedProcess.mode;savedProcess=null}
-   if(activeId==='workers'){q('norms').hidden=true;q('workerArea').hidden=false;active=true;q('upload').textContent='📥 Pliki pracowników';render()}
-   else{q('norms').hidden=false;q('workerArea').hidden=true;active=false;q('upload').textContent='📥 Wczytaj Excel';processRender()}
+   if(wasAssignment){q('assign').hidden=false;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSchedule?.restore();q('tv').disabled=false;}
+   else if(active){q('assign').hidden=true;q('norms').hidden=true;q('workerArea').hidden=false;active=true;q('upload').textContent='📥 Pliki pracowników';render()}
+   else{q('assign').hidden=true;q('norms').hidden=false;q('workerArea').hidden=true;active=false;q('upload').textContent='📥 Wczytaj Excel';processRender()}
    if(!skipFullscreen&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  }
  q('tv').onclick=open;q('tvsettings').onclick=open;q('workerTVsettings').onclick=open;
@@ -603,3 +618,6 @@ document.head.appendChild(tvViewportRepair);
 
 updatePeriods();render();
 })();
+
+// Harmonogram is isolated from legacy KPI/worker import.
+{const script=document.createElement('script');script.src='schedule.js';document.body.appendChild(script);}
