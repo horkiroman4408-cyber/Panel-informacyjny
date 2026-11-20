@@ -129,6 +129,9 @@ function rosterView(plan,tables,dateText){
 // Workspace: the Excel files remain local and the two sources are independent.
 const BOARD_KEY='incydenty-schedule-widgets-v2';
 const BREAK_KEY='incydenty-breaks-v1';
+const BREAK_SHIFT_KEY='incydenty-breaks-selected-shift-v1';
+let breakShift='I ZMIANA';
+try{const saved=localStorage.getItem(BREAK_SHIFT_KEY);if(saved==='I ZMIANA'||saved==='II ZMIANA')breakShift=saved}catch{}
 const TOMORROW_KEY='incydenty-tomorrow-plan-v1';
 let board={order:[],widths:{},removed:[],positions:{},sizes:{}};
 try{const b=JSON.parse(localStorage.getItem(BOARD_KEY));if(b&&Array.isArray(b.order))board={order:b.order,widths:b.widths||{},removed:Array.isArray(b.removed)?b.removed:[],positions:b.positions&&typeof b.positions==='object'?b.positions:{},sizes:b.sizes&&typeof b.sizes==='object'?b.sizes:{}}}catch{}
@@ -213,6 +216,12 @@ body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95v
 .schedule-widget[data-size="M"]{grid-column:span 3}
 .schedule-widget[data-size="L"]{grid-column:span 6}
 .schedule-widget-body{flex:0 0 auto;min-height:0}
+.schedule-break-select{display:flex;gap:3px;align-items:center;border-radius:10px;background:#dfe8ed;padding:3px;margin-right:5px}
+.schedule-break-select button{width:auto!important;height:26px!important;min-width:62px!important;padding:3px 7px!important;font-size:10px!important;font-weight:750!important;white-space:nowrap;border-radius:7px!important;color:#596d7e!important}
+.schedule-break-select button[aria-pressed="true"]{background:#fff!important;color:#116d73!important;box-shadow:0 1px 5px #203e4c19!important}
+body.unified-tv #assign .schedule-break-select{background:transparent;padding:0;margin-right:0}
+body.unified-tv #assign .schedule-break-select button{display:none!important}
+body.unified-tv #assign .schedule-break-select button[aria-pressed="true"]{display:block!important;background:#e4f3f2!important;color:#20595d!important;box-shadow:none!important;cursor:default}
 .schedule-widget-size-group{display:flex;gap:2px;padding:2px;background:#e2e9f0;border-radius:9px}
 .schedule-widget-size-group button{width:23px!important;height:24px!important;border-radius:7px!important;font-size:10px!important;font-weight:750!important;padding:0!important;color:#62768a!important}
 .schedule-widget-size-group button[aria-pressed="true"]{background:white!important;color:#0876d9!important;box-shadow:0 1px 5px #18395a18!important}
@@ -243,18 +252,15 @@ function teamMarkup(item){const t=item.table,off=isHidden(tomorrow,t.name);
  return (t.entries||[]).filter(entry=>!tv||!isHidden(tomorrow,t.name,entry.login)).map(entry=>{const hidden=isHidden(tomorrow,t.name,entry.login);
  return `<div class="schedule-person-row${hidden?' schedule-muted':''}"><div class="schedule-person-login">${esc(entry.login)}</div><div class="schedule-person-assignment">${entry.processes.map(x=>`<span>${esc(x)}</span>`).join('')}</div>${tv?'':`<button class="schedule-person-eye" data-person="${esc(entry.login)}" data-team="${esc(t.name)}" type="button" title="${hidden?'Pokaż':'Ukryj'} w TV" aria-label="Widoczność TV: ${esc(entry.login)}">${iconEye(!hidden)}</button>`}</div>`}).join('')||'<div class="schedule-person-empty">Brak pracowników</div>';
 }
-function breakMarkup(){if(!breaks)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
- if(Array.isArray(breaks.shifts)){return breaks.shifts.map(shift=>`<div class="schedule-break-shift"><h4>${esc(shift.name)}</h4><table class="schedule-break-table"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${shift.rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')+(breaks.people?.length?`<div class="schedule-break-shift"><h4>Przydział do przerw</h4><table class="schedule-break-table"><thead><tr><th>Grupa</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${breaks.people.map(r=>`<tr><th>${esc(r.label||'')}</th>${r.logins.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'')+(breaks.spm?.length?`<div class="schedule-break-shift"><h4>SPM</h4>${breaks.spm.map(r=>`<div class="schedule-break-spm">${esc(r)}</div>`).join('')}</div>`:'');}
- if(!breaks.rows?.length)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
- const rows=breaks.rows,heads=rows[0]||[],n=Math.max(1,...rows.map(r=>r.length));
- const header=Array.from({length:n},(_,j)=>`<th>${esc(heads[j]??'')}</th>`).join('');
- return `<div style="overflow-x:auto"><table class="schedule-break-table"><thead><tr>${header}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${Array.from({length:n},(_,j)=>`<td>${esc(r[j]??'')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+function breakMarkup(){
+ if(!breaks)return '<div class="schedule-empty">Nie znaleziono danych w Excel.</div>';
+ if(Array.isArray(breaks.shifts)){
+  const selected=breaks.shifts.find(s=>s.name===breakShift);
+  if(!selected)return '<div class="schedule-empty">Brak tabeli '+esc(breakShift)+' w pliku Excel.</div>';
+  return `<table class="schedule-break-table"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${selected.rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+ }
+ return '<div class="schedule-empty">Nie znaleziono harmonogramu zmian w pliku Excel.</div>';
 }
-// iPhone-style widget board: fixed S / M / L sizes, natural table height,
-// and drag-to-reorder grid. TV and editor share the same markup/order.
-const DESIGN_W=1200;
-let boardScale=1, draggingId=null, targetId=null;
-const SIZES=['S','M','L'];
 function widgetSize(item){
  const stored=board.sizes?.[item.id];if(SIZES.includes(stored))return stored;
  // One-time migration of the old freely resized positions and widths.
@@ -288,9 +294,10 @@ function render(){
  if(!list.length){el.innerHTML='<div class="schedule-empty" style="grid-column:span 6;padding:30px;text-align:center">Wczytaj grafik na jutro lub przerwy, aby ułożyć widżety do TV.</div>';syncBoardHeight();return}
  el.innerHTML=list.map(item=>{
   const size=widgetSize(item),isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
-  const sizeBtns=!tv?`<div class="schedule-widget-size-group" role="group" aria-label="Rozmiar ${esc(item.title)}">${SIZES.map(v=>`<button type="button" class="schedule-size" data-size-choice="${v}" aria-pressed="${v===size}" title="Rozmiar ${v}">${v}</button>`).join('')}</div>`:'';
-  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${sizeBtns}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij, aby zmienić kolejność" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
-  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-size="${size}"><div class="schedule-widget-header"><strong>${esc(item.title)}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div></section>`;
+  const shiftButtons=item.kind==='breaks'?`<div class="schedule-break-select" role="group" aria-label="Zmiana przerw">${['I ZMIANA','II ZMIANA'].map(name=>`<button type="button" class="schedule-break-choice" data-break-shift="${name}" aria-pressed="${breakShift===name}" title="Pokaż ${name}">${name}</button>`).join('')}</div>`:'';
+   const sizeBtns=!tv?`<div class="schedule-widget-size-group" role="group" aria-label="Rozmiar ${esc(item.title)}">${SIZES.map(v=>`<button type="button" class="schedule-size" data-size-choice="${v}" aria-pressed="${v===size}" title="Rozmiar ${v}">${v}</button>`).join('')}</div>`:'';
+  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${shiftButtons}${sizeBtns}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij, aby zmienić kolejność" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
+  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-size="${size}"><div class="schedule-widget-header"><strong>${esc(item.title)}${tv&&item.kind==='breaks'?` · ${esc(breakShift)}`:''}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div></section>`;
  }).join('');
  requestAnimationFrame(syncBoardHeight);
 }
@@ -298,7 +305,12 @@ $('scheduleWidgetCanvas').addEventListener('click',e=>{
  if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
  const id=widget.dataset.id,item=items().find(x=>x.id===id);if(!item)return;
  if(b.classList.contains('schedule-widget-remove')){board.removed=[...new Set([...board.removed,id])];saveBoard();render();status(`Usunięto widżet ${item.title} z tablicy i TV.`)}
- else if(b.classList.contains('schedule-size'))saveSize(item,b.dataset.sizeChoice);
+ else if(b.classList.contains('schedule-break-choice')&&item.kind==='breaks'){
+   breakShift=b.dataset.breakShift==='II ZMIANA'?'II ZMIANA':'I ZMIANA';
+   try{localStorage.setItem(BREAK_SHIFT_KEY,breakShift)}catch{}
+   render();status(`Przerwy: ${breakShift}. Wybór zapisano także dla TV.`);
+  }
+  else if(b.classList.contains('schedule-size'))saveSize(item,b.dataset.sizeChoice);
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
  else if(b.classList.contains('schedule-person-eye')&&tomorrow)toggleVisibility(tomorrow,b.dataset.team,b.dataset.person);
 });
