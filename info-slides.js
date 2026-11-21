@@ -13,9 +13,7 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
  <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
  <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij zdjęcie lub tekst, aby edytować</div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
- <div class="isa-images-heading"><span class="isa-label">Zdjęcia <span>(dodaj, zamień lub usuń)</span></span><button id="isaAddImage" class="isa-add-block" type="button">＋ Dodaj zdjęcie</button></div>
- <div id="isaImages" class="isa-images"></div>
- <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+ <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" hidden />
  <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
  <div id="isaBlocks" class="isa-blocks" aria-label="Bloki tekstowe"></div>
  
@@ -277,6 +275,28 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-mini-7 .body,.isa-mini-8 .body,.isa-mini-8 .details,.isa-mini-9 .body,.isa-mini-9 .details,.isa-mini-9 .extra{background:#e5edf1!important}
 .isa-template-picker{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))!important}
 .isa-images-heading.isa-text-only{opacity:.55}
+
+/* v1.1.48: edit photos only within the chosen mockup, compact folding text inspectors. */
+.isa-photo-remove{position:absolute!important;right:9px;top:9px;z-index:8;border:1px solid #dde6ef!important;background:#fffffff2!important;color:#576c80!important;width:28px;height:28px;padding:0!important;border-radius:9px!important;cursor:pointer;font-size:19px;line-height:1;opacity:0;transition:opacity .15s ease}
+.isa-layout-photo.has-photo:hover .isa-photo-remove,.isa-layout-photo.has-photo:focus-within .isa-photo-remove{opacity:1}
+.isa-photo-remove:hover{background:#ffebeb!important;color:#b8313f!important}
+.isa-blocks-heading{margin-top:12px!important;margin-bottom:7px!important}
+.isa-block-editor{padding:0!important;overflow:hidden;border-radius:12px!important;background:#fafbfe!important}
+.isa-block-editor>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:9px 12px!important;margin:0!important;cursor:pointer;min-height:40px;gap:10px}
+.isa-block-editor>summary::-webkit-details-marker{display:none}
+.isa-block-editor>summary::before{content:'▸';color:#8499ac;font-size:13px;transition:transform .15s ease}
+.isa-block-editor[open]>summary::before{transform:rotate(90deg)}
+.isa-block-editor .isa-block-number{display:flex;align-items:center;gap:9px;flex:1;min-width:0;white-space:nowrap;font-size:12px}
+.isa-block-excerpt{font-weight:400;color:#728496;font-size:11px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;min-width:0;max-width:580px}
+.isa-block-editor[open] .isa-block-excerpt{display:none}
+.isa-block-body{padding:0 12px 10px;border-top:1px solid #e7edf4}
+.isa-block-body>.isa-label{margin-top:9px!important}
+.isa-block-editor textarea{min-height:42px!important;height:48px;max-height:100px!important}
+.isa-block-editor .isa-typography-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px!important}
+.isa-block-editor .isa-color-row{margin-top:2px!important}
+.isa-block-editor .isa-format-row{margin-bottom:5px!important}
+@media (hover:none){.isa-photo-remove{opacity:1}}
+@media (max-width:650px){.isa-block-editor .isa-typography-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 `;document.head.append(style);
 function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
 function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
@@ -296,14 +316,12 @@ function renderTemplates(){
  };
  $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail],index)=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon isa-mini-${v}">${mini[v]}</span><strong>${index+1} · ${label}</strong><small>${detail}</small></button>`).join('');
 }
+let editorImageURLs=[];
 function renderImages(){
- const textOnly=['7','8','9'].includes(selectedTemplate);
- $('isaAddImage').hidden=textOnly;
- $('isaImages').closest('.isa-images-heading')?.classList.toggle('isa-text-only',textOnly);
- const host=$('isaImages'),slots=Math.max(draftImages.length,selectedTemplate==='2'?2:['6','7','8','9'].includes(selectedTemplate)?0:1);
- host.innerHTML=textOnly?'<div class="isa-template-empty">Ten szablon zawiera tylko tekst, bez zdjęć.</div>':Array.from({length:slots},(_,i)=>`<div class="isa-image-slot${draftImages[i]?'':' is-empty'}" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong>${draftImages[i]?'<img alt="Zdjęcie '+(i+1)+'" />':'<div>＋ Kliknij, aby dodać</div>'}<div class="isa-slot-actions"><button type="button" data-image-action="replace">${draftImages[i]?'Zamień':'Dodaj'}</button><button type="button" data-image-action="remove" ${draftImages[i]?'':'disabled'}>Usuń</button></div></div>`).join('')||'<div class="isa-template-empty">Slajd tekstowy, zdjęcie jest opcjonalne.</div>';
- const urls=imageURLS(draftImages,previewURLs);host.querySelectorAll('.isa-image-slot img').forEach(im=>im.src=urls[Number(im.closest('[data-image-index]').dataset.imageIndex)]||'');
+ // Image sources are owned by the editable mockup, not duplicate upload cards.
+ editorImageURLs=imageURLS(draftImages,previewURLs);
 }
+
 const message=s=>{$('isaMsg').textContent=s};
 function list(){return records.map(s=>({id:'info:'+s.id,name:'Informacje · '+s.title,description:'Zdjęcie i bloki tekstowe',available:true}))}
 function drawList(){ $('isaCount').textContent=String(records.length);$('isaList').innerHTML=records.map(r=>`<button type="button" class="${r.id===selectedId?'selected':''}" data-id="${escape(r.id)}"><span>▧ ${escape(r.title)}</span></button>`).join('')||'<p class="isa-helper">Nie ma jeszcze zapisanych podstron.</p>';}
@@ -351,7 +369,7 @@ const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
 const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
 const COLOR_LABELS=[['default','Domyślny'],['white','Biały'],['graphite','Grafit'],['teal','Turkus'],['blue','Błękit'],['amber','Bursztyn'],['rose','Koral']];
 function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div>`).join('');
+ $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<details class="isa-block-editor" data-block-id="${escape(b.id)}" ${i===0?'open':''}><summary class="isa-block-top"><span class="isa-block-number">Blok ${i+1} <span class="isa-block-excerpt">${escape((b.text||'Nowy tekst').replace(/\s+/g,' ').slice(0,70))}</span></span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń</button></summary><div class="isa-block-body"><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div></details>`).join('');
 }
 function compose(imageURLs,blocks,template='1',placeholder=false){
  const editor=placeholder===true;
@@ -362,7 +380,7 @@ function compose(imageURLs,blocks,template='1',placeholder=false){
   if(imageURLs[i]){const im=document.createElement('img');im.src=imageURLs[i];im.alt='Zdjęcie '+(i+1);slot.append(im);slot.classList.add('has-photo')}
   else if(editor){const empty=document.createElement('span');empty.className='isa-layout-placeholder';empty.textContent='＋ Zdjęcie '+(i+1);slot.append(empty)}
   else{slot.classList.add('isa-layout-missing')}
-  if(editor){slot.setAttribute('role','button');slot.setAttribute('tabindex','0');slot.setAttribute('title','Kliknij, aby wczytać zdjęcie')}
+  if(editor){slot.setAttribute('role','button');slot.setAttribute('tabindex','0');slot.setAttribute('title','Kliknij, aby wczytać lub zamienić zdjęcie');if(imageURLs[i]){const remove=document.createElement('button');remove.type='button';remove.className='isa-photo-remove';remove.dataset.removeImage=String(i);remove.title='Usuń zdjęcie';remove.setAttribute('aria-label','Usuń zdjęcie '+(i+1));remove.textContent='×';slot.append(remove)}}
   return slot;
  };
  const createText=(slotName)=>{
@@ -448,25 +466,19 @@ fitObserver.observe($('isaLivePreview'));fitObserver.observe($('isaTV'));
 function renderLivePreview(){
  const host=$('isaLivePreview');if(!host)return;
  // Do not revoke object URLs until both editor thumbnails and stage have been replaced.
- const urls=Array.from({length:Math.max(draftImages.length,selectedTemplate==='2'?2:1)},(_,i)=>$('isaImages').querySelector(`[data-image-index="${i}"] img`)?.src||null);
+ const urls=editorImageURLs;
  const stage=stageFor(urls,draftBlocks,selectedTemplate,true);host.replaceChildren(stage);
  fitStage(stage,false);scheduleTextFit(stage,true);
 }
 $('isaLivePreview').addEventListener('click',e=>{
- const block=e.target.closest('[data-edit-block]');if(block){const editor=$('isaBlocks').querySelector(`[data-block-id="${block.dataset.editBlock}"] textarea`);if(editor){editor.scrollIntoView({behavior:'smooth',block:'center'});editor.focus()}return}
+ const remove=e.target.closest('[data-remove-image]');if(remove){e.preventDefault();e.stopPropagation();draftImages[Number(remove.dataset.removeImage)]=null;preview();return}
+ const block=e.target.closest('[data-edit-block]');if(block){const editor=$('isaBlocks').querySelector(`[data-block-id="${block.dataset.editBlock}"] textarea`);if(editor){const section=editor.closest('details');if(section)section.open=true;editor.scrollIntoView({behavior:'smooth',block:'center'});editor.focus()}return}
  const photo=e.target.closest('[data-edit-image]');if(photo){replaceImageIndex=Number(photo.dataset.editImage);$('isaFiles').click()}
 });
 $('isaLivePreview').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const target=e.target.closest('[data-edit-block],[data-edit-image]');if(target){e.preventDefault();target.click()}}});
 $('isaTemplates').onclick=e=>{const b=e.target.closest('[data-template]');if(!b)return;selectedTemplate=validTemplate(b.dataset.template);draftBlocks=prepareBlocks(selectedTemplate,draftBlocks);renderTemplates();renderEditors();preview()};
 let replaceImageIndex=-1;
-$('isaAddImage').onclick=()=>{replaceImageIndex=-1;$('isaFiles').click()};
-$('isaImages').onclick=e=>{const b=e.target.closest('[data-image-action]'),slot=e.target.closest('[data-image-index]');if(!b||!slot)return;const i=Number(slot.dataset.imageIndex),action=b.dataset.imageAction;
- if(action==='replace'){replaceImageIndex=i;$('isaFiles').click();return}
- if(action==='remove')draftImages[i]=null;
- if(action==='left'&&i>0)[draftImages[i-1],draftImages[i]]=[draftImages[i],draftImages[i-1]];
- if(action==='right'&&i<draftImages.length-1)[draftImages[i+1],draftImages[i]]=[draftImages[i],draftImages[i+1]];
- preview();
-};
+// All photo actions now live in the template itself.
 function acceptImages(files){const incoming=[...files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)&&f.size<=16*1024*1024);
  if(!incoming.length){message('Wybierz PNG, JPG lub WebP (maks. 16 MB na zdjęcie).');return}
  if(replaceImageIndex>=0){draftImages[replaceImageIndex]=incoming[0];replaceImageIndex=-1}else{for(const file of incoming){const empty=draftImages.findIndex(x=>!x);if(empty>=0)draftImages[empty]=file;else draftImages.push(file)}}
@@ -474,16 +486,16 @@ function acceptImages(files){const incoming=[...files].filter(f=>['image/png','i
  preview();
 }
 $('isaFiles').onchange=e=>{acceptImages(e.target.files);e.target.value=''};
-// Image files can also be dropped directly onto the image collection.
-for(const eventName of ['dragenter','dragover'])$('isaImages').addEventListener(eventName,e=>{e.preventDefault()});
-$('isaImages').addEventListener('drop',e=>{e.preventDefault();acceptImages(e.dataTransfer.files)});
+// Dragging a photo directly onto a picture slot replaces that slot.
+$('isaLivePreview').addEventListener('dragover',e=>{if(e.target.closest('[data-edit-image]'))e.preventDefault()});
+$('isaLivePreview').addEventListener('drop',e=>{const slot=e.target.closest('[data-edit-image]');if(!slot)return;e.preventDefault();replaceImageIndex=Number(slot.dataset.editImage);acceptImages(e.dataTransfer.files)});
 $('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];draftBlocks.push(newBlock({slot}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
 $('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('click',e=>{
  const color=e.target.closest('[data-color-choice]');
  if(color){const editor=color.closest('[data-block-id]'),b=draftBlocks.find(b=>b.id===editor?.dataset.blockId);if(!b)return;b.color=validColor(color.dataset.colorChoice);editor.querySelectorAll('[data-color-choice]').forEach(x=>x.setAttribute('aria-pressed',String(x===color)));renderLivePreview();return}
- const btn=e.target.closest('[data-remove]');if(!btn)return;draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview();
+ const btn=e.target.closest('[data-remove]');if(!btn)return;e.preventDefault();draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview();
 });
 function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=prepareBlocks(selectedTemplate,storedBlocks(r));renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
