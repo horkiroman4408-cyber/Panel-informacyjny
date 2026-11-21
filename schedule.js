@@ -155,12 +155,12 @@ const css=document.createElement('style');css.id='schedule-widget-styles';css.te
 .schedule-workspace{min-width:0}.schedule-board-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 18px}
 .schedule-board-top h2{font-size:clamp(27px,2.5vw,36px);margin:0}.schedule-board-top p{font-size:13px;margin:7px 0 0;color:#738096}
 .schedule-board-top>button{font-size:12px;padding:10px 16px;white-space:nowrap}
-.schedule-drop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.schedule-drop{display:flex;align-items:center;gap:15px;min-width:0;min-height:115px;padding:20px;border:1.5px dashed #b6c9d9;border-radius:22px;background:rgba(255,255,255,.68);cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+.schedule-drop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.schedule-drop{display:flex;align-items:center;gap:10px;min-width:0;min-height:62px;padding:9px 13px;border:1.5px dashed #b6c9d9;border-radius:15px;background:rgba(255,255,255,.68);cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
 .schedule-drop:hover,.schedule-drop.is-over{border-color:#2eacac;background:#effaf8;transform:translateY(-2px)}
-.schedule-drop-icon{width:45px;height:45px;flex:0 0 auto;border-radius:15px;display:grid;place-items:center;background:#edf6f7;font-size:22px}
-.schedule-drop>div{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.schedule-drop strong{font-size:16px;color:#243b4a}.schedule-drop small{font-size:12px;color:#758597;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.schedule-drop-action{padding:8px 13px;border:1px solid #d1e2e6;border-radius:999px;background:#fff;color:#347e84;font-size:12px;font-weight:700}
+.schedule-drop-icon{width:32px;height:32px;flex:0 0 auto;border-radius:10px;display:grid;place-items:center;background:#edf6f7;font-size:17px}
+.schedule-drop>div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.schedule-drop strong{font-size:13px;color:#243b4a}.schedule-drop small{font-size:10px;color:#758597;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.schedule-drop-action{padding:6px 11px;border:1px solid #d1e2e6;border-radius:999px;background:#fff;color:#347e84;font-size:11px;font-weight:700}
 .schedule-board-info{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:19px 0 13px;font-size:12px;color:#68798b}
 .schedule-widget-viewport{position:relative;width:100%;min-height:160px;overflow:hidden;border-radius:18px}.schedule-widget-canvas{position:relative;width:1200px;min-height:160px;transform-origin:top left;background-image:linear-gradient(to right,#42637e0b 1px,transparent 1px),linear-gradient(to bottom,#42637e0b 1px,transparent 1px);background-size:20px 20px}
 .schedule-widget{position:absolute;min-width:0;border:1px solid #d9e3ec;border-radius:17px;overflow:hidden;background:white;box-shadow:0 7px 24px #2b436012;display:flex;flex-direction:column;touch-action:auto}.schedule-widget-body{min-height:0;flex:1}
@@ -208,6 +208,12 @@ body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95v
 .schedule-break-shift h4{font-size:13px;color:#24425b;background:#edf5f4;border-radius:9px;padding:9px 11px;margin:0 0 8px}
 .schedule-break-table{table-layout:fixed}.schedule-break-table th:first-child{width:25%}
 .schedule-break-spm{font-size:12px;padding:8px 10px;border-bottom:1px solid #e1e8ee;overflow-wrap:anywhere}
+/* Time awareness highlights only the relevant break cell. No repeated DOM recreation. */
+.schedule-break-table td.break-current{background:#d5f2e9!important;color:#096451;font-weight:800;box-shadow:inset 0 0 0 1px #62c4a5;position:relative}
+.schedule-break-table td.break-next{background:#fff5df!important;color:#8b611b;font-weight:700;box-shadow:inset 0 0 0 1px #eccf89}
+.schedule-break-table tr:has(td.break-current)>th{background:#e4f5ef;color:#176a56}
+.schedule-break-table tr:has(td.break-next):not(:has(td.break-current))>th{background:#fff7e8;color:#886c3e}
+
 
 /* iPhone-style widgets: a predictable 6-column auto-flowing grid. */
 .schedule-widget-viewport{overflow:visible;min-height:140px}
@@ -257,7 +263,9 @@ function breakMarkup(){
  if(Array.isArray(breaks.shifts)){
   const selected=breaks.shifts.find(s=>s.name===breakShift);
   if(!selected)return '<div class="schedule-empty">Brak tabeli '+esc(breakShift)+' w pliku Excel.</div>';
-  return `<table class="schedule-break-table"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${selected.rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td>${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+   // Ignore duplicated Roman numeral headers in the source sheet and retain only time rows.
+   const rows=selected.rows.filter(r=>(r.times||[]).some(t=>/\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(String(t))));
+   return `<table class="schedule-break-table" data-break-shift="${esc(selected.name)}"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td data-break-time="${esc(t)}">${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
  }
  return '<div class="schedule-empty">Nie znaleziono harmonogramu zmian w pliku Excel.</div>';
 }
@@ -292,6 +300,34 @@ function syncBoardHeight(){
  canvas.style.marginLeft=tv?Math.max(0,(availableWidth-DESIGN_W*boardScale)/2)+'px':'0px';
  viewport.style.height=Math.ceil(naturalHeight*boardScale)+'px';
 }
+// Refresh at most the colored time cells, not the widget markup (no TV animation reset).
+function updateBreakHighlights(){
+ const table=$('scheduleWidgetCanvas').querySelector('.schedule-break-table[data-break-shift]');if(!table)return;
+ const now=new Date(),mins=now.getHours()*60+now.getMinutes();
+ const shiftName=table.dataset.breakShift;
+ // II ZMIANA continues past midnight: times before noon belong to the following day.
+ const anchor=shiftName==='II ZMIANA'?(mins<12*60?-1:0):0;
+ const dayStart=anchor*1440;
+ const spans=[];
+ for(const cell of table.querySelectorAll('td[data-break-time]')){
+  const match=cell.dataset.breakTime.match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})/);
+  cell.classList.remove('break-current','break-next');cell.removeAttribute('title');
+  if(!match)continue;
+  let start=Number(match[1])*60+Number(match[2]),end=Number(match[3])*60+Number(match[4]);
+  if(shiftName==='II ZMIANA'){
+    if(start<12*60)start+=1440;
+    if(end<12*60)end+=1440;
+  }
+  if(end<=start)end+=1440;
+  const absoluteNow=mins-dayStart;
+  spans.push({cell,start,end,now:absoluteNow});
+ }
+ const active=spans.filter(x=>x.start<=x.now&&x.now<x.end);
+ const next=spans.filter(x=>x.start>x.now).sort((a,b)=>a.start-b.start);
+ const selected=active.length?active:(next.length?next.filter(x=>x.start===next[0].start):[]);
+ for(const x of selected){x.cell.classList.add(active.length?'break-current':'break-next');x.cell.title=active.length?'Trwa teraz':'Najbliższa przerwa'}
+}
+setInterval(updateBreakHighlights,30000);
 function render(){
  sourceLabels();const el=$('scheduleWidgetCanvas'),list=orderedItems();
  const dateLabel=$('scheduleTVPlanDate');dateLabel.hidden=!(tv&&tomorrow&&list.some(item=>item.kind==='team'));dateLabel.textContent=dateLabel.hidden?'':`STAN · ${formatDate(tomorrow.date)}`;
@@ -377,7 +413,7 @@ async function parseBreaks(file){
   if(first==='PD'){inPeople=true;continue}
   if(inPeople){const cells=[value(row,1),value(row,3),value(row,5)];if(cells.some(Boolean))people.push({label:'',logins:cells});continue}
   if(!current||!(/^(8|10|12)H$/i.test(first)||(!first&&[1,3,5].some(j=>value(row,j)))))continue;
-  const times=[1,3,5].map(j=>value(row,j));if(times.some(Boolean))current.rows.push({hours:first,times});
+   const times=[1,3,5].map(j=>value(row,j));if(times.some(t=>/\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(t)))current.rows.push({hours:first,times});
  }
  if(!shifts.length||!shifts.some(x=>x.rows.length)){
   const cleaned=rows.map(r=>r.map(v=>v==null?'':String(v).trim())).filter(r=>r.some(Boolean));
