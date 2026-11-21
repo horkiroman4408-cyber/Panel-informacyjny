@@ -294,7 +294,7 @@ function renderTemplates(){
  '8':'<i class="head"></i><i class="body"></i><i class="details"></i>',
  '9':'<i class="head"></i><i class="body"></i><i class="details"></i><i class="extra"></i>'
  };
- $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail])=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon isa-mini-${v}">${mini[v]}</span><strong>${v} · ${label}</strong><small>${detail}</small></button>`).join('');
+ $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail],index)=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon isa-mini-${v}">${mini[v]}</span><strong>${index+1} · ${label}</strong><small>${detail}</small></button>`).join('');
 }
 function renderImages(){
  const textOnly=['7','8','9'].includes(selectedTemplate);
@@ -506,3 +506,5 @@ $('assignment').addEventListener('click',close);$('results').addEventListener('c
 window.incSlides={list,open,close,showTV,restore,isOpen:()=>!area.hidden};
 (async()=>{try{db=await openDB();records=await tx('readonly',s=>s.getAll());records.sort((a,b)=>a.updatedAt-b.updatedAt);choose(records[0]||null)}catch(err){message('Przeglądarka nie pozwala zapisywać zdjęć: '+(err?.message||'IndexedDB'))}})();
 })();
+
+/* v1.1.46: Visual template numbers are consecutive; stable template IDs remain unchanged for saved slides. */
