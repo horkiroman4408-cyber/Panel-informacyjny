@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.53</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.54</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Źródła danych</h3>
@@ -123,7 +123,7 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.53</strong> · Źródła danych i aktualne informacje</summary><p>Jedna zwarta belka źródeł Excel nad harmonogramem. Zaktualizowano opis modułów, przechowywania danych i trybu TV w oknie O aplikacji.</p></details>
+  <details open><summary><strong>v1.1.54</strong> · Nowy wygląd INCYDENTY</summary><p>Przeprojektowano nagłówek, nawigację, źródła danych, karty i edytor komunikatów w spójnym stylu z turkusowym akcentem. Bez zmian w obliczeniach, imporcie oraz harmonogramie TV.</p></details><details><summary><strong>v1.1.53</strong> · Źródła danych i aktualne informacje</summary><p>Jedna zwarta belka źródeł Excel nad harmonogramem. Zaktualizowano opis modułów, przechowywania danych i trybu TV w oknie O aplikacji.</p></details>
   <details><summary><strong>v1.1.52</strong> · Prosta zamiana widżetów</summary><p>Usunięto skalowanie S/M/L, przeciąganie krawędzi i mozaikę. Widżety mają stałe szerokości i można zamieniać je miejscami za uchwyt ⠿.</p></details>
   <details><summary><strong>v1.1.51</strong> · Regulowana mozaika widżetów</summary><p>Zwężanie i poszerzanie widżetów przez uchwyt narożny z podglądem na żywo, dynamiczne przesuwanie kart oraz kompaktowe strefy Excel.</p></details>
   <details><summary><strong>v1.1.50</strong> · Wyśrodkowane nagłówki zakładek</summary><p>Harmonogram pracy i Tablica informacyjna mają wyśrodkowane nagłówki, takie jak Wyniki i normy. Przyciski akcji pozostały po prawej.</p></details>
@@ -670,3 +670,20 @@ updatePeriods();render();
 {const script=document.createElement('script');script.src='schedule.js';document.body.appendChild(script);}
 {const script=document.createElement('script');script.src='info-slides.js';document.body.appendChild(script);}
 {const script=document.createElement('script');script.src='tv-fit.js';document.body.appendChild(script);}
+
+// Visual-only redesign. Existing module functionality and TV event handlers stay unchanged.
+(()=>{
+ const brand=document.querySelector('.brand');
+ if(brand&&!brand.querySelector('.inc-y-logo')){
+   const icon=document.createElement('span');icon.className='inc-y-logo';icon.setAttribute('aria-hidden','true');icon.textContent='INC';
+   brand.prepend(icon);
+ }
+ const icons={assignment:'▦',results:'▥',infoSlidesTab:'▣'};
+ for(const [id,glyph] of Object.entries(icons)){
+   const button=document.getElementById(id);if(!button||button.querySelector('.inc-y-tab-icon'))continue;
+   const icon=document.createElement('span');icon.className='inc-y-tab-icon';icon.setAttribute('aria-hidden','true');icon.textContent=glyph;
+   button.prepend(icon);
+ }
+ const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='theme-yandex.css';stylesheet.id='inc-yandex-theme';
+ document.head.appendChild(stylesheet);
+})();
