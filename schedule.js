@@ -214,8 +214,7 @@ body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95v
 /* Time awareness highlights only the relevant break cell. No repeated DOM recreation. */
 .schedule-break-table td.break-current{background:#d5f2e9!important;color:#096451;font-weight:800;box-shadow:inset 0 0 0 1px #62c4a5;position:relative}
 .schedule-break-table td.break-next{background:#fff5df!important;color:#8b611b;font-weight:700;box-shadow:inset 0 0 0 1px #eccf89}
-.schedule-break-table tr:has(td.break-current)>th{background:#e4f5ef;color:#176a56}
-.schedule-break-table tr:has(td.break-next):not(:has(td.break-current))>th{background:#fff7e8;color:#886c3e}
+/* Keep the duration column neutral: highlight only the time interval cell. */
 
 
 /* Duration selection is separate from team selection. It never hides source rows. */

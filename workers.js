@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.33</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.34</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.33</strong> · Podświetlenie przerw 30 minut wcześniej</summary><p>Nadchodząca przerwa jest wyróżniana dopiero przez 30 minut przed rozpoczęciem. Podczas przerwy pozostaje zielone wyróżnienie, bez przeładowywania widżetów TV.</p></details>
+  <details open><summary><strong>v1.1.34</strong> · Podświetlenie tylko godzin przerw</summary><p>Kolorowe wyróżnienie dotyczy wyłącznie komórek z godzinami. Kolumna Czas pracy (8H / 10H / 12H) pozostaje neutralna.</p></details>
+  <details><summary><strong>v1.1.33</strong> · Podświetlenie przerw 30 minut wcześniej</summary><p>Nadchodząca przerwa jest wyróżniana dopiero przez 30 minut przed rozpoczęciem. Podczas przerwy pozostaje zielone wyróżnienie, bez przeładowywania widżetów TV.</p></details>
   <details><summary><strong>v1.1.32</strong> · Wybór 8H / 10H / 12H w Przerwy</summary><p>Podświetlenie aktualnej i następnej przerwy dotyczy tylko wybranej długości zmiany. Uwzględniono kontynuację 12H i zapis wyboru dla TV.</p></details>
   <details><summary><strong>v1.1.31</strong> · Naprawa inicjalizacji widżetów</summary><p>Przywrócono brakujące definicje rozmiarów S/M/L, skali układu i stanu przeciągania, dzięki czemu tabele znowu się wyświetlają.</p></details>
   <details><summary><strong>v1.1.29</strong> · Poprawione skalowanie widżetów</summary><p>Zmiana rozmiaru nie blokuje się na sąsiednich widżetach, które ustępują miejsca. Minimalna wysokość zależy od treści, nie od wcześniejszego rozmiaru.</p></details>
