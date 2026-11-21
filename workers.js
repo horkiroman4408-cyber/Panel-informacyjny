@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.50</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.51</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.50</strong> · Wyśrodkowane nagłówki zakładek</summary><p>Harmonogram pracy i Tablica informacyjna mają wyśrodkowane nagłówki, takie jak Wyniki i normy. Przyciski akcji pozostały po prawej.</p></details>
+  <details open><summary><strong>v1.1.51</strong> · Regulowana mozaika widżetów</summary><p>Zwężanie i poszerzanie widżetów przez uchwyt narożny z podglądem na żywo, dynamiczne przesuwanie kart oraz kompaktowe strefy Excel.</p></details>
+  <details><summary><strong>v1.1.50</strong> · Wyśrodkowane nagłówki zakładek</summary><p>Harmonogram pracy i Tablica informacyjna mają wyśrodkowane nagłówki, takie jak Wyniki i normy. Przyciski akcji pozostały po prawej.</p></details>
   <details><summary><strong>v1.1.49</strong> · Widżety w układzie Pinterest</summary><p>Widżety o rozmiarach S/M/L układają się w mozaikę bez rozciągania wierszy. Przenoszenie za uchwyt, zachowanie kolumn w TV i mniejsze strefy importu.</p></details>
   <details><summary><strong>v1.1.48</strong> · Uproszczone ustawienia tekstu</summary><p>Usunięto z edytora bloków zbędne pola Wygląd i Miejsce w szablonie. Zachowano układy, kolory oraz zgodność zapisanych podstron.</p></details>
   <details><summary><strong>v1.1.46</strong> · Numeracja szablonów</summary><p>Wybór układów pokazuje numery 1–7. Wewnętrzne identyfikatory pozostają bez zmian, by zachować zgodność zapisanych podstron.</p></details>
