@@ -12,12 +12,13 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <div class="isa-heading"><div><div class="eyebrow">INCYDENTY · KOMUNIKATY</div><h2>Tablica informacyjna</h2><p>Zdjęcia i komunikaty do wyświetlania na telewizorach.</p></div><button type="button" class="primary" id="isaNew">＋ Nowa podstrona</button></div>
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
  <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
+ <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij zdjęcie lub tekst, aby edytować</div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
  <div class="isa-images-heading"><span class="isa-label">Zdjęcia <span>(dodaj, zamień lub usuń)</span></span><button id="isaAddImage" class="isa-add-block" type="button">＋ Dodaj zdjęcie</button></div>
  <div id="isaImages" class="isa-images"></div>
  <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
  <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
  <div id="isaBlocks" class="isa-blocks" aria-label="Bloki tekstowe"></div>
-  <div class="isa-label">Podgląd slajdu</div><div id="isaLivePreview" class="isa-live-preview" aria-label="Podgląd slajdu"></div>
+ 
  <div class="isa-editor-actions"><span id="isaMsg" role="status"></span><button id="isaDelete" type="button">Usuń</button><button id="isaSave" class="primary" type="button">Zapisz podstronę</button></div></div></div>
  <div id="isaTV" class="isa-tv" hidden><div class="isa-tv-frame"></div></div>`;
 const shell=document.querySelector('.shell');shell.append(area);
@@ -169,19 +170,76 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-stage[data-template="6"] .isa-compose-image:has(.isa-image-grid[data-count="0"]){display:none!important}
 .isa-stage[data-template="6"] .isa-compose-zone[data-zone="left"],.isa-stage[data-template="6"] .isa-compose-zone[data-zone="right"]{flex:1 1 230px!important;width:auto!important;max-width:44%!important}
 @media(max-width:700px){.isa-template-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Precisely filled template canvases: same DOM and geometry in preview and TV. */
+.isa-live-preview{padding:14px;background:transparent;min-height:0}
+.isa-stage .isa-template-board{box-sizing:border-box;position:absolute;inset:0;display:grid!important;gap:14px;padding:28px;width:1200px;height:675px;overflow:hidden;align-items:stretch}
+.isa-stage .isa-layout-photo{position:relative;min-width:0;min-height:0;overflow:hidden;border-radius:15px;background:#dce9ec;display:flex;align-items:center;justify-content:center}
+.isa-stage .isa-layout-photo img{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;border-radius:0!important;box-shadow:none!important}
+.isa-stage .isa-layout-photo .isa-layout-placeholder{font-size:21px;font-weight:650;color:#607c87}
+.isa-stage .isa-template-board .isa-layout-text{min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px;align-items:stretch;justify-content:stretch}
+.isa-stage .isa-template-board .isa-caption-card{flex:1 1 auto;min-width:0;min-height:0;max-width:100%!important;width:100%;max-height:100%!important;box-shadow:none!important;padding:22px 26px!important;overflow-wrap:anywhere!important;overflow:hidden!important;display:flex;flex-direction:column;justify-content:center;line-height:1.34!important;font-size:26px!important;border-radius:16px!important}
+.isa-stage .isa-template-board .isa-caption-card[data-text-size="small"]{font-size:20px!important}
+.isa-stage .isa-template-board .isa-caption-card[data-text-size="large"]{font-size:32px!important}
+.isa-stage .isa-template-board .isa-caption-card[data-weight="normal"]{font-weight:400!important}
+.isa-stage .isa-template-board .isa-caption-card[data-weight="bold"]{font-weight:750!important}
+.isa-stage .isa-template-board .isa-caption-card[data-align="left"]{text-align:left!important}
+.isa-stage .isa-template-board .isa-caption-card[data-align="center"]{text-align:center!important}
+.isa-stage .isa-template-board .isa-caption-card[data-align="right"]{text-align:right!important}
+.isa-stage .isa-template-board .isa-caption-card[data-align="justify"]{text-align:justify!important}
+.isa-stage .isa-template-board .isa-layout-placeholder-text{opacity:.66;border:2px dashed #8da7b6!important}
+.isa-stage .isa-template-board [data-edit-image],.isa-stage .isa-template-board [data-edit-block]{cursor:pointer}
+.isa-live-preview .isa-stage [data-edit-image]:hover,.isa-live-preview .isa-stage [data-edit-block]:hover{outline:4px solid #33afa5;outline-offset:-4px}
+.isa-stage .isa-layout-1{grid-template-columns:60fr 40fr;grid-template-rows:110px minmax(0,1fr)}
+.isa-stage .isa-layout-1>.isa-layout-photo{grid-column:1;grid-row:1/span 2}
+.isa-stage .isa-layout-1>.isa-layout-header{grid-column:2;grid-row:1}
+.isa-stage .isa-layout-1>.isa-layout-body{grid-column:2;grid-row:2}
+.isa-stage .isa-layout-1 .isa-layout-header .isa-caption-card{background:#30465c;color:white;font-size:30px!important}
+.isa-stage .isa-layout-2{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) 135px}
+.isa-stage .isa-layout-2>.isa-layout-photo:nth-child(1){grid-column:1;grid-row:1}
+.isa-stage .isa-layout-2>.isa-layout-photo:nth-child(2){grid-column:2;grid-row:1}
+.isa-stage .isa-layout-2>.isa-layout-footer{grid-column:1/span 2;grid-row:2}
+.isa-stage .isa-layout-3{display:block!important;padding:28px}
+.isa-stage .isa-layout-3>.isa-photo-hero{position:absolute;inset:28px}
+.isa-stage .isa-layout-3>.isa-layout-badge{position:absolute;left:50px;top:50px;width:270px;height:90px;z-index:2}
+.isa-stage .isa-layout-3>.isa-layout-overlay{position:absolute;left:50px;right:50px;bottom:50px;height:120px;z-index:2}
+.isa-stage .isa-layout-3 .isa-layout-badge .isa-caption-card{background:#30465c;color:white;font-size:27px!important}
+.isa-stage .isa-layout-3 .isa-layout-overlay .isa-caption-card{background:#fffffff0;color:#30465c;font-size:29px!important}
+.isa-stage .isa-layout-6{grid-template-columns:37fr 63fr;grid-template-rows:100px minmax(0,1fr) minmax(0,1fr)}
+.isa-stage .isa-layout-6>.isa-layout-header{grid-column:1/span 2;grid-row:1}
+.isa-stage .isa-layout-6>.isa-layout-photo{grid-column:1;grid-row:2/span 2}
+.isa-stage .isa-layout-6>.isa-layout-body{grid-column:2;grid-row:2}
+.isa-stage .isa-layout-6>.isa-layout-details{grid-column:2;grid-row:3}
+.isa-stage .isa-layout-6 .isa-layout-header .isa-caption-card{background:#30465c;color:white}
+.isa-stage .isa-layout-6.isa-layout-no-photo{grid-template-columns:1fr}
+.isa-stage .isa-layout-6.isa-layout-no-photo>.isa-layout-photo{display:none!important}
+.isa-stage .isa-layout-6.isa-layout-no-photo>.isa-layout-body,.isa-stage .isa-layout-6.isa-layout-no-photo>.isa-layout-details{grid-column:1}
+.isa-template-icon{position:relative;display:grid!important;gap:3px;background:#e9f0f3}
+.isa-template-icon i{display:block;border-radius:4px;background:#b6d3d8}
+.isa-mini-1{grid-template-columns:2fr 1fr!important;grid-template-rows:1fr 1fr!important}.isa-mini-1 .photo{grid-row:span 2}.isa-mini-1 .head{background:#30465c}.isa-mini-1 .body{background:#fff}
+.isa-mini-2{grid-template-columns:1fr 1fr!important;grid-template-rows:2fr 1fr!important}.isa-mini-2 .footer{grid-column:span 2;background:#fff}
+.isa-mini-3{display:block!important}.isa-mini-3 .hero{position:absolute;inset:5px}.isa-mini-3 .badge{position:absolute;top:9px;left:9px;width:26%;height:23%;background:#30465c}.isa-mini-3 .overlay{position:absolute;bottom:9px;left:9px;right:9px;height:25%;background:#fff}
+.isa-mini-6{grid-template-columns:1fr 2fr!important;grid-template-rows:1fr 2fr!important}.isa-mini-6 .head{grid-column:span 2;background:#30465c}.isa-mini-6 .body{background:#fff}
+
 `;document.head.append(style);
 function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
 function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
 const TEMPLATES=[['1','Foto + tekst','Foto obok informacji'],['2','Dwa zdjęcia','Zdjęcia obok siebie'],['3','Duże zdjęcie','Tekst na fotografii'],['6','Tablica','Komunikaty i zdjęcia']];
 const validTemplate=t=>TEMPLATES.some(v=>v[0]===String(t))?String(t):'1';
-const imagesFor=slide=>Array.isArray(slide?.images)?slide.images.filter(Boolean):slide?.image?[slide.image]:[];
-const imageURLS=(blobs,collection)=>blobs.map(b=>{const u=URL.createObjectURL(b);collection.push(u);return u});
+const imagesFor=slide=>Array.isArray(slide?.images)?slide.images.slice(0,4):slide?.image?[slide.image]:[];
+const imageURLS=(blobs,collection)=>blobs.map(b=>{if(!b)return null;const u=URL.createObjectURL(b);collection.push(u);return u});
 function renderTemplates(){
- $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail])=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon">${Array.from({length:8},(_,i)=>`<i class="${(v==='6'||(v==='1'&&i%4===3)||(v==='2'&&i>=6))?'txt':''}" style="${v==='3'&&i<7?'background:#b2cbd1':''}"></i>`).join('')}</span><strong>${v} · ${label}</strong><small>${detail}</small></button>`).join('');
+ const mini={
+ '1':'<i class="photo"></i><i class="head"></i><i class="body"></i>',
+ '2':'<i class="photo"></i><i class="photo"></i><i class="footer"></i>',
+ '3':'<i class="hero"></i><i class="badge"></i><i class="overlay"></i>',
+ '6':'<i class="head"></i><i class="photo"></i><i class="body"></i>'
+ };
+ $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail])=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon isa-mini-${v}">${mini[v]}</span><strong>${v} · ${label}</strong><small>${detail}</small></button>`).join('');
 }
 function renderImages(){
- const host=$('isaImages');host.innerHTML=draftImages.map((_,i)=>`<div class="isa-image-slot" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong><img alt="Zdjęcie ${i+1}" /><div class="isa-slot-actions"><button type="button" data-image-action="replace">Zamień</button><button type="button" data-image-action="left" ${i===0?'disabled':''}>←</button><button type="button" data-image-action="right" ${i===draftImages.length-1?'disabled':''}>→</button><button type="button" data-image-action="remove">Usuń</button></div></div>`).join('')+(draftImages.length?'':'<div class="isa-template-empty">Brak zdjęć. Możesz dodać zdjęcia albo przygotować slajd tekstowy (szablon 6).</div>');
- const urls=imageURLS(draftImages,previewURLs);host.querySelectorAll('.isa-image-slot img').forEach((im,i)=>im.src=urls[i]);
+ const host=$('isaImages'),slots=Math.max(draftImages.length,selectedTemplate==='2'?2:selectedTemplate==='6'?0:1);
+ host.innerHTML=Array.from({length:slots},(_,i)=>`<div class="isa-image-slot${draftImages[i]?'':' is-empty'}" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong>${draftImages[i]?'<img alt="Zdjęcie '+(i+1)+'" />':'<div>＋ Kliknij, aby dodać</div>'}<div class="isa-slot-actions"><button type="button" data-image-action="replace">${draftImages[i]?'Zamień':'Dodaj'}</button><button type="button" data-image-action="remove" ${draftImages[i]?'':'disabled'}>Usuń</button></div></div>`).join('')||'<div class="isa-template-empty">Slajd tekstowy, zdjęcie jest opcjonalne.</div>';
+ const urls=imageURLS(draftImages,previewURLs);host.querySelectorAll('.isa-image-slot img').forEach(im=>im.src=urls[Number(im.closest('[data-image-index]').dataset.imageIndex)]||'');
 }
 const message=s=>{$('isaMsg').textContent=s};
 function list(){return records.map(s=>({id:'info:'+s.id,name:'Informacje · '+s.title,description:'Zdjęcie i bloki tekstowe',available:true}))}
@@ -198,7 +256,22 @@ const validWeight=v=>WEIGHTS.includes(v)?v:'bold';
 const validAlign=v=>ALIGNS.includes(v)?v:'center';
 const validTextSize=v=>TEXT_SIZES.includes(v)?v:'medium';
 let draftBlocks=[];
-const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize)});
+const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize),slot:String(data.slot||'')});
+const TEMPLATE_FIELDS={
+ '1':[['header','UWAGA!'],['body','Ważna informacja dla pracowników']],
+ '2':[['footer','Porównanie produktów']],
+ '3':[['badge','WAŻNE!'],['overlay','Instrukcja prawidłowego pakowania']],
+ '6':[['header','OGŁOSZENIE DLA PRACOWNIKÓW'],['body','Co się zmieniło?'],['details','Co należy zrobić?']]
+};
+function prepareBlocks(template,blocks){
+ const slots=TEMPLATE_FIELDS[template].map(x=>x[0]);
+ const copied=blocks.filter(b=>String(b.text||'').trim()).map(b=>({...b}));
+ const used=new Set();
+ // Older records did not have slot identifiers. Assign them in visible order.
+ copied.forEach((b,i)=>{if(!slots.includes(b.slot)||used.has(b.slot)){b.slot=slots.find(x=>!used.has(x))||slots[slots.length-1]}used.add(b.slot)});
+ for(const [slot] of TEMPLATE_FIELDS[template])if(!used.has(slot))copied.push(newBlock({slot,style:slot==='header'||slot==='badge'?'dark':'light',align:slot==='header'||slot==='badge'?'center':'left'}));
+ return copied;
+}
 function storedBlocks(slide){
  if(Array.isArray(slide?.textBlocks))return slide.textBlocks.map(newBlock);
  return slide?.caption?[newBlock({text:slide.caption,position:slide.position,style:slide.cardStyle})]:[];
@@ -209,27 +282,47 @@ const ALIGN_LABELS=[['left','Do lewej'],['center','Do środka'],['right','Do pra
 const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
 const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
 function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
+ $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Miejsce w szablonie</label><select data-field="slot">${TEMPLATE_FIELDS[selectedTemplate].map(([v,l])=>`<option value="${v}" ${v===b.slot?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
 }
 function compose(imageURLs,blocks,template='1',placeholder=false){
- const composition=document.createElement('div');composition.className='isa-composition';
- const top=document.createElement('div');top.className='isa-compose-zone';top.dataset.zone='top';
- const bottom=document.createElement('div');bottom.className='isa-compose-zone';bottom.dataset.zone='bottom';
- const main=document.createElement('div');main.className='isa-composition-main';
- const left=document.createElement('div');left.className='isa-compose-zone';left.dataset.zone='left';
- const right=document.createElement('div');right.className='isa-compose-zone';right.dataset.zone='right';
- const imageArea=document.createElement('div');imageArea.className='isa-compose-image';
- const grid=document.createElement('div');grid.className='isa-image-grid';grid.dataset.count=String(Math.min(imageURLs.length,4));
- for(const url of imageURLs.slice(0,4)){const im=document.createElement('img');im.src=url;im.alt='Zdjęcie slajdu';grid.append(im)}
- if(!imageURLs.length&&placeholder){const empty=document.createElement('div');empty.className='isa-empty-image';empty.textContent=template==='6'?'Slajd tekstowy':'Dodaj zdjęcie';grid.append(empty)}
- imageArea.append(grid);
- const overlayTop=document.createElement('div');overlayTop.className='isa-compose-overlay';overlayTop.dataset.zone='overlay-top';
- const overlayBottom=document.createElement('div');overlayBottom.className='isa-compose-overlay';overlayBottom.dataset.zone='overlay-bottom';
- const zones={top,bottom,left,right,'overlay-top':overlayTop,'overlay-bottom':overlayBottom};
- for(const b of blocks){if(!b.text.trim())continue;const card=document.createElement('div');card.className='isa-caption-card';card.dataset.style=validStyle(b.style);card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);card.textContent=b.text;zones[validPosition(b.position)].append(card)}
- imageArea.append(overlayTop,overlayBottom);main.append(left,imageArea,right);composition.append(top,main,bottom);
- if(!left.childElementCount)left.style.display='none';if(!right.childElementCount)right.style.display='none';
- return composition;
+ const editor=placeholder===true;
+ const board=document.createElement('div');board.className='isa-template-board isa-layout-'+validTemplate(template);
+ const photoCount=template==='2'?2:1;
+ const createPhoto=(i)=>{
+  const slot=document.createElement('div');slot.className='isa-layout-photo';slot.dataset.editImage=String(i);
+  if(imageURLs[i]){const im=document.createElement('img');im.src=imageURLs[i];im.alt='Zdjęcie '+(i+1);slot.append(im)}
+  else if(editor){const empty=document.createElement('span');empty.className='isa-layout-placeholder';empty.textContent='＋ Zdjęcie '+(i+1);slot.append(empty)}
+  else{slot.classList.add('isa-layout-missing')}
+  if(editor){slot.setAttribute('role','button');slot.setAttribute('tabindex','0');slot.setAttribute('title','Kliknij, aby wczytać zdjęcie')}
+  return slot;
+ };
+ const createText=(slotName)=>{
+  const container=document.createElement('div');container.className='isa-layout-text isa-layout-'+slotName;
+  const matching=blocks.filter(b=>b.slot===slotName);
+  if(!matching.length&&editor){const blank=newBlock({slot:slotName});matching.push(blank)}
+  for(const b of matching){
+   if(!b.text.trim()&&!editor)continue;
+   const card=document.createElement('div');card.className='isa-caption-card isa-layout-card';card.dataset.style=validStyle(b.style);
+   card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);
+   card.dataset.editBlock=b.id;card.textContent=b.text.trim()||(TEMPLATE_FIELDS[template].find(x=>x[0]===slotName)?.[1]||'Dodaj tekst');
+   if(!b.text.trim())card.classList.add('isa-layout-placeholder-text');
+   if(editor){card.setAttribute('role','button');card.setAttribute('tabindex','0');card.title='Kliknij, aby wpisać tekst'}
+   container.append(card);
+  }
+  return container;
+ };
+ const el=(tag,cls)=>{const n=document.createElement(tag);n.className=cls;return n};
+ if(template==='1'){
+  board.append(createPhoto(0),createText('header'),createText('body'));
+ }else if(template==='2'){
+  board.append(createPhoto(0),createPhoto(1),createText('footer'));
+ }else if(template==='3'){
+  const photo=createPhoto(0);photo.classList.add('isa-photo-hero');board.append(photo,createText('badge'),createText('overlay'));
+ }else{
+  board.append(createText('header'),createPhoto(0),createText('body'),createText('details'));
+  if(!imageURLs[0]&&!editor)board.classList.add('isa-layout-no-photo');
+ }
+ return board;
 }
 const STAGE_WIDTH=1200,STAGE_HEIGHT=675;
 function stageFor(imageURLs,blocks,template,placeholder=false){
@@ -264,23 +357,28 @@ fitObserver.observe($('isaLivePreview'));fitObserver.observe($('isaTV'));
 function renderLivePreview(){
  const host=$('isaLivePreview');if(!host)return;
  // Do not revoke object URLs until both editor thumbnails and stage have been replaced.
- const urls=[...$('isaImages').querySelectorAll('.isa-image-slot img')].map(im=>im.src);
+ const urls=Array.from({length:Math.max(draftImages.length,selectedTemplate==='2'?2:1)},(_,i)=>$('isaImages').querySelector(`[data-image-index="${i}"] img`)?.src||null);
  const stage=stageFor(urls,draftBlocks,selectedTemplate,true);host.replaceChildren(stage);
  fitStage(stage,false);
 }
-$('isaTemplates').onclick=e=>{const b=e.target.closest('[data-template]');if(!b)return;selectedTemplate=validTemplate(b.dataset.template);renderTemplates();renderLivePreview()};
+$('isaLivePreview').addEventListener('click',e=>{
+ const block=e.target.closest('[data-edit-block]');if(block){const editor=$('isaBlocks').querySelector(`[data-block-id="${block.dataset.editBlock}"] textarea`);if(editor){editor.scrollIntoView({behavior:'smooth',block:'center'});editor.focus()}return}
+ const photo=e.target.closest('[data-edit-image]');if(photo){replaceImageIndex=Number(photo.dataset.editImage);$('isaFiles').click()}
+});
+$('isaLivePreview').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const target=e.target.closest('[data-edit-block],[data-edit-image]');if(target){e.preventDefault();target.click()}}});
+$('isaTemplates').onclick=e=>{const b=e.target.closest('[data-template]');if(!b)return;selectedTemplate=validTemplate(b.dataset.template);draftBlocks=prepareBlocks(selectedTemplate,draftBlocks);renderTemplates();renderEditors();preview()};
 let replaceImageIndex=-1;
 $('isaAddImage').onclick=()=>{replaceImageIndex=-1;$('isaFiles').click()};
 $('isaImages').onclick=e=>{const b=e.target.closest('[data-image-action]'),slot=e.target.closest('[data-image-index]');if(!b||!slot)return;const i=Number(slot.dataset.imageIndex),action=b.dataset.imageAction;
  if(action==='replace'){replaceImageIndex=i;$('isaFiles').click();return}
- if(action==='remove')draftImages.splice(i,1);
+ if(action==='remove')draftImages[i]=null;
  if(action==='left'&&i>0)[draftImages[i-1],draftImages[i]]=[draftImages[i],draftImages[i-1]];
  if(action==='right'&&i<draftImages.length-1)[draftImages[i+1],draftImages[i]]=[draftImages[i],draftImages[i+1]];
  preview();
 };
 function acceptImages(files){const incoming=[...files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)&&f.size<=16*1024*1024);
  if(!incoming.length){message('Wybierz PNG, JPG lub WebP (maks. 16 MB na zdjęcie).');return}
- if(replaceImageIndex>=0){draftImages[replaceImageIndex]=incoming[0];replaceImageIndex=-1}else draftImages.push(...incoming);
+ if(replaceImageIndex>=0){draftImages[replaceImageIndex]=incoming[0];replaceImageIndex=-1}else{for(const file of incoming){const empty=draftImages.findIndex(x=>!x);if(empty>=0)draftImages[empty]=file;else draftImages.push(file)}}
  if(draftImages.length>4){draftImages=draftImages.slice(0,4);message('Maksymalnie 4 zdjęcia na jednym slajdzie.')}else message('Zdjęcia dodane. Zapisz podstronę, aby zachować zmiany.');
  preview();
 }
@@ -288,11 +386,11 @@ $('isaFiles').onchange=e=>{acceptImages(e.target.files);e.target.value=''};
 // Image files can also be dropped directly onto the image collection.
 for(const eventName of ['dragenter','dragover'])$('isaImages').addEventListener(eventName,e=>{e.preventDefault()});
 $('isaImages').addEventListener('drop',e=>{e.preventDefault();acceptImages(e.dataTransfer.files)});
-$('isaAddBlock').onclick=()=>{const position=selectedTemplate==='1'?'right':selectedTemplate==='3'?'overlay-bottom':selectedTemplate==='6'?'top':'bottom';draftBlocks.push(newBlock({position}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
+$('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];draftBlocks.push(newBlock({slot}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
 $('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('click',e=>{const btn=e.target.closest('[data-remove]');if(!btn)return;draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview()});
-function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=storedBlocks(r);renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
+function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=prepareBlocks(selectedTemplate,storedBlocks(r));renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
 function close(){area.hidden=true;$('isaTV').hidden=true;revokeTV();$('infoSlidesTab').classList.remove('active');}
 function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>fitStage(stage,true));}
@@ -301,10 +399,10 @@ $('isaNew').onclick=()=>choose(null);
 $('isaList').onclick=e=>{const b=e.target.closest('button[data-id]');if(b)choose(records.find(r=>r.id===b.dataset.id))};
 $('isaSave').onclick=async()=>{if(saving)return;const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);
  if(!title){message('Wpisz tytuł podstrony.');return}
- if(!draftImages.length&&selectedTemplate!=='6'){message('Dodaj zdjęcie lub wybierz szablon 6 dla slajdu tekstowego.');return}
- if(!draftImages.length&&!textBlocks.length){message('Dodaj zdjęcie lub blok tekstu.');return}
+ if(!draftImages.some(Boolean)&&selectedTemplate!=='6'){message('Dodaj zdjęcie lub wybierz szablon 6 dla slajdu tekstowego.');return}
+ if(!draftImages.some(Boolean)&&!textBlocks.length){message('Dodaj zdjęcie lub blok tekstu.');return}
  saving=true;$('isaSave').disabled=true;
- try{const old=records.find(r=>r.id===selectedId);const item={id:old?.id||id(),title,template:selectedTemplate,textBlocks,images:[...draftImages],image:draftImages[0]||null,updatedAt:Date.now()};await tx('readwrite',s=>s.put(item));const i=records.findIndex(s=>s.id===item.id);if(i>=0)records[i]=item;else records.push(item);choose(item);message('Podstrona zapisana. Możesz wybrać ją w ustawieniach TV.');$('tv').disabled=false;}
+ try{const old=records.find(r=>r.id===selectedId);const item={id:old?.id||id(),title,template:selectedTemplate,textBlocks,images:[...draftImages],image:draftImages.find(Boolean)||null,updatedAt:Date.now()};await tx('readwrite',s=>s.put(item));const i=records.findIndex(s=>s.id===item.id);if(i>=0)records[i]=item;else records.push(item);choose(item);message('Podstrona zapisana. Możesz wybrać ją w ustawieniach TV.');$('tv').disabled=false;}
  catch(err){message('Nie udało się zapisać podstrony: '+(err?.message||'brak miejsca'))}finally{saving=false;$('isaSave').disabled=false}
 };
 $('isaDelete').onclick=async()=>{const item=records.find(r=>r.id===selectedId);if(!item||!confirm('Usunąć podstronę '+item.title+'?'))return;try{await tx('readwrite',s=>s.delete(item.id));records=records.filter(r=>r.id!==item.id);choose(records[0]||null);$('tv').disabled=!records.length;message('Usunięto podstronę.')}catch{message('Nie udało się usunąć podstrony.')}};
