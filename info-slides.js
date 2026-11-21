@@ -116,6 +116,27 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-zone[data-zone="left"],bod
 body.unified-tv .isa-tv-frame .isa-stage .isa-caption-card{font-size:25px!important;padding:18px 24px!important;max-height:none!important;overflow:visible!important}
 body.unified-tv .isa-tv-frame .isa-stage .isa-compose-overlay .isa-caption-card{font-size:22px!important;padding:14px 20px!important;max-height:220px!important;overflow:auto!important}
 body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!important;max-width:100%!important}
+
+/* Clean, flat announcement blocks. No artificial drop-shadows in editor or TV. */
+.isa-stage .isa-caption-card,.isa-stage .isa-caption-card[data-style="dark"],.isa-stage .isa-caption-card[data-style="glass"]{box-shadow:none!important;filter:none!important}
+.isa-stage .isa-compose-image img,body.unified-tv .isa-tv-frame img{box-shadow:none!important;filter:none!important}
+.isa-stage .isa-caption-card{font-weight:700!important;text-align:center!important}
+.isa-stage .isa-caption-card[data-weight="normal"]{font-weight:400!important}
+.isa-stage .isa-caption-card[data-weight="bold"]{font-weight:750!important}
+.isa-stage .isa-caption-card[data-align="left"]{text-align:left!important}
+.isa-stage .isa-caption-card[data-align="center"]{text-align:center!important}
+.isa-stage .isa-caption-card[data-align="right"]{text-align:right!important}
+.isa-stage .isa-caption-card[data-align="justify"]{text-align:justify!important;text-justify:inter-word}
+.isa-stage .isa-caption-card[data-text-size="small"]{font-size:19px!important}
+.isa-stage .isa-caption-card[data-text-size="medium"]{font-size:25px!important}
+.isa-stage .isa-caption-card[data-text-size="large"]{font-size:32px!important}
+.isa-stage .isa-compose-overlay .isa-caption-card[data-text-size="small"]{font-size:17px!important}
+.isa-stage .isa-compose-overlay .isa-caption-card[data-text-size="medium"]{font-size:22px!important}
+.isa-stage .isa-compose-overlay .isa-caption-card[data-text-size="large"]{font-size:28px!important}
+.isa-typography-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 0 15px}
+.isa-typography-row>div{min-width:0}
+.isa-typography-row select{width:100%;min-width:0;border:1px solid #dbe5ef;background:#fff;color:#30465c;border-radius:12px;font:inherit;font-size:12px;padding:10px;outline-offset:3px}
+@media(max-width:620px){.isa-typography-row{grid-template-columns:1fr 1fr}.isa-typography-row>div:last-child{grid-column:span 2}}
 `;document.head.append(style);
 const revokePreview=()=>{if(previewURL){URL.revokeObjectURL(previewURL);previewURL=null}};
 const message=s=>{$('isaMsg').textContent=s};
@@ -126,16 +147,25 @@ const POSITIONS=['bottom','top','left','right','overlay-bottom','overlay-top'];
 const STYLES=['light','dark','glass'];
 const validPosition=p=>POSITIONS.includes(p)?p:'bottom';
 const validStyle=p=>STYLES.includes(p)?p:'light';
+const WEIGHTS=['normal','bold'];
+const ALIGNS=['left','center','right','justify'];
+const TEXT_SIZES=['small','medium','large'];
+const validWeight=v=>WEIGHTS.includes(v)?v:'bold';
+const validAlign=v=>ALIGNS.includes(v)?v:'center';
+const validTextSize=v=>TEXT_SIZES.includes(v)?v:'medium';
 let draftBlocks=[];
-const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle)});
+const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize)});
 function storedBlocks(slide){
  if(Array.isArray(slide?.textBlocks))return slide.textBlocks.map(newBlock);
  return slide?.caption?[newBlock({text:slide.caption,position:slide.position,style:slide.cardStyle})]:[];
 }
 const POS_LABELS=[['bottom','Pod zdjęciem'],['top','Nad zdjęciem'],['left','Po lewej'],['right','Po prawej'],['overlay-bottom','Na zdjęciu · na dole'],['overlay-top','Na zdjęciu · u góry']];
 const STYLE_LABELS=[['light','Jasna karta'],['dark','Ciemna karta'],['glass','Szklana karta']];
+const ALIGN_LABELS=[['left','Do lewej'],['center','Do środka'],['right','Do prawej'],['justify','Wyjustuj']];
+const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
+const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
 function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
+ $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
 }
 function compose(imageURL,blocks,placeholder=false){
  const composition=document.createElement('div');composition.className='isa-composition';
@@ -150,7 +180,7 @@ function compose(imageURL,blocks,placeholder=false){
  const overlayTop=document.createElement('div');overlayTop.className='isa-compose-overlay';overlayTop.dataset.zone='overlay-top';
  const overlayBottom=document.createElement('div');overlayBottom.className='isa-compose-overlay';overlayBottom.dataset.zone='overlay-bottom';
  const zones={top,bottom,left,right,'overlay-top':overlayTop,'overlay-bottom':overlayBottom};
- for(const b of blocks){if(!b.text.trim())continue;const card=document.createElement('div');card.className='isa-caption-card';card.dataset.style=validStyle(b.style);card.textContent=b.text;zones[validPosition(b.position)].append(card)}
+ for(const b of blocks){if(!b.text.trim())continue;const card=document.createElement('div');card.className='isa-caption-card';card.dataset.style=validStyle(b.style);card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);card.textContent=b.text;zones[validPosition(b.position)].append(card)}
  imageArea.append(overlayTop,overlayBottom);main.append(left,imageArea,right);composition.append(top,main,bottom);
  if(!left.childElementCount)left.style.display='none';if(!right.childElementCount)right.style.display='none';
  return composition;
