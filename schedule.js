@@ -272,6 +272,12 @@ body.unified-tv #assign .schedule-widget-size-group{display:none!important}
 .schedule-widget-canvas.is-board-drop{outline:2px dashed #44b6a7;outline-offset:3px}
 @media(max-width:720px){.schedule-drop-grid{flex-wrap:wrap}.schedule-drop{flex-basis:100%}.schedule-widget[data-size]{grid-column:span 6!important}}
 
+
+/* Centered heading aligned with Wyniki i normy; actions stay on the right. */
+body:not(.unified-tv) #assign .schedule-board-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+body:not(.unified-tv) #assign .schedule-board-top>div:first-child{grid-column:2;text-align:center;min-width:0}
+body:not(.unified-tv) #assign .schedule-board-top>button{grid-column:3;justify-self:end;margin:0}
+@media(max-width:740px){body:not(.unified-tv) #assign .schedule-board-top{grid-template-columns:1fr;gap:10px}body:not(.unified-tv) #assign .schedule-board-top>div:first-child{grid-column:1}body:not(.unified-tv) #assign .schedule-board-top>button{grid-column:1;justify-self:end}}
 `;document.head.append(css);
 const iconEye=(off)=>off?'◌':'◉';
 function saveBoard(){try{localStorage.setItem(BOARD_KEY,JSON.stringify(board))}catch{status('Nie udało się zapisać układu.')}}

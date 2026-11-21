@@ -297,6 +297,12 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-block-editor .isa-format-row{margin-bottom:5px!important}
 @media (hover:none){.isa-photo-remove{opacity:1}}
 @media (max-width:650px){.isa-block-editor .isa-typography-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Match the centered section heading used by Wyniki i normy. */
+body:not(.unified-tv) #infoSlidesArea .isa-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+body:not(.unified-tv) #infoSlidesArea .isa-heading>div:first-child{grid-column:2;text-align:center;min-width:0}
+body:not(.unified-tv) #infoSlidesArea .isa-heading>button{grid-column:3;justify-self:end;margin:0}
+@media(max-width:740px){body:not(.unified-tv) #infoSlidesArea .isa-heading{grid-template-columns:1fr;gap:10px}body:not(.unified-tv) #infoSlidesArea .isa-heading>div:first-child{grid-column:1}body:not(.unified-tv) #infoSlidesArea .isa-heading>button{grid-column:1;justify-self:end}}
 `;document.head.append(style);
 function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
 function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
