@@ -3,7 +3,7 @@
 'use strict';
 const $=id=>document.getElementById(id), escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const DB='incydenty-info-slides', STORE='slides';
-let records=[], selectedId=null, pendingImage=null, previewURL=null, tvURL=null, db=null, saving=false;
+let records=[], selectedId=null, draftImages=[], previewURLs=[], tvURLs=[], db=null, saving=false, selectedTemplate='1';
 const openDB=()=>new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE))request.result.createObjectStore(STORE,{keyPath:'id'})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
 const tx=(mode,operation)=>new Promise((resolve,reject)=>{const tr=db.transaction(STORE,mode), req=operation(tr.objectStore(STORE));req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);tr.onerror=()=>reject(tr.error)});
 const id=()=> 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -11,8 +11,10 @@ const nav=document.getElementById('assignment');const infoTab=document.createEle
 const area=document.createElement('section');area.id='infoSlidesArea';area.hidden=true;area.className='info-slides-area';area.innerHTML=`
  <div class="isa-heading"><div><div class="eyebrow">INCYDENTY · KOMUNIKATY</div><h2>Tablica informacyjna</h2><p>Zdjęcia i komunikaty do wyświetlania na telewizorach.</p></div><button type="button" class="primary" id="isaNew">＋ Nowa podstrona</button></div>
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
- <div class="isa-editor"><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
- <div class="isa-label">Zdjęcie / grafika</div><div id="isaDrop" class="isa-drop" role="button" tabindex="0" aria-label="Wczytaj zdjęcie"><input id="isaFile" type="file" accept="image/png,image/jpeg,image/webp" hidden/><div id="isaPreview" class="isa-preview"><span class="isa-drop-ico">▧</span><strong>Przeciągnij zdjęcie tutaj</strong><small>lub kliknij, aby wybrać PNG / JPG / WebP</small></div></div>
+ <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
+ <div class="isa-images-heading"><span class="isa-label">Zdjęcia <span>(dodaj, zamień lub usuń)</span></span><button id="isaAddImage" class="isa-add-block" type="button">＋ Dodaj zdjęcie</button></div>
+ <div id="isaImages" class="isa-images"></div>
+ <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
  <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
  <div id="isaBlocks" class="isa-blocks" aria-label="Bloki tekstowe"></div>
   <div class="isa-label">Podgląd slajdu</div><div id="isaLivePreview" class="isa-live-preview" aria-label="Podgląd slajdu"></div>
@@ -137,12 +139,54 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-typography-row>div{min-width:0}
 .isa-typography-row select{width:100%;min-width:0;border:1px solid #dbe5ef;background:#fff;color:#30465c;border-radius:12px;font:inherit;font-size:12px;padding:10px;outline-offset:3px}
 @media(max-width:620px){.isa-typography-row{grid-template-columns:1fr 1fr}.isa-typography-row>div:last-child{grid-column:span 2}}
+
+/* Template-first slide editor with independently managed image slots. */
+.isa-template-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:20px}
+.isa-template-option{border:1px solid #dce6ef;border-radius:13px;background:#f8fafc;color:#3e5368;padding:10px 8px;text-align:left;cursor:pointer;min-width:0;box-shadow:none!important}
+.isa-template-option[aria-pressed="true"]{background:#eaf8f6;border-color:#2dada4;box-shadow:inset 0 0 0 1px #2dada433!important}
+.isa-template-option strong{display:block;margin:7px 0 2px;font-size:11px}.isa-template-option small{font-size:10px;line-height:1.25;display:block}
+.isa-template-icon{height:46px;display:grid;gap:4px;border-radius:7px;padding:5px;background:#e8eef4;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr)}
+.isa-template-icon i{display:block;background:#b2cbd1;border-radius:3px}.isa-template-icon i.txt{background:#fff}
+.isa-images-heading{display:flex;align-items:center;justify-content:space-between;margin:3px 0 10px;gap:10px}.isa-images-heading .isa-label{margin:0}
+.isa-images{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:18px}
+.isa-image-slot{position:relative;background:#f8fbfe;border:1px dashed #bbccdc;border-radius:14px;min-height:126px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.isa-image-slot img{height:100px;max-width:100%;object-fit:contain;align-self:center;border-radius:8px}.isa-image-slot strong{font-size:11px;color:#354a5d}
+.isa-image-slot .isa-slot-actions{display:flex;flex-wrap:wrap;gap:5px}.isa-image-slot button{font-size:11px;padding:5px 7px;background:white;border:1px solid #d9e5ed;border-radius:8px;color:#39556a;cursor:pointer}
+.isa-image-slot.is-empty{align-items:center;justify-content:center;cursor:pointer;color:#718397}.isa-image-slot.is-empty strong{font-size:13px}
+.isa-template-empty{grid-column:1/-1;border:1px dashed #bfd0d9;background:#f8fbfe;padding:13px;border-radius:12px;color:#687e91;font-size:12px}
+.isa-stage .isa-image-grid{display:grid!important;gap:14px!important;align-content:center;justify-items:stretch;max-width:100%;max-height:100%;min-width:0;min-height:0;width:100%;height:100%}
+.isa-stage .isa-image-grid[data-count="1"]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.isa-stage .isa-image-grid[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
+.isa-stage .isa-image-grid[data-count="3"],.isa-stage .isa-image-grid[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.isa-stage .isa-image-grid img{width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important;border-radius:10px}
+.isa-stage[data-template="2"] .isa-composition-main{flex-direction:column!important;justify-content:stretch!important}
+.isa-stage[data-template="2"] .isa-compose-image{width:100%;min-height:0}
+.isa-stage[data-template="3"] .isa-composition-main{position:relative!important;flex:1 1 auto!important}
+.isa-stage[data-template="3"] .isa-compose-image{flex:1 1 100%!important}
+.isa-stage[data-template="3"] .isa-image-grid{height:100%}
+.isa-stage[data-template="6"] .isa-composition{justify-content:flex-start!important}
+.isa-stage[data-template="6"] .isa-composition-main{flex-wrap:wrap!important;align-content:center!important}
+.isa-stage[data-template="6"] .isa-compose-image:has(.isa-image-grid[data-count="0"]){display:none!important}
+.isa-stage[data-template="6"] .isa-compose-zone[data-zone="left"],.isa-stage[data-template="6"] .isa-compose-zone[data-zone="right"]{flex:1 1 230px!important;width:auto!important;max-width:44%!important}
+@media(max-width:700px){.isa-template-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
 `;document.head.append(style);
-const revokePreview=()=>{if(previewURL){URL.revokeObjectURL(previewURL);previewURL=null}};
+function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
+function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
+const TEMPLATES=[['1','Foto + tekst','Foto obok informacji'],['2','Dwa zdjęcia','Zdjęcia obok siebie'],['3','Duże zdjęcie','Tekst na fotografii'],['6','Tablica','Komunikaty i zdjęcia']];
+const validTemplate=t=>TEMPLATES.some(v=>v[0]===String(t))?String(t):'1';
+const imagesFor=slide=>Array.isArray(slide?.images)?slide.images.filter(Boolean):slide?.image?[slide.image]:[];
+const imageURLS=(blobs,collection)=>blobs.map(b=>{const u=URL.createObjectURL(b);collection.push(u);return u});
+function renderTemplates(){
+ $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail])=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon">${Array.from({length:8},(_,i)=>`<i class="${(v==='6'||(v==='1'&&i%4===3)||(v==='2'&&i>=6))?'txt':''}" style="${v==='3'&&i<7?'background:#b2cbd1':''}"></i>`).join('')}</span><strong>${v} · ${label}</strong><small>${detail}</small></button>`).join('');
+}
+function renderImages(){
+ const host=$('isaImages');host.innerHTML=draftImages.map((_,i)=>`<div class="isa-image-slot" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong><img alt="Zdjęcie ${i+1}" /><div class="isa-slot-actions"><button type="button" data-image-action="replace">Zamień</button><button type="button" data-image-action="left" ${i===0?'disabled':''}>←</button><button type="button" data-image-action="right" ${i===draftImages.length-1?'disabled':''}>→</button><button type="button" data-image-action="remove">Usuń</button></div></div>`).join('')+(draftImages.length?'':'<div class="isa-template-empty">Brak zdjęć. Możesz dodać zdjęcia albo przygotować slajd tekstowy (szablon 6).</div>');
+ const urls=imageURLS(draftImages,previewURLs);host.querySelectorAll('.isa-image-slot img').forEach((im,i)=>im.src=urls[i]);
+}
 const message=s=>{$('isaMsg').textContent=s};
 function list(){return records.map(s=>({id:'info:'+s.id,name:'Informacje · '+s.title,description:'Zdjęcie i bloki tekstowe',available:true}))}
 function drawList(){ $('isaCount').textContent=String(records.length);$('isaList').innerHTML=records.map(r=>`<button type="button" class="${r.id===selectedId?'selected':''}" data-id="${escape(r.id)}"><span>▧ ${escape(r.title)}</span></button>`).join('')||'<p class="isa-helper">Nie ma jeszcze zapisanych podstron.</p>';}
-function preview(file){revokePreview();$('isaPreview').replaceChildren();if(file){previewURL=URL.createObjectURL(file);const im=document.createElement('img');im.src=previewURL;im.alt='Podgląd zdjęcia';$('isaPreview').append(im)}else{$('isaPreview').innerHTML='<span class="isa-drop-ico">▧</span><strong>Przeciągnij zdjęcie tutaj</strong><small>lub kliknij, aby wybrać PNG / JPG / WebP</small>'}renderLivePreview()}
+function preview(){revokePreview();renderImages();renderLivePreview()}
 const POSITIONS=['bottom','top','left','right','overlay-bottom','overlay-top'];
 const STYLES=['light','dark','glass'];
 const validPosition=p=>POSITIONS.includes(p)?p:'bottom';
@@ -167,7 +211,7 @@ const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']
 function renderEditors(){
  $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
 }
-function compose(imageURL,blocks,placeholder=false){
+function compose(imageURLs,blocks,template='1',placeholder=false){
  const composition=document.createElement('div');composition.className='isa-composition';
  const top=document.createElement('div');top.className='isa-compose-zone';top.dataset.zone='top';
  const bottom=document.createElement('div');bottom.className='isa-compose-zone';bottom.dataset.zone='bottom';
@@ -175,8 +219,10 @@ function compose(imageURL,blocks,placeholder=false){
  const left=document.createElement('div');left.className='isa-compose-zone';left.dataset.zone='left';
  const right=document.createElement('div');right.className='isa-compose-zone';right.dataset.zone='right';
  const imageArea=document.createElement('div');imageArea.className='isa-compose-image';
- if(imageURL){const im=document.createElement('img');im.src=imageURL;im.alt='Grafika slajdu';imageArea.append(im)}
- else if(placeholder){const empty=document.createElement('div');empty.className='isa-empty-image';empty.textContent='Podgląd zdjęcia';imageArea.append(empty)}
+ const grid=document.createElement('div');grid.className='isa-image-grid';grid.dataset.count=String(Math.min(imageURLs.length,4));
+ for(const url of imageURLs.slice(0,4)){const im=document.createElement('img');im.src=url;im.alt='Zdjęcie slajdu';grid.append(im)}
+ if(!imageURLs.length&&placeholder){const empty=document.createElement('div');empty.className='isa-empty-image';empty.textContent=template==='6'?'Slajd tekstowy':'Dodaj zdjęcie';grid.append(empty)}
+ imageArea.append(grid);
  const overlayTop=document.createElement('div');overlayTop.className='isa-compose-overlay';overlayTop.dataset.zone='overlay-top';
  const overlayBottom=document.createElement('div');overlayBottom.className='isa-compose-overlay';overlayBottom.dataset.zone='overlay-bottom';
  const zones={top,bottom,left,right,'overlay-top':overlayTop,'overlay-bottom':overlayBottom};
@@ -186,10 +232,10 @@ function compose(imageURL,blocks,placeholder=false){
  return composition;
 }
 const STAGE_WIDTH=1200,STAGE_HEIGHT=675;
-function stageFor(imageURL,blocks,placeholder=false){
+function stageFor(imageURLs,blocks,template,placeholder=false){
  const viewport=document.createElement('div');viewport.className='isa-stage-viewport';
  const stage=document.createElement('div');stage.className='isa-stage';
- stage.append(compose(imageURL,blocks,placeholder));viewport.append(stage);
+ stage.dataset.template=validTemplate(template);stage.append(compose(imageURLs,blocks,validTemplate(template),placeholder));viewport.append(stage);
  return viewport;
 }
 function fitStage(viewport,isTV){
@@ -217,28 +263,50 @@ const fitObserver=new ResizeObserver(refreshStageFits);
 fitObserver.observe($('isaLivePreview'));fitObserver.observe($('isaTV'));
 function renderLivePreview(){
  const host=$('isaLivePreview');if(!host)return;
- const stage=stageFor(previewURL,draftBlocks,true);host.replaceChildren(stage);
+ // Do not revoke object URLs until both editor thumbnails and stage have been replaced.
+ const urls=[...$('isaImages').querySelectorAll('.isa-image-slot img')].map(im=>im.src);
+ const stage=stageFor(urls,draftBlocks,selectedTemplate,true);host.replaceChildren(stage);
  fitStage(stage,false);
 }
-$('isaAddBlock').onclick=()=>{draftBlocks.push(newBlock());renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
+$('isaTemplates').onclick=e=>{const b=e.target.closest('[data-template]');if(!b)return;selectedTemplate=validTemplate(b.dataset.template);renderTemplates();renderLivePreview()};
+let replaceImageIndex=-1;
+$('isaAddImage').onclick=()=>{replaceImageIndex=-1;$('isaFiles').click()};
+$('isaImages').onclick=e=>{const b=e.target.closest('[data-image-action]'),slot=e.target.closest('[data-image-index]');if(!b||!slot)return;const i=Number(slot.dataset.imageIndex),action=b.dataset.imageAction;
+ if(action==='replace'){replaceImageIndex=i;$('isaFiles').click();return}
+ if(action==='remove')draftImages.splice(i,1);
+ if(action==='left'&&i>0)[draftImages[i-1],draftImages[i]]=[draftImages[i],draftImages[i-1]];
+ if(action==='right'&&i<draftImages.length-1)[draftImages[i+1],draftImages[i]]=[draftImages[i],draftImages[i+1]];
+ preview();
+};
+function acceptImages(files){const incoming=[...files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)&&f.size<=16*1024*1024);
+ if(!incoming.length){message('Wybierz PNG, JPG lub WebP (maks. 16 MB na zdjęcie).');return}
+ if(replaceImageIndex>=0){draftImages[replaceImageIndex]=incoming[0];replaceImageIndex=-1}else draftImages.push(...incoming);
+ if(draftImages.length>4){draftImages=draftImages.slice(0,4);message('Maksymalnie 4 zdjęcia na jednym slajdzie.')}else message('Zdjęcia dodane. Zapisz podstronę, aby zachować zmiany.');
+ preview();
+}
+$('isaFiles').onchange=e=>{acceptImages(e.target.files);e.target.value=''};
+// Image files can also be dropped directly onto the image collection.
+for(const eventName of ['dragenter','dragover'])$('isaImages').addEventListener(eventName,e=>{e.preventDefault()});
+$('isaImages').addEventListener('drop',e=>{e.preventDefault();acceptImages(e.dataTransfer.files)});
+$('isaAddBlock').onclick=()=>{const position=selectedTemplate==='1'?'right':selectedTemplate==='3'?'overlay-bottom':selectedTemplate==='6'?'top':'bottom';draftBlocks.push(newBlock({position}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
 $('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('click',e=>{const btn=e.target.closest('[data-remove]');if(!btn)return;draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview()});
-function choose(r){selectedId=r?.id||null;pendingImage=null;$('isaTitle').value=r?.title||'';draftBlocks=storedBlocks(r);renderEditors();preview(r?.image||null);$('isaDelete').disabled=!r;message('');drawList()}
+function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=storedBlocks(r);renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
 function close(){area.hidden=true;$('isaTV').hidden=true;revokeTV();$('infoSlidesTab').classList.remove('active');}
-function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();tvURL=URL.createObjectURL(slide.image);const stage=stageFor(tvURL,storedBlocks(slide));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>fitStage(stage,true));}
-function revokeTV(){if(tvURL){URL.revokeObjectURL(tvURL);tvURL=null}}
+function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>fitStage(stage,true));}
 function restore(){revokeTV();open();}
-function acceptFile(file){if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type)){message('Wybierz PNG, JPG lub WebP.');return}if(file.size>16*1024*1024){message('Zdjęcie przekracza 16 MB.');return}pendingImage=file;preview(file);message(file.name)}
-$('isaDrop').onclick=()=> $('isaFile').click();$('isaDrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('isaFile').click()}};
-$('isaFile').onchange=e=>{acceptFile(e.target.files[0]);e.target.value=''};
-for(const name of ['dragenter','dragover'])$('isaDrop').addEventListener(name,e=>{e.preventDefault();$('isaDrop').classList.add('is-over')});
-$('isaDrop').addEventListener('dragleave',()=> $('isaDrop').classList.remove('is-over'));
-$('isaDrop').addEventListener('drop',e=>{e.preventDefault();$('isaDrop').classList.remove('is-over');acceptFile([...e.dataTransfer.files][0])});
 $('isaNew').onclick=()=>choose(null);
 $('isaList').onclick=e=>{const b=e.target.closest('button[data-id]');if(b)choose(records.find(r=>r.id===b.dataset.id))};
-$('isaSave').onclick=async()=>{if(saving)return;const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);if(!title){message('Wpisz tytuł podstrony.');return}const old=records.find(r=>r.id===selectedId),image=pendingImage||old?.image;if(!image){message('Dodaj zdjęcie.');return}saving=true;$('isaSave').disabled=true;try{const item={id:old?.id||id(),title,textBlocks,image,updatedAt:Date.now()};await tx('readwrite',s=>s.put(item));const i=records.findIndex(s=>s.id===item.id);if(i>=0)records[i]=item;else records.push(item);choose(item);message('Podstrona zapisana. Możesz wybrać ją w ustawieniach TV.');$('tv').disabled=false;}catch(err){message('Nie udało się zapisać zdjęcia: '+(err?.message||'brak miejsca'))}finally{saving=false;$('isaSave').disabled=false}};
+$('isaSave').onclick=async()=>{if(saving)return;const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);
+ if(!title){message('Wpisz tytuł podstrony.');return}
+ if(!draftImages.length&&selectedTemplate!=='6'){message('Dodaj zdjęcie lub wybierz szablon 6 dla slajdu tekstowego.');return}
+ if(!draftImages.length&&!textBlocks.length){message('Dodaj zdjęcie lub blok tekstu.');return}
+ saving=true;$('isaSave').disabled=true;
+ try{const old=records.find(r=>r.id===selectedId);const item={id:old?.id||id(),title,template:selectedTemplate,textBlocks,images:[...draftImages],image:draftImages[0]||null,updatedAt:Date.now()};await tx('readwrite',s=>s.put(item));const i=records.findIndex(s=>s.id===item.id);if(i>=0)records[i]=item;else records.push(item);choose(item);message('Podstrona zapisana. Możesz wybrać ją w ustawieniach TV.');$('tv').disabled=false;}
+ catch(err){message('Nie udało się zapisać podstrony: '+(err?.message||'brak miejsca'))}finally{saving=false;$('isaSave').disabled=false}
+};
 $('isaDelete').onclick=async()=>{const item=records.find(r=>r.id===selectedId);if(!item||!confirm('Usunąć podstronę '+item.title+'?'))return;try{await tx('readwrite',s=>s.delete(item.id));records=records.filter(r=>r.id!==item.id);choose(records[0]||null);$('tv').disabled=!records.length;message('Usunięto podstronę.')}catch{message('Nie udało się usunąć podstrony.')}};
 infoTab.onclick=()=>{open()};
 $('assignment').addEventListener('click',close);$('results').addEventListener('click',close);
