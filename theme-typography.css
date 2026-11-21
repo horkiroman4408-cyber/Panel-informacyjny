@@ -1,0 +1,8 @@
+/* INCYDENTY · Typography only. Visual layout/colors from the classic theme. */
+body:not(.tv):not(.unified-tv){font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:-.019em}
+body:not(.tv):not(.unified-tv) button,body:not(.tv):not(.unified-tv) input,body:not(.tv):not(.unified-tv) textarea,body:not(.tv):not(.unified-tv) select{font-family:inherit}
+body:not(.tv):not(.unified-tv) .brand h1{font-weight:850;letter-spacing:-.025em;line-height:1.07}
+body:not(.tv):not(.unified-tv) h2,body:not(.tv):not(.unified-tv) .schedule-board-top h2,body:not(.tv):not(.unified-tv) .isa-heading h2,body:not(.tv):not(.unified-tv) .workerheading h2,body:not(.tv):not(.unified-tv) .titlebar h2{font-weight:850;letter-spacing:-.04em;line-height:1.13}
+body:not(.tv):not(.unified-tv) .processname,body:not(.tv):not(.unified-tv) .schedule-widget-header strong{font-weight:800;letter-spacing:-.025em}
+body:not(.tv):not(.unified-tv) button{font-weight:740}
+body:not(.tv):not(.unified-tv) .eyebrow{font-weight:800;letter-spacing:.16em}
