@@ -130,6 +130,9 @@ function rosterView(plan,tables,dateText){
 const BOARD_KEY='incydenty-schedule-widgets-v2';
 const BREAK_KEY='incydenty-breaks-v1';
 const BREAK_SHIFT_KEY='incydenty-breaks-selected-shift-v1';
+const BREAK_HOURS_KEY='incydenty-breaks-selected-hours-v1';
+let breakHours='8H';
+try{const saved=localStorage.getItem(BREAK_HOURS_KEY);if(['8H','10H','12H'].includes(saved))breakHours=saved}catch{}
 let breakShift='I ZMIANA';
 try{const saved=localStorage.getItem(BREAK_SHIFT_KEY);if(saved==='I ZMIANA'||saved==='II ZMIANA')breakShift=saved}catch{}
 const TOMORROW_KEY='incydenty-tomorrow-plan-v1';
@@ -215,6 +218,16 @@ body.unified-tv #assign .schedule-widget-header strong{font-size:clamp(14px,.95v
 .schedule-break-table tr:has(td.break-next):not(:has(td.break-current))>th{background:#fff7e8;color:#886c3e}
 
 
+/* Duration selection is separate from team selection. It never hides source rows. */
+.schedule-break-hours{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 10px;background:#f7fafc;border-bottom:1px solid #e1e8ee}
+.schedule-break-hours-label{font-size:10px;font-weight:700;color:#64788c;white-space:nowrap}
+.schedule-break-hours-options{display:flex;align-items:center;gap:3px;padding:3px;border-radius:10px;background:#e6edf2}
+.schedule-break-hours-options button{border:0!important;background:transparent!important;box-shadow:none!important;min-width:41px!important;width:auto!important;height:28px!important;padding:4px 8px!important;border-radius:8px!important;color:#66788a!important;font-size:11px!important;font-weight:750!important;cursor:pointer}
+.schedule-break-hours-options button[aria-pressed="true"]{background:white!important;color:#157d76!important;box-shadow:0 1px 5px #173e5f18!important}
+.schedule-break-hours-options button:focus-visible{outline:2px solid #159c94;outline-offset:1px}
+body.unified-tv #assign .schedule-break-hours{padding:6px 8px}
+body.unified-tv #assign .schedule-break-hours-options button{display:none!important}
+body.unified-tv #assign .schedule-break-hours-options button[aria-pressed="true"]{display:block!important;background:#dff3ef!important;color:#176d64!important;cursor:default}
 /* iPhone-style widgets: a predictable 6-column auto-flowing grid. */
 .schedule-widget-viewport{overflow:visible;min-height:140px}
 .schedule-widget-canvas{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-flow:row;gap:12px;align-content:start;align-items:start;min-height:140px;height:auto!important;background-size:20px 20px}
@@ -265,7 +278,13 @@ function breakMarkup(){
   if(!selected)return '<div class="schedule-empty">Brak tabeli '+esc(breakShift)+' w pliku Excel.</div>';
    // Ignore duplicated Roman numeral headers in the source sheet and retain only time rows.
    const rows=selected.rows.filter(r=>(r.times||[]).some(t=>/\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(String(t))));
-   return `<table class="schedule-break-table" data-break-shift="${esc(selected.name)}"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${rows.map(r=>`<tr><th>${esc(r.hours||'')}</th>${r.times.map(t=>`<td data-break-time="${esc(t)}">${esc(t)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+   // Blank hours in the source are continuation rows (especially 12H).
+   let inheritedHours='';
+   const rowHtml=rows.map(r=>{const raw=String(r.hours||'').trim();if(/^(8|10|12)\s*H$/i.test(raw))inheritedHours=raw.replace(/\s/g,'').toUpperCase();const hours=inheritedHours;
+     return `<tr data-break-hours="${esc(hours)}"><th>${esc(raw)}</th>${r.times.map(t=>`<td data-break-time="${esc(t)}">${esc(t)}</td>`).join('')}</tr>`;
+   }).join('');
+   const hoursPicker=`<div class="schedule-break-hours" aria-label="Czas pracy dla podświetlenia"><span class="schedule-break-hours-label">Czas pracy</span><div class="schedule-break-hours-options" role="group" aria-label="Wybierz długość zmiany">${['8H','10H','12H'].map(h=>`<button type="button" class="schedule-break-hours-choice" data-break-hours-choice="${h}" aria-pressed="${h===breakHours}" title="Podświetl przerwy dla ${h}">${h}</button>`).join('')}</div></div>`;
+   return `${hoursPicker}<table class="schedule-break-table" data-break-shift="${esc(selected.name)}" data-selected-hours="${breakHours}"><thead><tr><th>Czas pracy</th><th>I</th><th>II</th><th>III</th></tr></thead><tbody>${rowHtml}</tbody></table>`;
  }
  return '<div class="schedule-empty">Nie znaleziono harmonogramu zmian w pliku Excel.</div>';
 }
@@ -305,6 +324,7 @@ function updateBreakHighlights(){
  const table=$('scheduleWidgetCanvas').querySelector('.schedule-break-table[data-break-shift]');if(!table)return;
  const now=new Date(),mins=now.getHours()*60+now.getMinutes();
  const shiftName=table.dataset.breakShift;
+ const selectedHours=table.dataset.selectedHours;
  // II ZMIANA continues past midnight: times before noon belong to the following day.
  const anchor=shiftName==='II ZMIANA'?(mins<12*60?-1:0):0;
  const dayStart=anchor*1440;
@@ -312,7 +332,7 @@ function updateBreakHighlights(){
  for(const cell of table.querySelectorAll('td[data-break-time]')){
   const match=cell.dataset.breakTime.match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})/);
   cell.classList.remove('break-current','break-next');cell.removeAttribute('title');
-  if(!match)continue;
+  if(!match||cell.closest('tr')?.dataset.breakHours!==selectedHours)continue;
   let start=Number(match[1])*60+Number(match[2]),end=Number(match[3])*60+Number(match[4]);
   if(shiftName==='II ZMIANA'){
     if(start<12*60)start+=1440;
@@ -339,7 +359,7 @@ function render(){
   const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${shiftButtons}${sizeBtns}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij, aby zmienić kolejność" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
   return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-size="${size}"><div class="schedule-widget-header"><strong>${esc(item.title)}${tv&&item.kind==='breaks'?` · ${esc(breakShift)}`:''}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div></section>`;
  }).join('');
- requestAnimationFrame(syncBoardHeight);
+ requestAnimationFrame(()=>{syncBoardHeight();updateBreakHighlights()});
 }
 $('scheduleWidgetCanvas').addEventListener('click',e=>{
  if(tv)return;const b=e.target.closest('button'),widget=e.target.closest('.schedule-widget');if(!b||!widget)return;
@@ -349,6 +369,12 @@ $('scheduleWidgetCanvas').addEventListener('click',e=>{
    breakShift=b.dataset.breakShift==='II ZMIANA'?'II ZMIANA':'I ZMIANA';
    try{localStorage.setItem(BREAK_SHIFT_KEY,breakShift)}catch{}
    render();status(`Przerwy: ${breakShift}. Wybór zapisano także dla TV.`);
+  }
+  else if(b.classList.contains('schedule-break-hours-choice')&&item.kind==='breaks'){
+   const choice=b.dataset.breakHoursChoice;
+   if(!['8H','10H','12H'].includes(choice))return;
+   breakHours=choice;try{localStorage.setItem(BREAK_HOURS_KEY,breakHours)}catch{}
+   render();status(`Przerwy: ${breakShift}, ${breakHours}. Wybór zapisano także dla TV.`);
   }
   else if(b.classList.contains('schedule-size'))saveSize(item,b.dataset.sizeChoice);
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
