@@ -166,6 +166,11 @@ function fitStage(viewport,isTV){
  if(!viewport?.isConnected)return;
  const host=isTV?$('isaTV'):$('isaLivePreview');
  const availableWidth=Math.max(1,host.clientWidth-(isTV?0:28));
+ // Use the actual room below the INCYDENTY header, like Wyniki i normy.
+ if(isTV&&document.body.classList.contains('unified-tv')&&!host.hidden){
+  const top=host.getBoundingClientRect().top;
+  host.style.height=Math.max(240,window.innerHeight-top-16)+'px';
+ }
  const availableHeight=isTV?Math.max(1,host.clientHeight):Infinity;
  const scale=Math.min(availableWidth/STAGE_WIDTH,availableHeight/STAGE_HEIGHT);
  if(!(scale>0))return;

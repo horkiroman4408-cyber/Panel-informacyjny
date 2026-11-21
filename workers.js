@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.39</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.40</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,7 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.39</strong> · Przezroczyste tło slajdów</summary><p>Usunięto prostokątne tło kompozycji informacji w podglądzie i trybie TV, bez zmian położenia zdjęcia oraz tekstów.</p></details>
+  <details open><summary><strong>v1.1.40</strong> · Przezroczyste tło slajdów</summary><p>Usunięto prostokątne tło kompozycji informacji w podglądzie i trybie TV, bez zmian położenia zdjęcia oraz tekstów.</p></details>
   <details><summary><strong>v1.1.38</strong> · Wiele bloków tekstowych</summary><p>Wiele niezależnych kart tekstowych z osobnym położeniem i wyglądem, podgląd na żywo i zgodność z zapisanymi podpisami.</p></details>
   <details><summary><strong>v1.1.36</strong> · Układ podpisów informacyjnych</summary><p>Położenie tekstu nad, pod, obok lub na zdjęciu; jasna, ciemna lub szklana karta i podgląd w edytorze.</p></details>
   <details><summary><strong>v1.1.35</strong> · Tablica informacyjna</summary><p>Nowa zakładka ze zdjęciami, opcjonalnym podpisem i zapisanymi podstronami wybieranymi osobno do pokazu TV.</p></details>
@@ -647,3 +647,4 @@ updatePeriods();render();
 // Harmonogram is isolated from legacy KPI/worker import.
 {const script=document.createElement('script');script.src='schedule.js';document.body.appendChild(script);}
 {const script=document.createElement('script');script.src='info-slides.js';document.body.appendChild(script);}
+{const script=document.createElement('script');script.src='tv-fit.js';document.body.appendChild(script);}
