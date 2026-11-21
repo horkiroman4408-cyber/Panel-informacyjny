@@ -97,7 +97,7 @@ body.unified-tv .isa-compose-zone[data-zone="left"],body.unified-tv .isa-compose
 
 /* Shared, fixed 16:9 composition for editor preview and TV. Only the parent stage scales. */
 .isa-stage-viewport{position:relative;flex:none;overflow:hidden;max-width:100%;margin:0 auto}
-.isa-stage{position:absolute;left:0;top:0;width:1200px;height:675px;transform-origin:top left;box-sizing:border-box;background:linear-gradient(135deg,#f0f3f8,#e7edf6);overflow:hidden}
+.isa-stage{position:absolute;left:0;top:0;width:1200px;height:675px;transform-origin:top left;box-sizing:border-box;background:transparent;overflow:hidden}
 .isa-stage .isa-composition{height:100%!important;max-height:100%!important;width:100%!important;box-sizing:border-box;padding:32px!important;gap:18px!important;display:flex!important;flex-direction:column!important;justify-content:center!important}
 .isa-stage .isa-composition-main{display:flex!important;flex:1 1 auto!important;max-height:none!important;min-height:0!important;align-items:stretch!important;gap:18px!important}
 .isa-stage .isa-compose-image{display:flex!important;flex:1 1 0!important;min-height:0!important;min-width:0!important;align-items:center!important;justify-content:center!important}
