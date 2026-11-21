@@ -220,6 +220,38 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-mini-3{display:block!important}.isa-mini-3 .hero{position:absolute;inset:5px}.isa-mini-3 .badge{position:absolute;top:9px;left:9px;width:26%;height:23%;background:#30465c}.isa-mini-3 .overlay{position:absolute;bottom:9px;left:9px;right:9px;height:25%;background:#fff}
 .isa-mini-6{grid-template-columns:1fr 2fr!important;grid-template-rows:1fr 2fr!important}.isa-mini-6 .head{grid-column:span 2;background:#30465c}.isa-mini-6 .body{background:#fff}
 
+/* v1.1.44: Compact inspector and independent, accessible caption palettes. */
+.isa-editor{padding:14px!important}.isa-shell{gap:12px!important}.isa-template-picker{gap:7px!important}
+.isa-blocks{gap:7px!important;margin-bottom:12px!important}
+.isa-block-editor{padding:10px 12px!important;border-radius:12px!important}
+.isa-block-top{margin-bottom:5px!important}
+.isa-block-editor textarea{min-height:46px!important;max-height:105px!important;resize:vertical;margin-bottom:7px!important;padding:8px 10px!important;font-size:12px!important}
+.isa-block-editor .isa-label{font-size:10px!important;margin-bottom:4px!important}
+.isa-block-editor .isa-format-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px!important;margin-bottom:7px!important}
+.isa-block-editor .isa-format-row select,.isa-block-editor .isa-typography-row select{padding:7px 9px!important;font-size:11px!important;border-radius:9px!important;height:33px!important}
+.isa-block-editor .isa-typography-row{gap:7px!important;margin-bottom:6px!important}
+.isa-block-editor .isa-color-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.isa-block-editor .isa-color-row .isa-label{margin:0!important;white-space:nowrap}
+.isa-color-options{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.isa-color-choice{height:27px;width:27px;padding:3px!important;display:grid;place-items:center;border:1px solid #d7e2ea;background:#fff;border-radius:9px;cursor:pointer}
+.isa-color-choice span{display:block;width:100%;height:100%;border-radius:5px;background:var(--swatch);border:1px solid #00000012}
+.isa-color-choice[aria-pressed="true"]{border:2px solid #138f9a;box-shadow:0 0 0 2px #138f9a22}
+.isa-color-choice[data-color="default"]{--swatch:linear-gradient(135deg,#f7fafc 50%,#30465c 50%)}
+.isa-color-choice[data-color="white"]{--swatch:#fff}.isa-color-choice[data-color="graphite"]{--swatch:#30465c}
+.isa-color-choice[data-color="teal"]{--swatch:#ccefe8}.isa-color-choice[data-color="blue"]{--swatch:#dbeafe}
+.isa-color-choice[data-color="amber"]{--swatch:#fff0c9}.isa-color-choice[data-color="rose"]{--swatch:#ffe0de}
+.isa-stage .isa-template-board .isa-layout-photo.has-photo{border:0!important;background:transparent!important;outline:0!important}
+.isa-stage .isa-template-board .isa-layout-photo.has-photo img{box-shadow:none!important;filter:none!important;object-fit:contain!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="white"]{background:#fff!important;color:#223c54!important;border-color:#d6e0e9!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="graphite"]{background:#30465c!important;color:#fff!important;border-color:#30465c!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="teal"]{background:#d5f4ed!important;color:#15594f!important;border-color:#b3e4d9!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="blue"]{background:#dceaff!important;color:#204e81!important;border-color:#c1d9f8!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="amber"]{background:#fff0c9!important;color:#76500d!important;border-color:#f1db9c!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="rose"]{background:#ffe1df!important;color:#8c3434!important;border-color:#f5c5c2!important}
+.isa-stage .isa-template-board .isa-caption-card.isa-text-overflow{outline:3px solid #d77b37!important;outline-offset:-3px}
+.isa-fit-notice{font-size:11px;color:#9d5b20;margin:5px 0 10px}
+@media(max-width:760px){.isa-block-editor .isa-format-row{grid-template-columns:1fr 1fr}.isa-block-editor .isa-format-row>div:last-child{grid-column:span 2}}
+
 `;document.head.append(style);
 function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
 function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
@@ -252,11 +284,13 @@ const validStyle=p=>STYLES.includes(p)?p:'light';
 const WEIGHTS=['normal','bold'];
 const ALIGNS=['left','center','right','justify'];
 const TEXT_SIZES=['small','medium','large'];
+const COLOR_SCHEMES=['default','white','graphite','teal','blue','amber','rose'];
+const validColor=v=>COLOR_SCHEMES.includes(v)?v:'default';
 const validWeight=v=>WEIGHTS.includes(v)?v:'bold';
 const validAlign=v=>ALIGNS.includes(v)?v:'center';
 const validTextSize=v=>TEXT_SIZES.includes(v)?v:'medium';
 let draftBlocks=[];
-const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize),slot:String(data.slot||'')});
+const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize),color:validColor(data.color),slot:String(data.slot||'')});
 const TEMPLATE_FIELDS={
  '1':[['header','UWAGA!'],['body','Ważna informacja dla pracowników']],
  '2':[['footer','Porównanie produktów']],
@@ -281,8 +315,9 @@ const STYLE_LABELS=[['light','Jasna karta'],['dark','Ciemna karta'],['glass','Sz
 const ALIGN_LABELS=[['left','Do lewej'],['center','Do środka'],['right','Do prawej'],['justify','Wyjustuj']];
 const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
 const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
+const COLOR_LABELS=[['default','Domyślny'],['white','Biały'],['graphite','Grafit'],['teal','Turkus'],['blue','Błękit'],['amber','Bursztyn'],['rose','Koral']];
 function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Miejsce w szablonie</label><select data-field="slot">${TEMPLATE_FIELDS[selectedTemplate].map(([v,l])=>`<option value="${v}" ${v===b.slot?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div></div>`).join('');
+ $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<div class="isa-block-editor" data-block-id="${escape(b.id)}"><div class="isa-block-top"><span class="isa-block-number">Blok ${i+1}</span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń blok</button></div><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Miejsce w szablonie</label><select data-field="slot">${TEMPLATE_FIELDS[selectedTemplate].map(([v,l])=>`<option value="${v}" ${v===b.slot?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Wygląd</label><select data-field="style">${STYLE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.style?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div>`).join('');
 }
 function compose(imageURLs,blocks,template='1',placeholder=false){
  const editor=placeholder===true;
@@ -290,7 +325,7 @@ function compose(imageURLs,blocks,template='1',placeholder=false){
  const photoCount=template==='2'?2:1;
  const createPhoto=(i)=>{
   const slot=document.createElement('div');slot.className='isa-layout-photo';slot.dataset.editImage=String(i);
-  if(imageURLs[i]){const im=document.createElement('img');im.src=imageURLs[i];im.alt='Zdjęcie '+(i+1);slot.append(im)}
+  if(imageURLs[i]){const im=document.createElement('img');im.src=imageURLs[i];im.alt='Zdjęcie '+(i+1);slot.append(im);slot.classList.add('has-photo')}
   else if(editor){const empty=document.createElement('span');empty.className='isa-layout-placeholder';empty.textContent='＋ Zdjęcie '+(i+1);slot.append(empty)}
   else{slot.classList.add('isa-layout-missing')}
   if(editor){slot.setAttribute('role','button');slot.setAttribute('tabindex','0');slot.setAttribute('title','Kliknij, aby wczytać zdjęcie')}
@@ -303,7 +338,7 @@ function compose(imageURLs,blocks,template='1',placeholder=false){
   for(const b of matching){
    if(!b.text.trim()&&!editor)continue;
    const card=document.createElement('div');card.className='isa-caption-card isa-layout-card';card.dataset.style=validStyle(b.style);
-   card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);
+   card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);card.dataset.color=validColor(b.color);
    card.dataset.editBlock=b.id;card.textContent=b.text.trim()||(TEMPLATE_FIELDS[template].find(x=>x[0]===slotName)?.[1]||'Dodaj tekst');
    if(!b.text.trim())card.classList.add('isa-layout-placeholder-text');
    if(editor){card.setAttribute('role','button');card.setAttribute('tabindex','0');card.title='Kliknij, aby wpisać tekst'}
@@ -331,6 +366,22 @@ function stageFor(imageURLs,blocks,template,placeholder=false){
  stage.dataset.template=validTemplate(template);stage.append(compose(imageURLs,blocks,validTemplate(template),placeholder));viewport.append(stage);
  return viewport;
 }
+function fitCaptionCards(stage,editor){
+ if(!stage?.isConnected)return;
+ let over=0;
+ for(const card of stage.querySelectorAll('.isa-template-board .isa-caption-card:not(.isa-layout-placeholder-text)')){
+  card.classList.remove('isa-text-overflow');card.style.removeProperty('font-size');
+  // Inline !important beats template-specific fixed font sizes, keeping preview and TV identical.
+  const original=parseFloat(getComputedStyle(card).fontSize)||26;
+  let size=original;
+  while(size>15&&(card.scrollHeight>card.clientHeight+2||card.scrollWidth>card.clientWidth+2)){
+   size-=1;card.style.setProperty('font-size',size+'px','important');
+  }
+  if(card.scrollHeight>card.clientHeight+3||card.scrollWidth>card.clientWidth+3){over++;if(editor)card.classList.add('isa-text-overflow')}
+ }
+ const note=$('isaFitNotice');if(editor&&note){note.hidden=!over;note.textContent=over?'Tekst nie mieści się w '+over+' blokach. Skróć treść lub wybierz inny szablon.':''}
+}
+function scheduleTextFit(viewport,editor){requestAnimationFrame(()=>{fitCaptionCards(viewport?.querySelector('.isa-stage'),editor)})}
 function fitStage(viewport,isTV){
  if(!viewport?.isConnected)return;
  const host=isTV?$('isaTV'):$('isaLivePreview');
@@ -359,7 +410,7 @@ function renderLivePreview(){
  // Do not revoke object URLs until both editor thumbnails and stage have been replaced.
  const urls=Array.from({length:Math.max(draftImages.length,selectedTemplate==='2'?2:1)},(_,i)=>$('isaImages').querySelector(`[data-image-index="${i}"] img`)?.src||null);
  const stage=stageFor(urls,draftBlocks,selectedTemplate,true);host.replaceChildren(stage);
- fitStage(stage,false);
+ fitStage(stage,false);scheduleTextFit(stage,true);
 }
 $('isaLivePreview').addEventListener('click',e=>{
  const block=e.target.closest('[data-edit-block]');if(block){const editor=$('isaBlocks').querySelector(`[data-block-id="${block.dataset.editBlock}"] textarea`);if(editor){editor.scrollIntoView({behavior:'smooth',block:'center'});editor.focus()}return}
@@ -389,11 +440,15 @@ $('isaImages').addEventListener('drop',e=>{e.preventDefault();acceptImages(e.dat
 $('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];draftBlocks.push(newBlock({slot}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
 $('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
-$('isaBlocks').addEventListener('click',e=>{const btn=e.target.closest('[data-remove]');if(!btn)return;draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview()});
+$('isaBlocks').addEventListener('click',e=>{
+ const color=e.target.closest('[data-color-choice]');
+ if(color){const editor=color.closest('[data-block-id]'),b=draftBlocks.find(b=>b.id===editor?.dataset.blockId);if(!b)return;b.color=validColor(color.dataset.colorChoice);editor.querySelectorAll('[data-color-choice]').forEach(x=>x.setAttribute('aria-pressed',String(x===color)));renderLivePreview();return}
+ const btn=e.target.closest('[data-remove]');if(!btn)return;draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview();
+});
 function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=prepareBlocks(selectedTemplate,storedBlocks(r));renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
 function close(){area.hidden=true;$('isaTV').hidden=true;revokeTV();$('infoSlidesTab').classList.remove('active');}
-function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>fitStage(stage,true));}
+function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>{fitStage(stage,true);scheduleTextFit(stage,false)});}
 function restore(){revokeTV();open();}
 $('isaNew').onclick=()=>choose(null);
 $('isaList').onclick=e=>{const b=e.target.closest('button[data-id]');if(b)choose(records.find(r=>r.id===b.dataset.id))};
