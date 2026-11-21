@@ -344,8 +344,11 @@ function updateBreakHighlights(){
  }
  const active=spans.filter(x=>x.start<=x.now&&x.now<x.end);
  const next=spans.filter(x=>x.start>x.now).sort((a,b)=>a.start-b.start);
- const selected=active.length?active:(next.length?next.filter(x=>x.start===next[0].start):[]);
- for(const x of selected){x.cell.classList.add(active.length?'break-current':'break-next');x.cell.title=active.length?'Trwa teraz':'Najbliższa przerwa'}
+ // Highlight upcoming breaks only during the 30 minutes before they start.
+ // Outside that window, the timetable must remain neutral, including overnight.
+ const upcoming=next.filter(x=>x.start-x.now<=30);
+ const selected=active.length?active:(upcoming.length?upcoming.filter(x=>x.start===upcoming[0].start):[]);
+ for(const x of selected){x.cell.classList.add(active.length?'break-current':'break-next');x.cell.title=active.length?'Przerwa trwa':'Przerwa za mniej niż 30 minut'}
 }
 setInterval(updateBreakHighlights,30000);
 function render(){
