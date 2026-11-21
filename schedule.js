@@ -145,13 +145,14 @@ try{const b=JSON.parse(localStorage.getItem(BREAK_KEY));if(b&&(Array.isArray(b.r
 // Historical local plans are preserved, but never silently treated as tomorrow's upload.
 const section=$('assign');section.className='schedule-area schedule-workspace';
 section.innerHTML=`
-<div class="schedule-board-top"><div><div class="eyebrow">INCYDENTY · PLAN OBSADY</div><h2>Harmonogram pracy</h2><div id="scheduleTVPlanDate" class="schedule-tv-plan-date" hidden></div><p>Wczytaj dwa źródła i ułóż widżety tak, jak mają wyglądać na TV.</p></div><button id="scheduleResetLayout" type="button" title="Przywróć szerokości i kolejność">↺ Przywróć układ</button></div>
-<div class="schedule-drop-grid">
- <div class="schedule-drop" id="schedulePlanDrop" role="button" tabindex="0" aria-label="Wczytaj grafik na jutro"><span class="schedule-drop-icon">📅</span><div><strong>Grafik na jutro</strong><small id="schedulePlanSource">Przeciągnij Excel lub kliknij, aby wybrać plik</small></div><span class="schedule-drop-action">Wczytaj</span></div>
- <div class="schedule-drop" id="scheduleBreakDrop" role="button" tabindex="0" aria-label="Wczytaj przerwy"><span class="schedule-drop-icon">☕</span><div><strong>Przerwy</strong><small id="scheduleBreakSource">Przeciągnij Excel lub kliknij, aby wybrać plik</small></div><span class="schedule-drop-action">Wczytaj</span></div>
+<div class="schedule-board-top"><div><div class="eyebrow">INCYDENTY · PLAN OBSADY</div><h2>Harmonogram pracy</h2><div id="scheduleTVPlanDate" class="schedule-tv-plan-date" hidden></div><p>Wczytaj dwa źródła i ułóż widżety tak, jak mają wyglądać na TV.</p></div><button id="scheduleResetLayout" type="button" title="Przywróć kolejność widżetów">↺ Przywróć układ</button></div>
+<div class="schedule-drop-grid" aria-label="Źródła danych harmonogramu">
+ <span class="schedule-source-title">Źródła danych</span>
+ <div class="schedule-drop" id="schedulePlanDrop" role="button" tabindex="0" aria-label="Wczytaj grafik na jutro"><span class="schedule-drop-icon">📅</span><div><strong>Grafik na jutro</strong><small id="schedulePlanSource">Wybierz plik Excel</small></div><span class="schedule-drop-action">Zmień</span></div>
+ <div class="schedule-drop" id="scheduleBreakDrop" role="button" tabindex="0" aria-label="Wczytaj przerwy"><span class="schedule-drop-icon">☕</span><div><strong>Przerwy</strong><small id="scheduleBreakSource">Wybierz plik Excel</small></div><span class="schedule-drop-action">Zmień</span></div>
 </div>
 <input id="schedulePlanFile" type="file" accept=".xlsx" hidden><input id="scheduleBreakFile" type="file" accept=".xlsx" hidden>
-<div class="schedule-board-info"><span>Układ Pinterest · przeciągaj za <b>⠿</b> · zmieniaj szerokość za dolny prawy róg</span><span id="scheduleBoardStatus" role="status"></span></div>
+<div class="schedule-board-info"><span>Układ widżetów · przeciągnij za <b>⠿</b> na inny widżet, aby zamienić je miejscami</span><span id="scheduleBoardStatus" role="status"></span></div>
 <div id="scheduleWidgetViewport" class="schedule-widget-viewport"><div id="scheduleWidgetCanvas" class="schedule-widget-canvas" aria-label="Układ widżetów TV"></div></div>`;
 $('assignment').textContent='Harmonogram pracy';
 const css=document.createElement('style');css.id='schedule-widget-styles';css.textContent=`
@@ -280,11 +281,30 @@ body.unified-tv #assign .schedule-widget-size-group{display:none!important}
 body.unified-tv .schedule-widget-resize-columns{display:none!important}
 @media(max-width:720px){.schedule-drop{flex:1 1 230px}.schedule-widget[data-size]{grid-column:span 12!important}}
 
+/* Simple swap-only board: fixed equal widths, natural heights, no masonry sizing. */
+.schedule-widget-canvas{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-auto-rows:auto!important;grid-auto-flow:row!important;gap:12px!important;align-items:start!important;align-content:start!important}
+.schedule-widget,.schedule-widget[data-size="S"],.schedule-widget[data-size="M"],.schedule-widget[data-size="L"]{grid-column:auto!important;grid-row:auto!important;width:auto!important;height:auto!important;min-height:0!important;align-self:start!important}
+.schedule-widget-size-group,.schedule-widget-resize-columns{display:none!important}
+.schedule-widget-handle{cursor:grab!important}
+.schedule-widget.drop-target{outline:2px solid #2eafa5!important;outline-offset:2px}
+@media(max-width:850px){.schedule-widget-canvas{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:550px){.schedule-widget-canvas{grid-template-columns:1fr!important}}
+body.unified-tv .schedule-widget-canvas{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 /* Centered heading aligned with Wyniki i normy; actions stay on the right. */
 body:not(.unified-tv) #assign .schedule-board-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
 body:not(.unified-tv) #assign .schedule-board-top>div:first-child{grid-column:2;text-align:center;min-width:0}
 body:not(.unified-tv) #assign .schedule-board-top>button{grid-column:3;justify-self:end;margin:0}
 @media(max-width:740px){body:not(.unified-tv) #assign .schedule-board-top{grid-template-columns:1fr;gap:10px}body:not(.unified-tv) #assign .schedule-board-top>div:first-child{grid-column:1}body:not(.unified-tv) #assign .schedule-board-top>button{grid-column:1;justify-self:end}}
+
+/* v1.1.53: single aligned data-source toolbar; drop/file keyboard handlers unchanged. */
+.schedule-drop-grid{display:flex!important;align-items:center;gap:8px!important;width:100%!important;max-width:100%!important;flex-wrap:wrap;padding:7px 10px!important;margin:2px 0 8px!important;background:#ffffffbd;border:1px solid #e1e9f1;border-radius:15px;box-sizing:border-box}
+.schedule-source-title{flex:0 0 auto;color:#667d92;font-size:11px;font-weight:800;letter-spacing:.01em;padding:0 7px 0 3px;white-space:nowrap}
+.schedule-drop{flex:0 1 310px!important;width:auto!important;min-width:210px!important;min-height:38px!important;padding:5px 9px!important;border:1px solid #e3ebf1!important;border-radius:10px!important;background:#f7fafdf2!important;box-shadow:none!important;gap:8px!important;transition:background .15s,border-color .15s!important}
+.schedule-drop:hover,.schedule-drop.is-over{background:#edf8f7!important;border-color:#83c9c3!important;transform:none!important}
+.schedule-drop-icon{width:27px!important;height:27px!important;border-radius:8px!important;font-size:14px!important}
+.schedule-drop>div{gap:1px!important}.schedule-drop strong{font-size:11px!important;line-height:1.25}.schedule-drop small{font-size:9px!important;line-height:1.2;max-width:100%}
+.schedule-drop-action{border-color:#d4e5e9!important;background:#fff!important;padding:4px 9px!important;font-size:10px!important}
+@media(max-width:660px){.schedule-source-title{width:100%;padding:1px 3px}.schedule-drop{flex:1 1 230px!important}}
 `;document.head.append(css);
 const iconEye=(off)=>off?'◌':'◉';
 function saveBoard(){try{localStorage.setItem(BOARD_KEY,JSON.stringify(board))}catch{status('Nie udało się zapisać układu.')}}
@@ -323,21 +343,7 @@ function breakMarkup(){
 }
 // Widget grid constants and drag state, required before first render.
 const DESIGN_W=1200;
-const SIZES=['S','M','L'];
-const SPAN_PRESETS={S:3,M:6,L:9};
-let resizeSession=null;
 let boardScale=1,draggingId=null,targetId=null;
-function widgetSize(item){
- const stored=board.sizes?.[item.id];if(SIZES.includes(stored))return stored;
- // One-time migration of the old freely resized positions and widths.
- const width=Number(board.positions?.[item.id]?.w)||Number(board.widths?.[item.id])*(DESIGN_W/12);
- if(Number.isFinite(width)&&width>0)return width>=850?'L':width>=490?'M':'S';
- return item.kind==='breaks'?'L':'S';
-}
-function saveSize(item,size){
- board.sizes=board.sizes||{};board.sizes[item.id]=size;board.spans=board.spans||{};board.spans[item.id]=SPAN_PRESETS[size];
- saveBoard();render();status(`Rozmiar widżetu ${item.title}: ${size}.`);
-}
 function syncBoardHeight(){
  const canvas=$('scheduleWidgetCanvas'),viewport=$('scheduleWidgetViewport');
  const availableWidth=viewport.clientWidth||DESIGN_W;
@@ -386,35 +392,16 @@ function updateBreakHighlights(){
  for(const x of selected){x.cell.classList.add(active.length?'break-current':'break-next');x.cell.title=active.length?'Przerwa trwa':'Przerwa za mniej niż 30 minut'}
 }
 setInterval(updateBreakHighlights,30000);
-// Masonry layout based on each widget's natural table height. No stretched rows.
-const MASON_ROW=8,MASON_GAP=10;
-function layoutMasonry(){
- const canvas=$('scheduleWidgetCanvas');
- // Measure at natural design width, without the scaled TV transform.
- canvas.style.transform='none';canvas.style.marginLeft='0px';
- for(const w of canvas.querySelectorAll('.schedule-widget'))w.style.gridRowEnd='span 1';
- for(const w of canvas.querySelectorAll('.schedule-widget')){
-  const height=Math.max(48,Math.ceil(w.scrollHeight));
-  const rows=Math.max(1,Math.ceil((height+MASON_GAP)/(MASON_ROW+MASON_GAP)));
-  w.style.gridRowEnd='span '+rows;
- }
- // Both editor and TV use identical ordering and column spans.
- syncBoardHeight();
-}
+function layoutMasonry(){syncBoardHeight()}
 function render(){
- sourceLabels();const el=$('scheduleWidgetCanvas');let list=orderedItems();
- // The big Przerwy widget is the default left anchor, with smaller team cards alongside.
- if(!(board.order||[]).length)list=[...list.filter(x=>x.kind==='breaks'),...list.filter(x=>x.kind!=='breaks')];
+ sourceLabels();const el=$('scheduleWidgetCanvas');const list=orderedItems();
  const dateLabel=$('scheduleTVPlanDate');dateLabel.hidden=!(tv&&tomorrow&&list.some(item=>item.kind==='team'));dateLabel.textContent=dateLabel.hidden?'':`STAN · ${formatDate(tomorrow.date)}`;
  if(!list.length){el.innerHTML='<div class="schedule-empty" style="grid-column:span 12;padding:30px;text-align:center">Wczytaj grafik na jutro lub przerwy, aby ułożyć widżety do TV.</div>';syncBoardHeight();return}
  el.innerHTML=list.map(item=>{
-  const isOff=item.kind==='team'&&isHidden(tomorrow,item.title),size=widgetSize(item);
+  const isOff=item.kind==='team'&&isHidden(tomorrow,item.title);
   const shiftButtons=item.kind==='breaks'?`<div class="schedule-break-select" role="group" aria-label="Zmiana przerw">${['I ZMIANA','II ZMIANA'].map(name=>`<button type="button" class="schedule-break-choice" data-break-shift="${name}" aria-pressed="${breakShift===name}" title="Pokaż ${name}">${name}</button>`).join('')}</div>`:'';
-  const sizeBtns=`<div class="schedule-widget-size-group" role="group" aria-label="Rozmiar ${esc(item.title)}">${SIZES.map(v=>`<button type="button" class="schedule-size" data-size-choice="${v}" aria-pressed="${v===size}" title="Rozmiar ${v}">${v}</button>`).join('')}</div>`;
-  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${shiftButtons}${sizeBtns}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij widżet, aby zmienić układ" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
-  const span=Math.max(2,Math.min(12,Number(board.spans?.[item.id])||SPAN_PRESETS[size]));
-  const colStyle=` style="grid-column:auto / span ${span}"`;
-  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}" data-size="${size}" data-span="${span}"${colStyle}><div class="schedule-widget-header"><strong>${esc(item.title)}${tv&&item.kind==='breaks'?` · ${esc(breakShift)}`:''}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div>${tv?'':'<div class="schedule-widget-resize-columns" role="button" tabindex="0" aria-label="Zmień szerokość widżetu" title="Przeciągnij w bok, aby zmienić szerokość"></div>'}</section>`;
+  const controls=!tv?`${item.kind==='team'?`<button class="schedule-team-visibility" title="${isOff?'Pokaż':'Ukryj'} cały zespół w TV" aria-label="Widoczność TV: ${esc(item.title)}">${iconEye(isOff)}</button>`:''}${shiftButtons}<button class="schedule-widget-handle" draggable="true" type="button" title="Przeciągnij widżet, aby zmienić układ" aria-label="Przesuń ${esc(item.title)}">⠿</button><button class="schedule-widget-remove" title="Usuń widżet z układu i TV" aria-label="Usuń widżet ${esc(item.title)}" type="button">×</button>`:'';
+  return `<section class="schedule-widget${isOff?' is-muted':''}" data-id="${esc(item.id)}"><div class="schedule-widget-header"><strong>${esc(item.title)}${tv&&item.kind==='breaks'?` · ${esc(breakShift)}`:''}</strong><div class="schedule-widget-actions">${controls}</div></div><div class="schedule-widget-body">${item.kind==='team'?teamMarkup(item):breakMarkup()}</div></section>`;
  }).join('');
  requestAnimationFrame(()=>{layoutMasonry();updateBreakHighlights()});
 }
@@ -433,43 +420,10 @@ $('scheduleWidgetCanvas').addEventListener('click',e=>{
    breakHours=choice;try{localStorage.setItem(BREAK_HOURS_KEY,breakHours)}catch{}
    render();status(`Przerwy: ${breakShift}, ${breakHours}. Wybór zapisano także dla TV.`);
   }
-  else if(b.classList.contains('schedule-size'))saveSize(item,b.dataset.sizeChoice);
  else if(b.classList.contains('schedule-team-visibility')&&tomorrow)toggleVisibility(tomorrow,item.title,null);
  else if(b.classList.contains('schedule-person-eye')&&tomorrow)toggleVisibility(tomorrow,b.dataset.team,b.dataset.person);
 });
 const canvas=$('scheduleWidgetCanvas');
-// Direct resize by the bottom-right grip, snapped to one of 12 grid columns.
-canvas.addEventListener('pointerdown',e=>{
- if(tv||e.button!==0)return;
- const grip=e.target.closest('.schedule-widget-resize-columns');if(!grip)return;
- const widget=grip.closest('.schedule-widget');if(!widget)return;
- resizeSession={widget,grip,pointerId:e.pointerId,startX:e.clientX,startSpan:Number(widget.dataset.span)||3,scale:boardScale};
- grip.setPointerCapture(e.pointerId);widget.classList.add('is-interacting');e.preventDefault();
-});
-canvas.addEventListener('pointermove',e=>{
- if(!resizeSession||e.pointerId!==resizeSession.pointerId)return;
- const {widget,startX,startSpan,scale}=resizeSession;
- const step=(DESIGN_W-11*MASON_GAP)/12+MASON_GAP;
- const span=Math.max(2,Math.min(12,startSpan+Math.round((e.clientX-startX)/(Math.max(.05,scale)*step))));
- if(span===Number(widget.dataset.span))return;
- widget.dataset.span=String(span);widget.style.gridColumn=`auto / span ${span}`;
- // Make the other tiles move immediately as width changes.
- layoutMasonry();
-});
-function finishWidgetResize(e){
- if(!resizeSession||e.pointerId!==resizeSession.pointerId)return;
- const {widget}=resizeSession;const span=Number(widget.dataset.span);
- board.spans=board.spans||{};board.spans[widget.dataset.id]=span;
- widget.classList.remove('is-interacting');resizeSession=null;
- saveBoard();layoutMasonry();status(`Szerokość widżetu: ${span}/12.`);
-}
-canvas.addEventListener('pointerup',finishWidgetResize);
-canvas.addEventListener('pointercancel',finishWidgetResize);
-canvas.addEventListener('keydown',e=>{
- const grip=e.target.closest('.schedule-widget-resize-columns');if(!grip||tv||!['ArrowLeft','ArrowRight'].includes(e.key))return;
- e.preventDefault();const widget=grip.closest('.schedule-widget'),span=Math.max(2,Math.min(12,(Number(widget.dataset.span)||3)+(e.key==='ArrowRight'?1:-1)));
- widget.dataset.span=span;widget.style.gridColumn=`auto / span ${span}`;board.spans=board.spans||{};board.spans[widget.dataset.id]=span;saveBoard();layoutMasonry();
-});
 // Native HTML drag initiates only on the handle. Widgets swap positions like
 // iPhone home-screen tiles; no overlap and no arbitrary pixel coordinates.
 canvas.addEventListener('dragstart',e=>{
@@ -477,27 +431,27 @@ canvas.addEventListener('dragstart',e=>{
  if(!widget){e.preventDefault();return}draggingId=widget.dataset.id;targetId=null;
  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggingId);widget.classList.add('is-dragging');
 });
-let lastDragTarget=null;
 canvas.addEventListener('dragover',e=>{
- if(!draggingId)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+ if(!draggingId)return;
+ e.preventDefault();e.dataTransfer.dropEffect='move';
  const over=e.target.closest('.schedule-widget');
- if(!over||over.dataset.id===draggingId)return;
- const dragged=Array.from(canvas.children).find(x=>x.dataset.id===draggingId);if(!dragged)return;
- if(lastDragTarget===over.dataset.id)return;
- lastDragTarget=over.dataset.id;
- // Move surrounding tiles while dragging, not only when releasing the mouse.
- const mid=over.getBoundingClientRect().top+over.getBoundingClientRect().height/2;
- const before=e.clientY<mid;
- if(before)canvas.insertBefore(dragged,over);else canvas.insertBefore(dragged,over.nextSibling);
- layoutMasonry();
+ targetId=over&&over.dataset.id!==draggingId?over.dataset.id:null;
+ canvas.querySelectorAll('.schedule-widget').forEach(w=>w.classList.toggle('drop-target',w.dataset.id===targetId));
 });
 canvas.addEventListener('drop',e=>{
  if(!draggingId)return;e.preventDefault();
- board.order=[...canvas.querySelectorAll('.schedule-widget')].map(w=>w.dataset.id);
- saveBoard();draggingId=null;targetId=null;lastDragTarget=null;
- canvas.classList.remove('is-board-drop');render();status('Zapisano układ widżetów.');
+ const dropWidget=e.target.closest('.schedule-widget');
+ const dest=dropWidget?.dataset.id!==draggingId?dropWidget?.dataset.id:null;
+ if(dest){
+  const order=[...canvas.querySelectorAll('.schedule-widget')].map(w=>w.dataset.id),a=order.indexOf(draggingId),b=order.indexOf(dest);
+  if(a>=0&&b>=0){[order[a],order[b]]=[order[b],order[a]];board.order=order;saveBoard();status('Zamieniono widżety miejscami.');}
+ }
+ draggingId=null;targetId=null;render();
 });
-canvas.addEventListener('dragend',()=>{draggingId=null;targetId=null;lastDragTarget=null;canvas.classList.remove('is-board-drop');canvas.querySelectorAll('.schedule-widget').forEach(w=>w.classList.remove('is-dragging','drop-target'))});
+canvas.addEventListener('dragend',()=>{
+ draggingId=null;targetId=null;
+ canvas.querySelectorAll('.schedule-widget').forEach(w=>w.classList.remove('is-dragging','drop-target'));
+});
 canvas.addEventListener('keydown',e=>{
  const h=e.target.closest('.schedule-widget-handle');if(!h||tv||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
  const w=h.closest('.schedule-widget'),id=w.dataset.id,order=[...canvas.querySelectorAll('.schedule-widget')].map(x=>x.dataset.id),i=order.indexOf(id),j=i+(['ArrowLeft','ArrowUp'].includes(e.key)?-1:1);
@@ -505,7 +459,7 @@ canvas.addEventListener('keydown',e=>{
  canvas.querySelector(`[data-id="${CSS.escape(id)}"] .schedule-widget-handle`)?.focus();
 });
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(layoutMasonry,90)});
-$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{},sizes:{},spans:{}};saveBoard();render();status('Przywrócono domyślny układ Pinterest.');};
+$('scheduleResetLayout').onclick=()=>{board={order:[],widths:{},removed:[],positions:{},sizes:{},spans:{}};saveBoard();render();status('Przywrócono domyślną kolejność widżetów.');};
 function attachDrop(kind){const zone=$(kind==='plan'?'schedulePlanDrop':'scheduleBreakDrop'),input=$(kind==='plan'?'schedulePlanFile':'scheduleBreakFile');
  zone.addEventListener('click',()=>input.click());zone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click()}});
  for(const evt of ['dragenter','dragover'])zone.addEventListener(evt,e=>{e.preventDefault();zone.classList.add('is-over')});

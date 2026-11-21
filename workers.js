@@ -94,45 +94,60 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.51</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.53</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
-  <h3>Dane raportów</h3>
+  <h3>Źródła danych</h3>
   <div class="inc-info-item"><div><strong>Wyniki procesów</strong><small>Źródło: Excel · arkusz RAPORT</small><small id="incProcessSource"></small></div></div>
   <div class="inc-info-item"><div><strong>Karty pracowników</strong><small>Źródło: raporty Login TH · arkusz Export</small><small id="incWorkerSource"></small></div></div>
+  <div class="inc-info-item"><div><strong>Harmonogram pracy</strong><small>Excel STAN: obsada zespołów i pracownicy; osobny Excel Przerwy: godziny przerw.</small><small>Źródła są wczytywane lokalnie. Widżety można zamieniać miejscami; ikony oka określają widoczność na TV.</small></div></div>
+  <div class="inc-info-item"><div><strong>Tablica informacyjna</strong><small>Podstrony ze zdjęciami i kartami tekstowymi, gotowe szablony oraz osobny wybór slajdów do TV.</small><small>Zdjęcia i treść podstron są przechowywane w IndexedDB tej przeglądarki.</small></div></div>
   <h3>Jak obliczane są wyniki?</h3>
   <p><b>Realizacja normy</b> = wynik szt./h ÷ norma × 100%.</p>
   <p><b>KPI za okres</b> = średnia KPI procesów ważona czasem pracy.</p>
   <p><b>Procesy w normie</b> = liczba procesów z KPI ≥ 100% / wszystkie procesy pracownika.</p>
   <p class="inc-muted">Wynik szt./h i KPI procesu pochodzą z raportów. Zaokrąglenie dotyczy jedynie wyświetlania.</p>
-  <div class="inc-info-safe"><b>Ochrona danych</b><p>Import odbywa się lokalnie. Dane zapisują się w tej przeglądarce i nie są wysyłane na serwer. Nie synchronizują się między komputerami.</p></div>
+  <div class="inc-info-safe"><b>Ochrona danych</b><p>Pliki Excel są odczytywane w przeglądarce. Wyniki i ustawienia harmonogramu są przechowywane lokalnie, a podstrony informacyjne wraz ze zdjęciami w IndexedDB. Aplikacja nie przesyła tych danych na własny serwer. Dane nie synchronizują się między przeglądarkami i urządzeniami; usunięcie danych witryny może je skasować.</p></div>
   <details class="inc-danger-area"><summary>Zarządzanie danymi</summary><div><button type="button" id="incClearProcess">Wyczyść wyniki procesów</button><button type="button" id="incClearWorkers">Wyczyść karty pracowników</button></div></details>
  </section>
  <section class="inc-info-section" id="incTabApp" role="tabpanel" hidden>
   <div class="inc-info-item"><strong>Wersja aplikacji</strong><b id="incAppVersion">1.1.8</b></div>
   <div class="inc-info-item"><strong>Status PWA</strong><span id="incPwaStatus">Sprawdzanie…</span></div>
-  <h3>Funkcje</h3><p>Wyniki procesów, karty pracowników, harmonogram pracy, import Excel i niezależne pokazy TV w osobnych oknach aplikacji.</p>
-  <h3>Tryb TV</h3><p>Wybór ekranów, kolejności, czasu wyświetlania i automatycznego lub ręcznego dopasowania kart do ekranu.</p>
-  <p class="inc-muted">Harmonogram pracy obsługuje import STAN / Arkusz1, podział na procesy oraz ekrany TV dla dzisiaj i jutra.</p>
+  <h3>Główne zakładki</h3>
+  <div class="inc-info-item"><div><strong>Harmonogram pracy</strong><small>Grafik na jutro (STAN), Przerwy I/II ZMIANA z wyborem 8H/10H/12H; widżety, widoczność pracowników na TV i data STAN.</small></div></div>
+  <div class="inc-info-item"><div><strong>Wyniki i normy</strong><small>Wyniki procesów oraz Karty pracowników, import raportów Excel, realizacja norm i przegląd okresów.</small></div></div>
+  <div class="inc-info-item"><div><strong>Tablica informacyjna</strong><small>Szablony slajdów ze zdjęciami lub samym tekstem, niezależne bloki tekstowe, edycja w makiecie, zapis podstron.</small></div></div>
+  <h3>Tryb TV</h3>
+  <p>Wspólny pokaz wybranych ekranów: procesy, karty pracowników, harmonogram oraz zapisane slajdy informacyjne. Możesz ustawiać kolejność, czas wyświetlania i tryb stały lub automatyczny. Wewnętrzne strony ekranu dzielą jego czas.</p>
+  <h3>Zapisywanie i aktualizacje</h3><p>Ustawienia i dane pozostają lokalnie w tej przeglądarce. PWA może działać offline po zapisaniu zasobów; nowe wersje instalowane są przez mechanizm aktualizacji aplikacji.</p>
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.51</strong> · Regulowana mozaika widżetów</summary><p>Zwężanie i poszerzanie widżetów przez uchwyt narożny z podglądem na żywo, dynamiczne przesuwanie kart oraz kompaktowe strefy Excel.</p></details>
+  <details open><summary><strong>v1.1.53</strong> · Źródła danych i aktualne informacje</summary><p>Jedna zwarta belka źródeł Excel nad harmonogramem. Zaktualizowano opis modułów, przechowywania danych i trybu TV w oknie O aplikacji.</p></details>
+  <details><summary><strong>v1.1.52</strong> · Prosta zamiana widżetów</summary><p>Usunięto skalowanie S/M/L, przeciąganie krawędzi i mozaikę. Widżety mają stałe szerokości i można zamieniać je miejscami za uchwyt ⠿.</p></details>
+  <details><summary><strong>v1.1.51</strong> · Regulowana mozaika widżetów</summary><p>Zwężanie i poszerzanie widżetów przez uchwyt narożny z podglądem na żywo, dynamiczne przesuwanie kart oraz kompaktowe strefy Excel.</p></details>
   <details><summary><strong>v1.1.50</strong> · Wyśrodkowane nagłówki zakładek</summary><p>Harmonogram pracy i Tablica informacyjna mają wyśrodkowane nagłówki, takie jak Wyniki i normy. Przyciski akcji pozostały po prawej.</p></details>
   <details><summary><strong>v1.1.49</strong> · Widżety w układzie Pinterest</summary><p>Widżety o rozmiarach S/M/L układają się w mozaikę bez rozciągania wierszy. Przenoszenie za uchwyt, zachowanie kolumn w TV i mniejsze strefy importu.</p></details>
-  <details><summary><strong>v1.1.48</strong> · Uproszczone ustawienia tekstu</summary><p>Usunięto z edytora bloków zbędne pola Wygląd i Miejsce w szablonie. Zachowano układy, kolory oraz zgodność zapisanych podstron.</p></details>
+  <details><summary><strong>v1.1.47</strong> · Prostsze ustawienia tekstu</summary><p>Usunięto pola Wygląd i Miejsce w szablonie z edycji bloków tekstowych.</p></details>
+  <details><summary><strong>v1.1.44</strong> · Kolory i dopasowanie tekstu</summary><p>Dodano warianty kolorystyczne kart, bardziej kompaktowe opcje tekstu i dopasowywanie długich komunikatów.</p></details>
+  <details><summary><strong>v1.1.43</strong> · Wypełnianie makiet</summary><p>Gotowe obszary zdjęć i tekstu można uzupełniać bezpośrednio w podglądzie szablonu.</p></details>
+  <details><summary><strong>v1.1.40</strong> · Dopasowanie ekranów TV</summary><p>Ujednolicono sposób dopasowania harmonogramu i slajdów do dostępnej przestrzeni TV.</p></details>
+  <details><summary><strong>v1.1.39</strong> · Przezroczyste tło slajdów</summary><p>Usunięto prostokątne tło kompozycji informacyjnych.</p></details>
+  <details><summary><strong>v1.1.37</strong> · Wiele bloków tekstowych</summary><p>Na jednym slajdzie można umieszczać niezależne tekstowe karty.</p></details>
+  <details><summary><strong>v1.1.48</strong> · Kompaktowy edytor slajdów</summary><p>Ukryto powtórzoną sekcję Zdjęcia, pozostawiono wstawianie bezpośrednio w makiecie i dodano zwijane ustawienia tekstu.</p></details>
   <details><summary><strong>v1.1.46</strong> · Numeracja szablonów</summary><p>Wybór układów pokazuje numery 1–7. Wewnętrzne identyfikatory pozostają bez zmian, by zachować zgodność zapisanych podstron.</p></details>
-  <details><summary><strong>v1.1.45</strong> · Szablony gotowe do wypełnienia</summary><p>Po wyborze układu 1/2/3/6 widać od razu miejsca na zdjęcia i tekst. Kliknięcie w miejsce otwiera edycję. Podgląd i TV korzystają z tej samej kompozycji 16:9, zachowano zgodność zapisanych slajdów.</p></details>
+  <details><summary><strong>v1.1.45</strong> · Trzy szablony tylko z tekstem</summary><p>Dodano warianty bez zdjęć: ogłoszenie, dwie kolumny i trzy karty tekstowe.</p></details>
   <details><summary><strong>v1.1.42</strong> · Kreator slajdów informacyjnych</summary><p>Cztery szablony (1, 2, 3, 6), do czterech zdjęć, niezależne bloki tekstowe, podgląd 16:9 i zapis układu do TV. Zachowano zgodność z wcześniejszymi podstronami.</p></details>
-  <details><summary><strong>v1.1.41</strong> · Przezroczyste tło slajdów</summary><p>Usunięto prostokątne tło kompozycji informacji w podglądzie i trybie TV, bez zmian położenia zdjęcia oraz tekstów.</p></details>
-  <details><summary><strong>v1.1.38</strong> · Wiele bloków tekstowych</summary><p>Wiele niezależnych kart tekstowych z osobnym położeniem i wyglądem, podgląd na żywo i zgodność z zapisanymi podpisami.</p></details>
+  <details><summary><strong>v1.1.41</strong> · Formatowanie tekstu</summary><p>Dodano ustawienia wyrównania, pogrubienia i rozmiaru tekstu w kartach informacyjnych.</p></details>
+  <details><summary><strong>v1.1.38</strong> · Zgodność podglądu i TV</summary><p>Wprowadzono wspólny układ kompozycji 16:9 dla podglądu i ekranu TV.</p></details>
   <details><summary><strong>v1.1.36</strong> · Układ podpisów informacyjnych</summary><p>Położenie tekstu nad, pod, obok lub na zdjęciu; jasna, ciemna lub szklana karta i podgląd w edytorze.</p></details>
   <details><summary><strong>v1.1.35</strong> · Tablica informacyjna</summary><p>Nowa zakładka ze zdjęciami, opcjonalnym podpisem i zapisanymi podstronami wybieranymi osobno do pokazu TV.</p></details>
   <details><summary><strong>v1.1.34</strong> · Podświetlenie tylko godzin przerw</summary><p>Kolorowe wyróżnienie dotyczy wyłącznie komórek z godzinami. Kolumna Czas pracy (8H / 10H / 12H) pozostaje neutralna.</p></details>
   <details><summary><strong>v1.1.33</strong> · Podświetlenie przerw 30 minut wcześniej</summary><p>Nadchodząca przerwa jest wyróżniana dopiero przez 30 minut przed rozpoczęciem. Podczas przerwy pozostaje zielone wyróżnienie, bez przeładowywania widżetów TV.</p></details>
   <details><summary><strong>v1.1.32</strong> · Wybór 8H / 10H / 12H w Przerwy</summary><p>Podświetlenie aktualnej i następnej przerwy dotyczy tylko wybranej długości zmiany. Uwzględniono kontynuację 12H i zapis wyboru dla TV.</p></details>
-  <details><summary><strong>v1.1.31</strong> · Naprawa inicjalizacji widżetów</summary><p>Przywrócono brakujące definicje rozmiarów S/M/L, skali układu i stanu przeciągania, dzięki czemu tabele znowu się wyświetlają.</p></details>
-  <details><summary><strong>v1.1.29</strong> · Poprawione skalowanie widżetów</summary><p>Zmiana rozmiaru nie blokuje się na sąsiednich widżetach, które ustępują miejsca. Minimalna wysokość zależy od treści, nie od wcześniejszego rozmiaru.</p></details>
+  <details><summary><strong>v1.1.31</strong> · Mniejszy import i przerwy</summary><p>Zmniejszono strefy importu i usunięto powtórzony nagłówek I/II/III w tabeli przerw.</p></details>
+  <details><summary><strong>v1.1.30</strong> · Naprawa wyświetlania widżetów</summary><p>Uzupełniono brakujące definicje potrzebne do inicjalizacji widżetów.</p></details>
+  <details><summary><strong>v1.1.29</strong> · Wybór zmiany przerw</summary><p>Wybór I ZMIANA lub II ZMIANA, bez zbędnych list SPM i przydziałów do przerw.</p></details>
   <details><summary><strong>v1.1.26</strong> · Swobodny edytor widżetów</summary><p>Przeciąganie widżetów w dowolne wolne miejsce, zmiana szerokości i wysokości za narożnik, zapis pozycji i zachowanie układu w TV.</p></details>
   <details><summary><strong>v1.1.25</strong> · Data STAN w trybie TV</summary><p>Data załadowanego grafiku STAN jest wyświetlana pod nagłówkiem Harmonogram pracy tylko wtedy, gdy na ekranie są widżety tego grafiku.</p></details>
   <details><summary><strong>v1.1.24</strong> · Przerwy i usuwanie widżetów</summary><p>Import PRZERWY AGENCJE.xlsx: zmiany I/II, grupy przerw i SPM. Usuwanie widżetów z tablicy i TV, możliwość przywrócenia.</p></details>
