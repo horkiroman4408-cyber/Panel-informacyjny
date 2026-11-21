@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.44</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.45</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,7 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.44</strong> · Szablony gotowe do wypełnienia</summary><p>Po wyborze układu 1/2/3/6 widać od razu miejsca na zdjęcia i tekst. Kliknięcie w miejsce otwiera edycję. Podgląd i TV korzystają z tej samej kompozycji 16:9, zachowano zgodność zapisanych slajdów.</p></details>
+  <details open><summary><strong>v1.1.45</strong> · Szablony gotowe do wypełnienia</summary><p>Po wyborze układu 1/2/3/6 widać od razu miejsca na zdjęcia i tekst. Kliknięcie w miejsce otwiera edycję. Podgląd i TV korzystają z tej samej kompozycji 16:9, zachowano zgodność zapisanych slajdów.</p></details>
   <details><summary><strong>v1.1.42</strong> · Kreator slajdów informacyjnych</summary><p>Cztery szablony (1, 2, 3, 6), do czterech zdjęć, niezależne bloki tekstowe, podgląd 16:9 i zapis układu do TV. Zachowano zgodność z wcześniejszymi podstronami.</p></details>
   <details><summary><strong>v1.1.41</strong> · Przezroczyste tło slajdów</summary><p>Usunięto prostokątne tło kompozycji informacji w podglądzie i trybie TV, bez zmian położenia zdjęcia oraz tekstów.</p></details>
   <details><summary><strong>v1.1.38</strong> · Wiele bloków tekstowych</summary><p>Wiele niezależnych kart tekstowych z osobnym położeniem i wyglądem, podgląd na żywo i zgodność z zapisanymi podpisami.</p></details>

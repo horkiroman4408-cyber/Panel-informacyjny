@@ -252,10 +252,35 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-fit-notice{font-size:11px;color:#9d5b20;margin:5px 0 10px}
 @media(max-width:760px){.isa-block-editor .isa-format-row{grid-template-columns:1fr 1fr}.isa-block-editor .isa-format-row>div:last-child{grid-column:span 2}}
 
+
+/* v1.1.45: Text-only templates. Shared layout for preview and TV. */
+.isa-stage .isa-layout-7{grid-template-columns:1fr;grid-template-rows:120px minmax(0,1fr)}
+.isa-stage .isa-layout-7>.isa-layout-header{grid-column:1;grid-row:1}
+.isa-stage .isa-layout-7>.isa-layout-body{grid-column:1;grid-row:2}
+.isa-stage .isa-layout-8{grid-template-columns:1fr 1fr;grid-template-rows:105px minmax(0,1fr)}
+.isa-stage .isa-layout-8>.isa-layout-header{grid-column:1/span 2;grid-row:1}
+.isa-stage .isa-layout-8>.isa-layout-body{grid-column:1;grid-row:2}
+.isa-stage .isa-layout-8>.isa-layout-details{grid-column:2;grid-row:2}
+.isa-stage .isa-layout-9{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:105px minmax(0,1fr)}
+.isa-stage .isa-layout-9>.isa-layout-header{grid-column:1/span 3;grid-row:1}
+.isa-stage .isa-layout-9>.isa-layout-body{grid-column:1;grid-row:2}
+.isa-stage .isa-layout-9>.isa-layout-details{grid-column:2;grid-row:2}
+.isa-stage .isa-layout-9>.isa-layout-extra{grid-column:3;grid-row:2}
+.isa-stage .isa-layout-7 .isa-layout-header .isa-caption-card,.isa-stage .isa-layout-8 .isa-layout-header .isa-caption-card,.isa-stage .isa-layout-9 .isa-layout-header .isa-caption-card{background:#30465c;color:#fff;font-size:30px!important}
+.isa-stage .isa-layout-7 .isa-layout-body .isa-caption-card{font-size:34px!important}
+.isa-mini-7{grid-template-columns:1fr!important;grid-template-rows:1fr 2fr!important}
+.isa-mini-7 .head,.isa-mini-8 .head,.isa-mini-9 .head{background:#30465c!important}
+.isa-mini-8{grid-template-columns:1fr 1fr!important;grid-template-rows:1fr 2fr!important}
+.isa-mini-8 .head{grid-column:span 2}
+.isa-mini-9{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:1fr 2fr!important}
+.isa-mini-9 .head{grid-column:span 3}
+.isa-mini-7 .body,.isa-mini-8 .body,.isa-mini-8 .details,.isa-mini-9 .body,.isa-mini-9 .details,.isa-mini-9 .extra{background:#e5edf1!important}
+.isa-template-picker{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))!important}
+.isa-images-heading.isa-text-only{opacity:.55}
 `;document.head.append(style);
 function revokePreview(){for(const u of previewURLs)URL.revokeObjectURL(u);previewURLs=[]}
 function revokeTV(){for(const u of tvURLs)URL.revokeObjectURL(u);tvURLs=[]}
-const TEMPLATES=[['1','Foto + tekst','Foto obok informacji'],['2','Dwa zdjęcia','Zdjęcia obok siebie'],['3','Duże zdjęcie','Tekst na fotografii'],['6','Tablica','Komunikaty i zdjęcia']];
+const TEMPLATES=[['1','Foto + tekst','Foto obok informacji'],['2','Dwa zdjęcia','Zdjęcia obok siebie'],['3','Duże zdjęcie','Tekst na fotografii'],['6','Tablica','Komunikaty i zdjęcia'],['7','Ogłoszenie','Nagłówek i duży tekst'],['8','Dwie kolumny','Dwa bloki informacji'],['9','Trzy karty','Trzy komunikaty obok siebie']];
 const validTemplate=t=>TEMPLATES.some(v=>v[0]===String(t))?String(t):'1';
 const imagesFor=slide=>Array.isArray(slide?.images)?slide.images.slice(0,4):slide?.image?[slide.image]:[];
 const imageURLS=(blobs,collection)=>blobs.map(b=>{if(!b)return null;const u=URL.createObjectURL(b);collection.push(u);return u});
@@ -264,13 +289,19 @@ function renderTemplates(){
  '1':'<i class="photo"></i><i class="head"></i><i class="body"></i>',
  '2':'<i class="photo"></i><i class="photo"></i><i class="footer"></i>',
  '3':'<i class="hero"></i><i class="badge"></i><i class="overlay"></i>',
- '6':'<i class="head"></i><i class="photo"></i><i class="body"></i>'
+ '6':'<i class="head"></i><i class="photo"></i><i class="body"></i>',
+ '7':'<i class="head"></i><i class="body"></i>',
+ '8':'<i class="head"></i><i class="body"></i><i class="details"></i>',
+ '9':'<i class="head"></i><i class="body"></i><i class="details"></i><i class="extra"></i>'
  };
  $('isaTemplates').innerHTML=TEMPLATES.map(([v,label,detail])=>`<button type="button" class="isa-template-option" data-template="${v}" aria-pressed="${selectedTemplate===v}"><span class="isa-template-icon isa-mini-${v}">${mini[v]}</span><strong>${v} · ${label}</strong><small>${detail}</small></button>`).join('');
 }
 function renderImages(){
- const host=$('isaImages'),slots=Math.max(draftImages.length,selectedTemplate==='2'?2:selectedTemplate==='6'?0:1);
- host.innerHTML=Array.from({length:slots},(_,i)=>`<div class="isa-image-slot${draftImages[i]?'':' is-empty'}" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong>${draftImages[i]?'<img alt="Zdjęcie '+(i+1)+'" />':'<div>＋ Kliknij, aby dodać</div>'}<div class="isa-slot-actions"><button type="button" data-image-action="replace">${draftImages[i]?'Zamień':'Dodaj'}</button><button type="button" data-image-action="remove" ${draftImages[i]?'':'disabled'}>Usuń</button></div></div>`).join('')||'<div class="isa-template-empty">Slajd tekstowy, zdjęcie jest opcjonalne.</div>';
+ const textOnly=['7','8','9'].includes(selectedTemplate);
+ $('isaAddImage').hidden=textOnly;
+ $('isaImages').closest('.isa-images-heading')?.classList.toggle('isa-text-only',textOnly);
+ const host=$('isaImages'),slots=Math.max(draftImages.length,selectedTemplate==='2'?2:['6','7','8','9'].includes(selectedTemplate)?0:1);
+ host.innerHTML=textOnly?'<div class="isa-template-empty">Ten szablon zawiera tylko tekst, bez zdjęć.</div>':Array.from({length:slots},(_,i)=>`<div class="isa-image-slot${draftImages[i]?'':' is-empty'}" data-image-index="${i}"><strong>Zdjęcie ${i+1}</strong>${draftImages[i]?'<img alt="Zdjęcie '+(i+1)+'" />':'<div>＋ Kliknij, aby dodać</div>'}<div class="isa-slot-actions"><button type="button" data-image-action="replace">${draftImages[i]?'Zamień':'Dodaj'}</button><button type="button" data-image-action="remove" ${draftImages[i]?'':'disabled'}>Usuń</button></div></div>`).join('')||'<div class="isa-template-empty">Slajd tekstowy, zdjęcie jest opcjonalne.</div>';
  const urls=imageURLS(draftImages,previewURLs);host.querySelectorAll('.isa-image-slot img').forEach(im=>im.src=urls[Number(im.closest('[data-image-index]').dataset.imageIndex)]||'');
 }
 const message=s=>{$('isaMsg').textContent=s};
@@ -295,7 +326,10 @@ const TEMPLATE_FIELDS={
  '1':[['header','UWAGA!'],['body','Ważna informacja dla pracowników']],
  '2':[['footer','Porównanie produktów']],
  '3':[['badge','WAŻNE!'],['overlay','Instrukcja prawidłowego pakowania']],
- '6':[['header','OGŁOSZENIE DLA PRACOWNIKÓW'],['body','Co się zmieniło?'],['details','Co należy zrobić?']]
+ '6':[['header','OGŁOSZENIE DLA PRACOWNIKÓW'],['body','Co się zmieniło?'],['details','Co należy zrobić?']],
+ '7':[['header','OGŁOSZENIE'],['body','Treść ogłoszenia']],
+ '8':[['header','INFORMACJE'],['body','Informacja 1'],['details','Informacja 2']],
+ '9':[['header','KOMUNIKATY'],['body','Komunikat 1'],['details','Komunikat 2'],['extra','Komunikat 3']]
 };
 function prepareBlocks(template,blocks){
  const slots=TEMPLATE_FIELDS[template].map(x=>x[0]);
@@ -353,9 +387,15 @@ function compose(imageURLs,blocks,template='1',placeholder=false){
   board.append(createPhoto(0),createPhoto(1),createText('footer'));
  }else if(template==='3'){
   const photo=createPhoto(0);photo.classList.add('isa-photo-hero');board.append(photo,createText('badge'),createText('overlay'));
- }else{
+ }else if(template==='6'){
   board.append(createText('header'),createPhoto(0),createText('body'),createText('details'));
   if(!imageURLs[0]&&!editor)board.classList.add('isa-layout-no-photo');
+ }else if(template==='7'){
+  board.append(createText('header'),createText('body'));
+ }else if(template==='8'){
+  board.append(createText('header'),createText('body'),createText('details'));
+ }else if(template==='9'){
+  board.append(createText('header'),createText('body'),createText('details'),createText('extra'));
  }
  return board;
 }
@@ -448,13 +488,13 @@ $('isaBlocks').addEventListener('click',e=>{
 function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=prepareBlocks(selectedTemplate,storedBlocks(r));renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
 function close(){area.hidden=true;$('isaTV').hidden=true;revokeTV();$('infoSlidesTab').classList.remove('active');}
-function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>{fitStage(stage,true);scheduleTextFit(stage,false)});}
+function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;area.hidden=false;$('isaTV').hidden=false;revokeTV();const urls=imageURLS(imagesFor(slide),tvURLs);const stage=stageFor(['7','8','9'].includes(validTemplate(slide.template))?[]:urls,storedBlocks(slide),validTemplate(slide.template));$('isaTV').querySelector('.isa-tv-frame').replaceChildren(stage);requestAnimationFrame(()=>{fitStage(stage,true);scheduleTextFit(stage,false)});}
 function restore(){revokeTV();open();}
 $('isaNew').onclick=()=>choose(null);
 $('isaList').onclick=e=>{const b=e.target.closest('button[data-id]');if(b)choose(records.find(r=>r.id===b.dataset.id))};
 $('isaSave').onclick=async()=>{if(saving)return;const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);
  if(!title){message('Wpisz tytuł podstrony.');return}
- if(!draftImages.some(Boolean)&&selectedTemplate!=='6'){message('Dodaj zdjęcie lub wybierz szablon 6 dla slajdu tekstowego.');return}
+ if(!draftImages.some(Boolean)&&!['6','7','8','9'].includes(selectedTemplate)){message('Dodaj zdjęcie lub wybierz szablon tekstowy.');return}
  if(!draftImages.some(Boolean)&&!textBlocks.length){message('Dodaj zdjęcie lub blok tekstu.');return}
  saving=true;$('isaSave').disabled=true;
  try{const old=records.find(r=>r.id===selectedId);const item={id:old?.id||id(),title,template:selectedTemplate,textBlocks,images:[...draftImages],image:draftImages.find(Boolean)||null,updatedAt:Date.now()};await tx('readwrite',s=>s.put(item));const i=records.findIndex(s=>s.id===item.id);if(i>=0)records[i]=item;else records.push(item);choose(item);message('Podstrona zapisana. Możesz wybrać ją w ustawieniach TV.');$('tv').disabled=false;}
