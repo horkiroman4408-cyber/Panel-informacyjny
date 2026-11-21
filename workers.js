@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.34</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.35</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Dane raportów</h3>
@@ -117,7 +117,8 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.34</strong> · Podświetlenie tylko godzin przerw</summary><p>Kolorowe wyróżnienie dotyczy wyłącznie komórek z godzinami. Kolumna Czas pracy (8H / 10H / 12H) pozostaje neutralna.</p></details>
+  <details open><summary><strong>v1.1.35</strong> · Tablica informacyjna</summary><p>Nowa zakładka ze zdjęciami, opcjonalnym podpisem i zapisanymi podstronami wybieranymi osobno do pokazu TV.</p></details>
+  <details><summary><strong>v1.1.34</strong> · Podświetlenie tylko godzin przerw</summary><p>Kolorowe wyróżnienie dotyczy wyłącznie komórek z godzinami. Kolumna Czas pracy (8H / 10H / 12H) pozostaje neutralna.</p></details>
   <details><summary><strong>v1.1.33</strong> · Podświetlenie przerw 30 minut wcześniej</summary><p>Nadchodząca przerwa jest wyróżniana dopiero przez 30 minut przed rozpoczęciem. Podczas przerwy pozostaje zielone wyróżnienie, bez przeładowywania widżetów TV.</p></details>
   <details><summary><strong>v1.1.32</strong> · Wybór 8H / 10H / 12H w Przerwy</summary><p>Podświetlenie aktualnej i następnej przerwy dotyczy tylko wybranej długości zmiany. Uwzględniono kontynuację 12H i zapis wyboru dla TV.</p></details>
   <details><summary><strong>v1.1.31</strong> · Naprawa inicjalizacji widżetów</summary><p>Przywrócono brakujące definicje rozmiarów S/M/L, skali układu i stanu przeciągania, dzięki czemu tabele znowu się wyświetlają.</p></details>
@@ -368,13 +369,14 @@ const unifiedTV=(()=>{
  config.screens=(Array.isArray(config.screens)?config.screens:defaultScreens).filter(x=>x&&x.id!=='process:norms'&&x.id!=='schedule:today'&&x.id!=='schedule:tomorrow');
  if(config.fixed==='process:norms')config.fixed='process:all';
  if(config.fixed==='schedule:today'||config.fixed==='schedule:tomorrow')config.fixed='schedule:board';
- let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false;
+ let draft=[],running=false,pausedUnified=false,activeId='',screenCursor=0,cycleTimer=null,controlsTimer=null,savedProcess=null,currentSec=20,fitWarning='',processPageIndex=0,schedulePageIndex=0,wasAssignment=false,wasInfoSlides=false;
  const isProcess=id=>id.startsWith('process:');
  const availableScreens=()=>[
    {id:'process:all',name:'Wyniki procesów',description:'Wszystkie procesy razem',available:!!data.sections.length},
    ...data.sections.map(s=>({id:'process:'+s.name,name:processLabel(s.name),description:'Wyniki jednego procesu',available:true})),
    {id:'workers',name:'Karty pracowników',description:'Wszystkie procesy każdego pracownika',available:!!filtered().length},
-    {id:'schedule:board',name:'Harmonogram pracy',description:'Grafik na jutro i przerwy · układ widżetów',available:!!window.incSchedule?.has()}
+    {id:'schedule:board',name:'Harmonogram pracy',description:'Grafik na jutro i przerwy · układ widżetów',available:!!window.incSchedule?.has()},
+    ...(window.incSlides?.list()||[])
  ];
  const screenName=id=>availableScreens().find(x=>x.id===id)?.name||id;
  function normalizeScreens(){
@@ -418,6 +420,7 @@ const unifiedTV=(()=>{
    document.body.classList.add('tv','unified-tv');
    document.documentElement.scrollTop=0;document.body.scrollTop=0;
    window.scrollTo(0,0);
+   if(!id.startsWith('info:'))window.incSlides?.close();
    if(isProcess(id)){
      q('assign').hidden=true;monthlyTV=false;cancelAnimationFrame(raf);clearInterval(timer);q('workerArea').hidden=true;q('norms').hidden=false;q('workerTVbar').hidden=true;
      q('processView').classList.add('active');q('workerView').classList.remove('active');
@@ -433,6 +436,11 @@ const unifiedTV=(()=>{
      settings.layout=config.layout;settings.cards=config.cards;
      document.body.classList.add('monthly-tv');renderTV();
      requestAnimationFrame(checkManualFit);
+   }else if(id.startsWith('info:')){
+     tv=false;monthlyTV=false;clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
+     document.body.classList.remove('monthly-tv');document.body.removeAttribute('data-tv-density');
+     q('norms').hidden=true;q('workerArea').hidden=true;q('assign').hidden=true;q('workerTVbar').hidden=true;
+     window.incSlides?.showTV(id.slice(5));
    }else if(id.startsWith('schedule:')){
      tv=false;monthlyTV=false;clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
      document.body.classList.remove('monthly-tv');document.body.removeAttribute('data-tv-density');
@@ -506,7 +514,7 @@ const unifiedTV=(()=>{
    if(!enabled.length){u('unifiedTVerror').textContent='Wybierz co najmniej jeden ekran z wczytanymi danymi.';u('unifiedTVerror').hidden=false;return}
    config={screens:draft.map(x=>({id:x.id,enabled:x.enabled,seconds:x.seconds})),layout:dialog.querySelector('input[name="utLayout"]:checked').value,cards:Number(dialog.querySelector('input[name="utCount"]:checked').value),mode:dialog.querySelector('input[name="utMode"]:checked').value,fixed:u('unifiedFixed').value,autohide:u('unifiedHide').checked};
    try{localStorage.setItem(KEY,JSON.stringify(config))}catch{}
-   wasAssignment=!q('assign').hidden;dialog.close();running=true;pausedUnified=false;screenCursor=0;
+   wasAssignment=!q('assign').hidden;wasInfoSlides=!!window.incSlides?.isOpen();dialog.close();running=true;pausedUnified=false;screenCursor=0;
    const screens=selectedScreens();const fixedScreen=screens.find(x=>x.id===config.fixed)||screens[0];const selected=config.mode==='fixed'?fixedScreen:screens[0];screenCursor=screens.findIndex(x=>x.id===selected.id);currentSec=selected.seconds;
    q('workerTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;
    window.scrollTo(0,0);show(selected.id);u('unifiedTVnext').disabled=config.mode==='fixed';requestAnimationFrame(()=>requestAnimationFrame(schedule));revealControls();
@@ -518,7 +526,8 @@ const unifiedTV=(()=>{
    monthlyTV=false;tv=false;document.body.classList.remove('tv','monthly-tv','unified-tv','cursor-hidden');document.body.removeAttribute('data-tv-density');
    u('unifiedTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;q('workerTVbar').hidden=true;
    if(savedProcess){q('onlynorms').checked=false;tvConfig.density=savedProcess.density;tvConfig.mode=savedProcess.mode;savedProcess=null}
-   if(wasAssignment){q('assign').hidden=false;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSchedule?.restore();q('tv').disabled=false;}
+   if(wasInfoSlides){q('assign').hidden=true;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSlides?.restore();q('tv').disabled=!(window.incSlides?.list().length);}
+   else if(wasAssignment){q('assign').hidden=false;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSchedule?.restore();q('tv').disabled=false;}
    else if(active){q('assign').hidden=true;q('norms').hidden=true;q('workerArea').hidden=false;active=true;q('upload').textContent='📥 Pliki pracowników';render()}
    else{q('assign').hidden=true;q('norms').hidden=false;q('workerArea').hidden=true;active=false;q('upload').textContent='📥 Wczytaj Excel';processRender()}
    if(!skipFullscreen&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});
@@ -634,3 +643,4 @@ updatePeriods();render();
 
 // Harmonogram is isolated from legacy KPI/worker import.
 {const script=document.createElement('script');script.src='schedule.js';document.body.appendChild(script);}
+{const script=document.createElement('script');script.src='info-slides.js';document.body.appendChild(script);}
