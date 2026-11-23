@@ -18,7 +18,7 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <button type="button" data-rich-command="insertUnorderedList" title="Lista punktowana" aria-label="Lista punktowana">☷</button><button type="button" data-rich-command="insertOrderedList" title="Lista numerowana" aria-label="Lista numerowana">≡<sup>1</sup></button><span class="isa-rich-divider"></span>
  <label title="Rozmiar zaznaczonego tekstu" class="isa-rich-field"><span>Rozmiar</span><select id="isaRichSize" aria-label="Rozmiar zaznaczonego tekstu"><option value="3">Mały</option><option value="4" selected>Średni</option><option value="5">Duży</option></select></label>
  <label title="Kolor zaznaczonego tekstu" class="isa-rich-field"><span>Tekst</span><input type="color" id="isaRichColor" value="#233b54" aria-label="Kolor zaznaczonego tekstu"></label>
- <label title="Kolor podświetlenia zaznaczonego tekstu" class="isa-rich-field"><span>Marker</span><input type="color" id="isaRichHighlight" value="#c7f3eb" aria-label="Kolor podświetlenia"></label>
+ <label title="Kolor podświetlenia zaznaczonego tekstu" class="isa-rich-field"><span>Marker</span><input type="color" id="isaRichHighlight" value="#c7f3eb" aria-label="Kolor podświetlenia"></label><button type="button" id="isaRichClearMarker" title="Usuń podświetlenie z zaznaczonego tekstu" aria-label="Bez markera">✕</button>
  <span class="isa-rich-divider"></span>
  <div class="isa-rich-align" role="group" aria-label="Wyrównanie tekstu"><button type="button" data-rich-align="left" title="Do lewej" aria-label="Do lewej">☰</button><button type="button" data-rich-align="center" title="Do środka" aria-label="Do środka">≡</button><button type="button" data-rich-align="right" title="Do prawej" aria-label="Do prawej">☷</button></div>
  <label class="isa-rich-field isa-rich-background"><span>Tło bloku</span><select id="isaRichBackground" aria-label="Kolor tła bloku"><option value="default">Szablon</option><option value="transparent">Bez tła</option><option value="white">Białe</option><option value="graphite">Grafit</option><option value="teal">Turkus</option><option value="blue">Błękit</option><option value="amber">Krem</option><option value="rose">Koral</option></select></label>
@@ -342,7 +342,7 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-blocks-heading{margin-top:10px!important;padding-top:0!important;border:0!important;justify-content:flex-end!important}
 .isa-blocks-heading>.isa-label{display:none!important}
 @media(max-width:780px){.isa-rich-tools{justify-content:flex-start}.isa-rich-field span{display:none}.isa-rich-divider{display:none}.isa-rich-toolbar{max-width:100%;overflow-x:auto}}
-/* v1.1.62 · Reliable paste into editable cards (Range-based insertion). */
+/* v1.1.63 · Selection-safe font size, text colour, marker and marker removal. */
 /* v1.1.61 · Floating toolbar anchored to the focused editable card. */
 .isa-editor{position:relative!important;overflow:visible!important}
 .isa-preview-action-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:7px 0 10px;flex-wrap:wrap}
@@ -608,22 +608,148 @@ function setRichToolbar(id){
  bar.querySelectorAll('[data-rich-align]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.richAlign===b.align)));
  if(id)requestAnimationFrame(positionRichToolbar);
 }
-function saveSelection(){const sel=window.getSelection(),card=activeCard();if(!card||!sel?.rangeCount)return;const range=sel.getRangeAt(0);if(card.contains(range.commonAncestorContainer))savedRichRange=range.cloneRange()}
+// A colour picker moves focus away from contenteditable. Remember the actual
+// selected DOM range before that happens, and never re-select an entire block.
+function saveSelection(){
+ const sel=window.getSelection(),card=activeCard();
+ if(!card||!sel?.rangeCount)return;
+ const range=sel.getRangeAt(0);
+ if(card.contains(range.commonAncestorContainer)&&!range.collapsed)savedRichRange=range.cloneRange();
+}
+function selectedRichRange(){
+ const card=activeCard(),selection=window.getSelection();
+ if(!card)return null;
+ if(savedRichRange&&!savedRichRange.collapsed&&card.contains(savedRichRange.commonAncestorContainer))return savedRichRange.cloneRange();
+ if(!selection?.rangeCount)return null;
+ const r=selection.getRangeAt(0);
+ return !r.collapsed&&card.contains(r.commonAncestorContainer)?r.cloneRange():null;
+}
+// Work on leaf text ranges, not surrounding cards or paragraphs: a marker must
+// never turn into a rectangular background covering an entire block.
+function textBoundary(root,offset){
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node,remaining=offset,last=null;
+ while((node=walker.nextNode())){
+  last=node;
+  if(remaining<=node.length)return {node,offset:remaining};
+  remaining-=node.length;
+ }
+ return last?{node:last,offset:last.length}:{node:root,offset:0};
+}
+function textOffset(root,container,offset){
+ const r=document.createRange();r.selectNodeContents(root);
+ try{r.setEnd(container,offset);return r.toString().length}catch{return 0}
+}
+function restoreTextSelection(card,start,end){
+ const a=textBoundary(card,start),b=textBoundary(card,end),r=document.createRange();
+ try{r.setStart(a.node,a.offset);r.setEnd(b.node,b.offset)}catch{return}
+ const sel=window.getSelection();sel?.removeAllRanges();sel?.addRange(r);
+ savedRichRange=r.cloneRange();
+}
+function sliceInlineSpan(span,from,to){
+ // Clone the full subtree, then trim its text. This retains nested bold,
+ // font-size and text-colour spans when a marker is removed.
+ const clone=span.cloneNode(true),len=(clone.textContent||'').length;
+ if(to<len){
+  const a=textBoundary(clone,to),b=textBoundary(clone,len),r=document.createRange();
+  r.setStart(a.node,a.offset);r.setEnd(b.node,b.offset);r.deleteContents();
+ }
+ if(from>0){
+  const a=textBoundary(clone,0),b=textBoundary(clone,from),r=document.createRange();
+  r.setStart(a.node,a.offset);r.setEnd(b.node,b.offset);r.deleteContents();
+ }
+ const fragment=document.createDocumentFragment();
+ while(clone.firstChild)fragment.append(clone.firstChild);
+ return fragment;
+}
+// Split an existing marker or font span into before/selected/after sections.
+// Only the selected section loses the old property; other words stay styled.
+function clearRichProperty(card,prop,start,end){
+ for(let pass=0;pass<100;pass++){
+  const spans=[...card.querySelectorAll('span[style]')].filter(x=>x.style.getPropertyValue(prop));
+  let target=null,partStart=0,partEnd=0;
+  for(const span of spans){
+   const boundary=document.createRange();boundary.setStart(card,0);boundary.setEndBefore(span);
+   const from=boundary.toString().length,to=from+(span.textContent||'').length;
+   if(from<end&&to>start){target=span;partStart=Math.max(0,start-from);partEnd=Math.min(to-from,end-from);break}
+  }
+  if(!target)break;
+  const len=(target.textContent||'').length;
+  const fragment=document.createDocumentFragment();
+  for(const [from,to,clean] of [[0,partStart,false],[partStart,partEnd,true],[partEnd,len,false]]){
+   if(from===to)continue;
+   const clone=target.cloneNode(false);
+   if(clean)clone.style.removeProperty(prop);
+   clone.append(sliceInlineSpan(target,from,to));
+   fragment.append(clone);
+  }
+  target.replaceWith(fragment);
+ }
+}
+function applyRichStyle(property,value){
+ const card=activeCard(),range=selectedRichRange();
+ if(!card||!range||!range.toString().trim())return;
+ const start=textOffset(card,range.startContainer,range.startOffset);
+ const end=textOffset(card,range.endContainer,range.endOffset);
+ if(start>=end)return;
+ clearRichProperty(card,property,start,end);
+ if(value!==null){
+  // Process from right to left so splitting text nodes preserves offsets.
+  const walker=document.createTreeWalker(card,NodeFilter.SHOW_TEXT);
+  const parts=[];let node,pos=0;
+  while((node=walker.nextNode())){
+   const next=pos+node.length;
+   if(next>start&&pos<end){
+    const a=Math.max(0,start-pos),b=Math.min(node.length,end-pos);
+    if(a<b)parts.push({node,a,b});
+   }
+   pos=next;
+  }
+  for(const part of parts.reverse()){
+   let n=part.node;
+   if(part.b<n.length)n.splitText(part.b);
+   if(part.a>0)n=n.splitText(part.a);
+   if(!n.nodeValue)continue;
+   const parent=document.createElement('span');parent.style.setProperty(property,value);
+   n.replaceWith(parent);parent.append(n);
+  }
+ }
+ updateRichBlock(card);restoreTextSelection(card,start,end);
+}
 function applyRich(command,value){
  const card=activeCard();if(!card)return;
- card.focus();if(savedRichRange){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRichRange.cloneRange())}
- document.execCommand(command,false,value??null);updateRichBlock(card);saveSelection();
+ // For bold/italic/list shortcuts, restore selection before execCommand.
+ const range=selectedRichRange();
+ if(range){const sel=window.getSelection();sel?.removeAllRanges();sel?.addRange(range)}
+ if(document.execCommand(command,false,value??null)){
+  updateRichBlock(card);saveSelection();
+ }
 }
-$('isaRichToolbar').addEventListener('mousedown',e=>{if(e.target.closest('button,input,select')){saveSelection();if(e.target.closest('button'))e.preventDefault()}});
+$('isaRichToolbar').addEventListener('pointerdown',e=>{
+ if(e.target.closest('button,input,select'))saveSelection();
+ // Buttons must not steal caret or selection from the edited card.
+ if(e.target.closest('button'))e.preventDefault();
+});
 $('isaRichToolbar').addEventListener('click',e=>{
  const cmd=e.target.closest('[data-rich-command]')?.dataset.richCommand;
  if(cmd){applyRich(cmd);return}
  const align=e.target.closest('[data-rich-align]')?.dataset.richAlign;
  if(align){const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.align=align;card.dataset.align=align;$('isaRichToolbar').querySelectorAll('[data-rich-align]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.richAlign===align)))}
 });
-$('isaRichSize').addEventListener('change',e=>applyRich('fontSize',e.target.value));
-$('isaRichColor').addEventListener('input',e=>applyRich('foreColor',e.target.value));
-$('isaRichHighlight').addEventListener('input',e=>applyRich('hiliteColor',e.target.value));
+// These are commits, not continuous 'input' events: native colour pickers may
+// fire dozens of inputs while open, corrupting the original selection.
+$('isaRichSize').addEventListener('change',e=>{
+ const px=({3:20,4:28,5:36})[e.target.value];if(px)applyRichStyle('font-size',px+'px');
+});
+$('isaRichColor').addEventListener('change',e=>{
+ if(/^#[0-9a-f]{6}$/i.test(e.target.value))applyRichStyle('color',e.target.value);
+});
+$('isaRichHighlight').addEventListener('change',e=>{
+ if(/^#[0-9a-f]{6}$/i.test(e.target.value))applyRichStyle('background-color',e.target.value);
+});
+$('isaRichClearMarker').addEventListener('click',()=>applyRichStyle('background-color',null));
+$('isaLivePreview').addEventListener('mouseup',saveSelection);
+$('isaLivePreview').addEventListener('keyup',saveSelection);
 $('isaRichBackground').addEventListener('change',e=>{const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.color=validColor(e.target.value);card.dataset.color=b.color});
 $('isaRichDelete').addEventListener('click',()=>{const id=activeRichId;if(!id)return;draftBlocks=draftBlocks.filter(x=>x.id!==id);setRichToolbar(null);savedRichRange=null;renderLivePreview()});
 $('isaLivePreview').addEventListener('focusin',e=>{const card=e.target.closest('[data-edit-block]');if(card){setRichToolbar(card.dataset.editBlock);if(card.classList.contains('isa-layout-placeholder-text')){const range=document.createRange();range.selectNodeContents(card);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}}});
