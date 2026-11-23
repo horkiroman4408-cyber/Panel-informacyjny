@@ -94,7 +94,7 @@ q('tv').onclick=()=>active?openTV():dailyTV();q('workerTVsettings').onclick=open
 const legacyInfo=q('info');legacyInfo.hidden=true;
 const infoPanel=document.createElement('dialog');infoPanel.id='incInfo';infoPanel.setAttribute('aria-labelledby','incInfoTitle');
 infoPanel.innerHTML=`
- <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.55</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
+ <div class="inc-info-top"><div><span class="inc-kicker">INCYDENTY · INFORMACJE</span><h2 id="incInfoTitle">O aplikacji</h2><p>Panel informacyjny działu</p></div><div class="inc-info-topright"><span class="inc-version" id="incVersion">v1.1.56</span><button type="button" id="incInfoClose" aria-label="Zamknij">✕</button></div></div>
  <div class="inc-info-tabs" role="tablist" aria-label="Informacje"><button role="tab" type="button" aria-selected="true" data-info-tab="data">Dane</button><button role="tab" type="button" aria-selected="false" data-info-tab="app">Aplikacja</button><button role="tab" type="button" aria-selected="false" data-info-tab="history">Historia</button></div>
  <section class="inc-info-section" id="incTabData" role="tabpanel">
   <h3>Źródła danych</h3>
@@ -123,7 +123,7 @@ infoPanel.innerHTML=`
  </section>
  <section class="inc-info-section" id="incTabHistory" role="tabpanel" hidden>
   <p class="inc-muted">Najważniejsze zmiany w kolejnych wydaniach.</p>
-  <details open><summary><strong>v1.1.55</strong> · Klasyczny wygląd i nowa typografia</summary><p>Przywrócono klasyczny układ, kolory i karty aplikacji. Zachowano bardziej wyraziste nagłówki i typografię inspirowaną projektem v1.1.54. Bez zmian w danych, Excel i TV.</p></details><details><summary><strong>v1.1.54</strong> · Próba nowego wyglądu</summary><p>Wariant wizualny z nową kompozycją i turkusowym akcentem. Wycofano zmiany układu w v1.1.55.</p></details><details><summary><strong>v1.1.53</strong> · Źródła danych i aktualne informacje</summary><p>Jedna zwarta belka źródeł Excel nad harmonogramem. Zaktualizowano opis modułów, przechowywania danych i trybu TV w oknie O aplikacji.</p></details>
+  <details open><summary><strong>v1.1.56</strong> · Poprawka powrotu z TV i kursora</summary><p>Po zakończeniu TV zamykany jest ostatni slajd informacyjny, a widoczny pozostaje tylko poprzedni dział. Ujednolicono widoczność kursora na wszystkich ekranach TV.</p></details><details><summary><strong>v1.1.55</strong> · Klasyczny wygląd i nowa typografia</summary><p>Przywrócono klasyczny układ, kolory i karty aplikacji. Zachowano bardziej wyraziste nagłówki i typografię inspirowaną projektem v1.1.54. Bez zmian w danych, Excel i TV.</p></details><details><summary><strong>v1.1.54</strong> · Próba nowego wyglądu</summary><p>Wariant wizualny z nową kompozycją i turkusowym akcentem. Wycofano zmiany układu w v1.1.55.</p></details><details><summary><strong>v1.1.53</strong> · Źródła danych i aktualne informacje</summary><p>Jedna zwarta belka źródeł Excel nad harmonogramem. Zaktualizowano opis modułów, przechowywania danych i trybu TV w oknie O aplikacji.</p></details>
   <details><summary><strong>v1.1.52</strong> · Prosta zamiana widżetów</summary><p>Usunięto skalowanie S/M/L, przeciąganie krawędzi i mozaikę. Widżety mają stałe szerokości i można zamieniać je miejscami za uchwyt ⠿.</p></details>
   <details><summary><strong>v1.1.51</strong> · Regulowana mozaika widżetów</summary><p>Zwężanie i poszerzanie widżetów przez uchwyt narożny z podglądem na żywo, dynamiczne przesuwanie kart oraz kompaktowe strefy Excel.</p></details>
   <details><summary><strong>v1.1.50</strong> · Wyśrodkowane nagłówki zakładek</summary><p>Harmonogram pracy i Tablica informacyjna mają wyśrodkowane nagłówki, takie jak Wyniki i normy. Przyciski akcji pozostały po prawej.</p></details>
@@ -550,6 +550,8 @@ const unifiedTV=(()=>{
    running=false;pausedUnified=false;clearTimeout(cycleTimer);clearTimeout(controlsTimer);clearInterval(timer);cancelAnimationFrame(raf);cancelAnimationFrame(layoutFrame);
    monthlyTV=false;tv=false;document.body.classList.remove('tv','monthly-tv','unified-tv','cursor-hidden');document.body.removeAttribute('data-tv-density');
    u('unifiedTVbar').hidden=true;document.querySelector('.tvbar').hidden=true;q('workerTVbar').hidden=true;
+   // Last shown slide can be an information slide, regardless of the original tab.
+   window.incSlides?.close();
    if(savedProcess){q('onlynorms').checked=false;tvConfig.density=savedProcess.density;tvConfig.mode=savedProcess.mode;savedProcess=null}
    if(wasInfoSlides){q('assign').hidden=true;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSlides?.restore();q('tv').disabled=!(window.incSlides?.list().length);}
    else if(wasAssignment){q('assign').hidden=false;q('norms').hidden=true;q('workerArea').hidden=true;q('resultViews').hidden=true;q('upload').hidden=true;window.incSchedule?.restore();q('tv').disabled=false;}
@@ -604,6 +606,9 @@ const unifiedTV=(()=>{
  #unifiedTVbar button{padding:7px 12px;font-size:12px}
  #unifiedTVbar span{font-size:12px;color:#53647c}
  #unifiedTVbar.controls-hidden{opacity:0;pointer-events:none}
+ /* Make mouse pointer visibility consistent across KPI, schedule and information slides. */
+ body.unified-tv:not(.cursor-hidden),body.unified-tv:not(.cursor-hidden) *{cursor:default!important}
+ body.unified-tv:not(.cursor-hidden) button,body.unified-tv:not(.cursor-hidden) select{cursor:pointer!important}
  body.unified-tv #resultViews,body.unified-tv .workerfilters,body.unified-tv .workerheading>button{display:none!important}
  body.unified-tv #norms #cards .card{min-height:0}
  body.unified-tv #norms:not(.focused) #cards .norm{margin:8px 0 10px!important;padding-bottom:10px!important}
