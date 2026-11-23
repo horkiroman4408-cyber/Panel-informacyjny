@@ -12,7 +12,7 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <div class="isa-heading"><div><div class="eyebrow">INCYDENTY · KOMUNIKATY</div><h2>Tablica informacyjna</h2><p>Zdjęcia i komunikaty do wyświetlania na telewizorach.</p></div><button type="button" class="primary" id="isaNew">＋ Nowa podstrona</button></div>
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
  <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
- <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij tekst, aby pisać i formatować</div><div class="isa-rich-toolbar" id="isaRichToolbar" role="toolbar" aria-label="Formatowanie tekstu i bloku" hidden>
+ <div class="isa-preview-action-row"><span class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij tekst, aby pisać i formatować</span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div><div class="isa-rich-toolbar" id="isaRichToolbar" role="toolbar" aria-label="Formatowanie tekstu i bloku" hidden>
  <div class="isa-rich-tools">
  <button type="button" data-rich-command="bold" title="Pogrubienie Ctrl+B" aria-label="Pogrubienie"><strong>B</strong></button><button type="button" data-rich-command="italic" title="Kursywa Ctrl+I" aria-label="Kursywa"><em>I</em></button><button type="button" data-rich-command="underline" title="Podkreślenie Ctrl+U" aria-label="Podkreślenie"><u>U</u></button><button type="button" data-rich-command="strikeThrough" title="Przekreślenie" aria-label="Przekreślenie"><s>S</s></button><span class="isa-rich-divider"></span>
  <button type="button" data-rich-command="insertUnorderedList" title="Lista punktowana" aria-label="Lista punktowana">☷</button><button type="button" data-rich-command="insertOrderedList" title="Lista numerowana" aria-label="Lista numerowana">≡<sup>1</sup></button><span class="isa-rich-divider"></span>
@@ -25,12 +25,14 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <button type="button" class="isa-rich-delete" id="isaRichDelete" title="Usuń wybrany blok" aria-label="Usuń wybrany blok">✕</button>
  </div></div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
  <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" hidden />
- <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
+
  
  
  <div class="isa-editor-actions"><span id="isaMsg" role="status"></span><button id="isaDelete" type="button">Usuń</button><button id="isaSave" class="primary" type="button">Zapisz podstronę</button></div></div></div>
  <div id="isaTV" class="isa-tv" hidden><div class="isa-tv-frame"></div></div>`;
 const shell=document.querySelector('.shell');shell.append(area);
+// Floating formatting panel is a sibling of the preview so re-rendering a slide cannot erase it.
+area.querySelector('.isa-editor').append(area.querySelector('#isaRichToolbar'));
 const style=document.createElement('style');style.textContent=`
 #isaTV[hidden],#infoSlidesArea[hidden]{display:none!important}.info-slides-area{max-width:1400px;margin:22px auto 70px}.isa-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:22px 0}.isa-heading h2{font-size:clamp(24px,2.3vw,36px);margin:5px 0}.isa-heading p{font-size:13px;color:#7d8ba0}.isa-shell{display:grid;grid-template-columns:minmax(235px,310px) minmax(0,1fr);gap:16px}.isa-list-panel,.isa-editor{background:rgba(255,255,255,.83);border:1px solid #e2e9f1;box-shadow:0 9px 28px #21374a0b;border-radius:20px;padding:18px;min-width:0}.isa-panel-title{font-weight:750;color:#30455d;font-size:14px;display:flex;justify-content:space-between}.isa-panel-title span{color:#78889b}.isa-list{display:grid;gap:8px;margin:16px 0}.isa-list button{border:1px solid #e1e8f1;border-radius:12px;background:#f8fafd;padding:12px;text-align:left;display:flex;align-items:center;gap:10px;color:#304459;font-weight:700;cursor:pointer}.isa-list button.selected{border-color:#89c6c5;background:#edfaf8}.isa-list button span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.isa-helper{font-size:11px;color:#8392a4;line-height:1.55}.isa-label{display:block;font-size:12px;color:#53677d;font-weight:700;margin:0 0 8px}.isa-label span{font-weight:400;color:#8997a9}.isa-editor input:not([type=file]),.isa-editor textarea{width:100%;min-width:0;max-width:none;box-sizing:border-box;padding:12px 14px;border:1px solid #dbe5ef;border-radius:12px;background:#fff;color:#233b54;font:inherit;font-size:13px;margin:0 0 17px}.isa-drop{border:1.5px dashed #b4c7d9;background:#f8fbfe;border-radius:16px;min-height:230px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin-bottom:17px}.isa-drop:hover,.isa-drop.is-over{border-color:#39a99f;background:#f2fbf9}.isa-preview{width:100%;min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:#61778e}.isa-preview img{display:block;max-width:100%;max-height:420px;width:auto;height:auto;object-fit:contain}.isa-drop-ico{font-size:38px;color:#5da69f}.isa-preview small{font-size:11px}.isa-editor-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}.isa-editor-actions #isaMsg{flex:1;color:#5a7787;font-size:12px}.isa-tv{display:none}.isa-tv img{display:block;max-width:100%;max-height:100%;object-fit:contain;margin:auto}.isa-tv-caption{max-width:1100px;margin:0 auto;font-size:clamp(20px,1.85vw,42px);font-weight:650;line-height:1.35;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere;color:#233f5b}.isa-tv-caption:empty{display:none}
 body.unified-tv #isaTV[hidden],#infoSlidesArea[hidden]{display:none!important}.info-slides-area{max-width:none;width:100%;margin:0 auto}body.unified-tv .info-slides-area .isa-heading,body.unified-tv .isa-shell{display:none!important}body.unified-tv .info-slides-area .isa-tv{display:flex;align-items:center;justify-content:center;height:calc(100dvh - 180px);min-height:300px}body.unified-tv .isa-tv-frame{max-height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(15px,2vh,32px)}body.unified-tv .isa-tv-frame img{max-height:min(70dvh,1400px);max-width:94%;border-radius:10px;box-shadow:0 10px 32px #243d5712}body.unified-tv .isa-tv-frame img:only-child{max-height:76dvh}body.unified-tv .isa-tv-frame{animation:isaFloatIn .6s cubic-bezier(.2,.72,.2,1) both}@keyframes isaFloatIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){body.unified-tv .isa-tv-frame{animation:none}}@media(max-width:750px){.isa-shell{grid-template-columns:1fr}.isa-heading{flex-wrap:wrap}.isa-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -340,6 +342,25 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-blocks-heading{margin-top:10px!important;padding-top:0!important;border:0!important;justify-content:flex-end!important}
 .isa-blocks-heading>.isa-label{display:none!important}
 @media(max-width:780px){.isa-rich-tools{justify-content:flex-start}.isa-rich-field span{display:none}.isa-rich-divider{display:none}.isa-rich-toolbar{max-width:100%;overflow-x:auto}}
+/* v1.1.61 · Floating toolbar anchored to the focused editable card. */
+.isa-editor{position:relative!important;overflow:visible!important}
+.isa-preview-action-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:7px 0 10px;flex-wrap:wrap}
+.isa-preview-action-row .isa-label{margin:0;font-size:11px}
+.isa-preview-action-row .isa-add-block{margin:0;padding:8px 12px;font-size:11px;border-radius:10px;white-space:nowrap}
+.isa-rich-toolbar{position:absolute!important;width:min(510px,calc(100% - 24px))!important;max-width:510px!important;padding:5px 7px!important;margin:0!important;z-index:999!important;background:#fffffff9!important;box-shadow:0 10px 35px #1c456026!important;border:1px solid #cadce7!important;border-radius:13px!important}
+.isa-rich-tools{display:flex;flex-wrap:wrap;justify-content:center;gap:3px!important}
+.isa-rich-toolbar button{width:27px!important;min-width:27px!important;height:27px!important;font-size:13px!important;border-radius:7px!important}
+.isa-rich-field{gap:3px!important;font-size:10px!important;margin:0 1px!important}
+.isa-rich-field select{font-size:10px!important;max-width:80px!important;padding:4px!important}
+.isa-rich-background select{max-width:102px!important}
+.isa-rich-field input[type=color]{width:25px!important;height:25px!important}
+.isa-rich-divider{height:17px;margin:0 2px}
+.isa-live-preview{margin-bottom:11px!important}
+.isa-editor-actions{margin-top:12px!important}
+.isa-template-picker{gap:7px!important}
+.isa-template-option{padding:7px 6px!important;border-radius:11px!important}
+.isa-template-option small{display:none!important}
+@media(max-width:760px){.isa-rich-toolbar{width:min(430px,calc(100% - 18px))!important;max-width:none!important}.isa-rich-tools{justify-content:center!important}.isa-preview-action-row{align-items:center}}
 /* Match the centered section heading used by Wyniki i normy. */
 body:not(.unified-tv) #infoSlidesArea .isa-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
 body:not(.unified-tv) #infoSlidesArea .isa-heading>div:first-child{grid-column:2;text-align:center;min-width:0}
@@ -547,9 +568,12 @@ function refreshStageFits(){
  fitStage($('isaTV').querySelector('.isa-stage-viewport'),true);
 }
 window.addEventListener('resize',refreshStageFits);
+window.addEventListener('resize',()=>requestAnimationFrame(positionRichToolbar));
+window.addEventListener('scroll',()=>requestAnimationFrame(positionRichToolbar),true);
 const fitObserver=new ResizeObserver(refreshStageFits);
 fitObserver.observe($('isaLivePreview'));fitObserver.observe($('isaTV'));
 function renderLivePreview(){
+ if(typeof setRichToolbar==='function')setRichToolbar(null);
  const host=$('isaLivePreview');if(!host)return;
  // Do not revoke object URLs until both editor thumbnails and stage have been replaced.
  const urls=editorImageURLs;
@@ -563,6 +587,16 @@ function updateRichBlock(card){
  b.text=card.innerText.slice(0,1000).trim();b.html=safeRichHtml(card.innerHTML);
  if(!b.text)b.html='';
 }
+function positionRichToolbar(){
+ const bar=$('isaRichToolbar'),card=activeCard(),editor=area.querySelector('.isa-editor');
+ if(bar.hidden||!card||!editor)return;
+ const block=card.getBoundingClientRect(),scope=editor.getBoundingClientRect();
+ const w=bar.offsetWidth||510,h=bar.offsetHeight||76;
+ const x=Math.max(8,Math.min(scope.width-w-8,block.left-scope.left+(block.width-w)/2));
+ // Anchor directly above the edited block, visually floating over the mockup.
+ const y=Math.max(6,block.top-scope.top-h-9);
+ bar.style.left=Math.round(x)+'px';bar.style.top=Math.round(y)+'px';
+}
 function setRichToolbar(id){
  if(activeRichId!==id)savedRichRange=null;
  activeRichId=id;const bar=$('isaRichToolbar');bar.hidden=!id;
@@ -570,6 +604,7 @@ function setRichToolbar(id){
  if(!b)return;
  $('isaRichBackground').value=b.color;
  bar.querySelectorAll('[data-rich-align]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.richAlign===b.align)));
+ if(id)requestAnimationFrame(positionRichToolbar);
 }
 function saveSelection(){const sel=window.getSelection(),card=activeCard();if(!card||!sel?.rangeCount)return;const range=sel.getRangeAt(0);if(card.contains(range.commonAncestorContainer))savedRichRange=range.cloneRange()}
 function applyRich(command,value){
@@ -590,7 +625,7 @@ $('isaRichHighlight').addEventListener('input',e=>applyRich('hiliteColor',e.targ
 $('isaRichBackground').addEventListener('change',e=>{const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.color=validColor(e.target.value);card.dataset.color=b.color});
 $('isaRichDelete').addEventListener('click',()=>{const id=activeRichId;if(!id)return;draftBlocks=draftBlocks.filter(x=>x.id!==id);setRichToolbar(null);savedRichRange=null;renderLivePreview()});
 $('isaLivePreview').addEventListener('focusin',e=>{const card=e.target.closest('[data-edit-block]');if(card){setRichToolbar(card.dataset.editBlock);if(card.classList.contains('isa-layout-placeholder-text')){const range=document.createRange();range.selectNodeContents(card);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}}});
-$('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card)});
+$('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card);requestAnimationFrame(positionRichToolbar)});
 $('isaLivePreview').addEventListener('paste',e=>{
  if(!e.target.closest('[data-edit-block]'))return;
  e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');
