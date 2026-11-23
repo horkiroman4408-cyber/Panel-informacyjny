@@ -12,10 +12,21 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <div class="isa-heading"><div><div class="eyebrow">INCYDENTY · KOMUNIKATY</div><h2>Tablica informacyjna</h2><p>Zdjęcia i komunikaty do wyświetlania na telewizorach.</p></div><button type="button" class="primary" id="isaNew">＋ Nowa podstrona</button></div>
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
  <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
- <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij tekst, aby pisać; zaznacz słowo, aby formatować</div><div class="isa-rich-toolbar" id="isaRichToolbar" role="toolbar" aria-label="Formatowanie zaznaczonego tekstu" hidden><button type="button" data-rich-command="bold" title="Pogrubienie (Ctrl+B)" aria-label="Pogrubienie"><strong>B</strong></button><button type="button" data-rich-command="italic" title="Kursywa (Ctrl+I)" aria-label="Kursywa"><em>I</em></button><button type="button" data-rich-command="underline" title="Podkreślenie (Ctrl+U)" aria-label="Podkreślenie"><u>U</u></button><button type="button" data-rich-command="strikeThrough" title="Przekreślenie" aria-label="Przekreślenie"><s>S</s></button><span class="isa-rich-divider" aria-hidden="true"></span><button type="button" data-rich-command="insertUnorderedList" title="Lista punktowana" aria-label="Lista punktowana">☷</button><button type="button" data-rich-command="insertOrderedList" title="Lista numerowana" aria-label="Lista numerowana">≡<sup>1</sup></button></div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
+ <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij tekst, aby pisać i formatować</div><div class="isa-rich-toolbar" id="isaRichToolbar" role="toolbar" aria-label="Formatowanie tekstu i bloku" hidden>
+ <div class="isa-rich-tools">
+ <button type="button" data-rich-command="bold" title="Pogrubienie Ctrl+B" aria-label="Pogrubienie"><strong>B</strong></button><button type="button" data-rich-command="italic" title="Kursywa Ctrl+I" aria-label="Kursywa"><em>I</em></button><button type="button" data-rich-command="underline" title="Podkreślenie Ctrl+U" aria-label="Podkreślenie"><u>U</u></button><button type="button" data-rich-command="strikeThrough" title="Przekreślenie" aria-label="Przekreślenie"><s>S</s></button><span class="isa-rich-divider"></span>
+ <button type="button" data-rich-command="insertUnorderedList" title="Lista punktowana" aria-label="Lista punktowana">☷</button><button type="button" data-rich-command="insertOrderedList" title="Lista numerowana" aria-label="Lista numerowana">≡<sup>1</sup></button><span class="isa-rich-divider"></span>
+ <label title="Rozmiar zaznaczonego tekstu" class="isa-rich-field"><span>Rozmiar</span><select id="isaRichSize" aria-label="Rozmiar zaznaczonego tekstu"><option value="3">Mały</option><option value="4" selected>Średni</option><option value="5">Duży</option></select></label>
+ <label title="Kolor zaznaczonego tekstu" class="isa-rich-field"><span>Tekst</span><input type="color" id="isaRichColor" value="#233b54" aria-label="Kolor zaznaczonego tekstu"></label>
+ <label title="Kolor podświetlenia zaznaczonego tekstu" class="isa-rich-field"><span>Marker</span><input type="color" id="isaRichHighlight" value="#c7f3eb" aria-label="Kolor podświetlenia"></label>
+ <span class="isa-rich-divider"></span>
+ <div class="isa-rich-align" role="group" aria-label="Wyrównanie tekstu"><button type="button" data-rich-align="left" title="Do lewej" aria-label="Do lewej">☰</button><button type="button" data-rich-align="center" title="Do środka" aria-label="Do środka">≡</button><button type="button" data-rich-align="right" title="Do prawej" aria-label="Do prawej">☷</button></div>
+ <label class="isa-rich-field isa-rich-background"><span>Tło bloku</span><select id="isaRichBackground" aria-label="Kolor tła bloku"><option value="default">Szablon</option><option value="transparent">Bez tła</option><option value="white">Białe</option><option value="graphite">Grafit</option><option value="teal">Turkus</option><option value="blue">Błękit</option><option value="amber">Krem</option><option value="rose">Koral</option></select></label>
+ <button type="button" class="isa-rich-delete" id="isaRichDelete" title="Usuń wybrany blok" aria-label="Usuń wybrany blok">✕</button>
+ </div></div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
  <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" hidden />
  <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
- <div id="isaBlocks" class="isa-blocks" aria-label="Bloki tekstowe"></div>
+ 
  
  <div class="isa-editor-actions"><span id="isaMsg" role="status"></span><button id="isaDelete" type="button">Usuń</button><button id="isaSave" class="primary" type="button">Zapisz podstronę</button></div></div></div>
  <div id="isaTV" class="isa-tv" hidden><div class="isa-tv-frame"></div></div>`;
@@ -313,6 +324,22 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-stage [data-edit-block] li{margin:.1em 0}
 .isa-stage [data-edit-block] .isa-rich-normal{font-weight:400!important}
 
+/* Unified slide editor. One toolbar handles selected text and block styling. */
+.isa-rich-toolbar{width:100%!important;max-width:100%!important;justify-content:center!important;padding:7px 9px!important;border-radius:16px!important;background:#ffffffef!important;box-shadow:0 8px 28px #21374a12!important}
+.isa-rich-tools{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;width:100%}
+.isa-rich-field{display:inline-flex!important;align-items:center;gap:5px;font-size:11px;color:#546f83;font-weight:700;white-space:nowrap;margin:0 2px}
+.isa-rich-field select{font-size:11px!important;max-width:105px!important;padding:5px 6px!important;border:1px solid #d8e8ed!important;border-radius:8px!important;background:#f7fbfd!important;color:#29485e!important}
+.isa-rich-field input[type=color]{width:28px;height:28px;padding:2px;border:1px solid #d3e3e8;border-radius:8px;background:white;cursor:pointer}
+.isa-rich-align{display:flex;align-items:center;gap:2px;background:#f1f7f8;border-radius:10px;padding:2px}
+.isa-rich-tools button[aria-pressed=true]{background:#d8f4ef!important;color:#087e7a!important;border-color:#abdfd5!important}
+.isa-rich-delete{margin-left:4px;color:#ad5158!important}
+.isa-rich-background select{max-width:120px!important}
+.isa-stage .isa-template-board .isa-caption-card[data-color="transparent"]{background:transparent!important;box-shadow:none!important;border-color:transparent!important;color:#233b54!important}
+.isa-stage [data-edit-block] [style*="background-color"]{border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.isa-stage [data-edit-block] span[style*="font-size"]{line-height:1.2}
+.isa-blocks-heading{margin-top:10px!important;padding-top:0!important;border:0!important;justify-content:flex-end!important}
+.isa-blocks-heading>.isa-label{display:none!important}
+@media(max-width:780px){.isa-rich-tools{justify-content:flex-start}.isa-rich-field span{display:none}.isa-rich-divider{display:none}.isa-rich-toolbar{max-width:100%;overflow-x:auto}}
 /* Match the centered section heading used by Wyniki i normy. */
 body:not(.unified-tv) #infoSlidesArea .isa-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
 body:not(.unified-tv) #infoSlidesArea .isa-heading>div:first-child{grid-column:2;text-align:center;min-width:0}
@@ -352,30 +379,38 @@ function safeRichHtml(raw){
  if(!raw)return '';
  const doc=new DOMParser().parseFromString('<div>'+String(raw).slice(0,25000)+'</div>','text/html');
  const tags=new Set(['STRONG','B','EM','I','U','S','STRIKE','UL','OL','LI','BR','P','DIV']);
- const encode=t=>escape(t);
  const convert=node=>{
-  if(node.nodeType===3)return encode(node.nodeValue||'');
+  if(node.nodeType===3)return escape(node.nodeValue||'');
   if(node.nodeType!==1)return '';
   const tag=node.tagName;
-  if(tag==='SPAN'&&node.classList.contains('isa-rich-normal'))return '<span class="isa-rich-normal">'+[...node.childNodes].map(convert).join('')+'</span>';
-  if(['SCRIPT','STYLE','IFRAME','SVG','OBJECT','TEMPLATE'].includes(tag))return '';
-  let body=[...node.childNodes].map(convert).join('');
-  if(!tags.has(tag)){
-   if(tag==='SPAN'||tag==='FONT'){
-    const style=node.getAttribute('style')||'';
-    if(/font-weight\s*:\s*(bold|[6-9]00)/i.test(style))body='<strong>'+body+'</strong>';
-    else if(/font-weight\s*:\s*(normal|[1-5]00)/i.test(style))body='<span class="isa-rich-normal">'+body+'</span>';
-    if(/font-style\s*:\s*italic/i.test(style))body='<em>'+body+'</em>';
-    if(/text-decoration[^;]*underline/i.test(style))body='<u>'+body+'</u>';
-    if(/text-decoration[^;]*line-through/i.test(style))body='<s>'+body+'</s>';
-   }
-   return body;
+  if(['SCRIPT','STYLE','IFRAME','SVG','OBJECT','TEMPLATE','IMG','A'].includes(tag))return '';
+  const body=[...node.childNodes].map(convert).join('');
+  let text=body;
+  const css=(node.getAttribute('style')||'').toLowerCase();
+  if(tag==='SPAN'||tag==='FONT'){
+   if(/font-weight\s*:\s*(bold|[6-9]00)/.test(css))text='<strong>'+text+'</strong>';
+   else if(node.classList.contains('isa-rich-normal')||/font-weight\s*:\s*(normal|[1-5]00)/.test(css))text='<span class="isa-rich-normal">'+text+'</span>';
+   if(/font-style\s*:\s*italic/.test(css))text='<em>'+text+'</em>';
+   if(/text-decoration[^;]*underline/.test(css))text='<u>'+text+'</u>';
+   if(/text-decoration[^;]*line-through/.test(css))text='<s>'+text+'</s>';
   }
+  const decl=[];
+  const getColor=(name)=>{const m=css.match(new RegExp('(?:^|;)\\s*'+name+'\\s*:\\s*(#[0-9a-f]{3,6}|rgb\\(\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*\\))'));return m?m[1]:null};
+  let color=getColor('color');
+  if(tag==='FONT'&&/^#[0-9a-f]{6}$/i.test(node.getAttribute('color')||''))color=node.getAttribute('color');
+  if(color)decl.push('color:'+color);
+  const bg=getColor('background-color');if(bg)decl.push('background-color:'+bg);
+  const fs=css.match(/font-size\s*:\s*(16|20|24|28|32|36|40)px/);
+  if(fs)decl.push('font-size:'+fs[1]+'px');
+  if(tag==='FONT'&&/^[1-7]$/.test(node.getAttribute('size')||''))decl.push('font-size:'+({1:16,2:20,3:24,4:28,5:36,6:40,7:40}[node.getAttribute('size')])+'px');
+  if(decl.length)text='<span style="'+decl.join(';')+'">'+text+'</span>';
+  if(!tags.has(tag))return text;
   const normalized={B:'strong',STRONG:'strong',I:'em',EM:'em',STRIKE:'s',S:'s'}[tag]||tag.toLowerCase();
-  return normalized==='br'?'<br>':'<'+normalized+'>'+body+'</'+normalized+'>';
+  return normalized==='br'?'<br>':'<'+normalized+'>'+text+'</'+normalized+'>';
  };
  return [...(doc.body.firstElementChild?.childNodes||[])].map(convert).join('');
 }
+
 const POSITIONS=['bottom','top','left','right','overlay-bottom','overlay-top'];
 const STYLES=['light','dark','glass'];
 const validPosition=p=>POSITIONS.includes(p)?p:'bottom';
@@ -383,7 +418,7 @@ const validStyle=p=>STYLES.includes(p)?p:'light';
 const WEIGHTS=['normal','bold'];
 const ALIGNS=['left','center','right','justify'];
 const TEXT_SIZES=['small','medium','large'];
-const COLOR_SCHEMES=['default','white','graphite','teal','blue','amber','rose'];
+const COLOR_SCHEMES=['default','transparent','white','graphite','teal','blue','amber','rose'];
 const validColor=v=>COLOR_SCHEMES.includes(v)?v:'default';
 const validWeight=v=>WEIGHTS.includes(v)?v:'bold';
 const validAlign=v=>ALIGNS.includes(v)?v:'center';
@@ -418,9 +453,7 @@ const ALIGN_LABELS=[['left','Do lewej'],['center','Do środka'],['right','Do pra
 const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
 const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
 const COLOR_LABELS=[['default','Domyślny'],['white','Biały'],['graphite','Grafit'],['teal','Turkus'],['blue','Błękit'],['amber','Bursztyn'],['rose','Koral']];
-function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<details class="isa-block-editor" data-block-id="${escape(b.id)}" ${i===0?'open':''}><summary class="isa-block-top"><span class="isa-block-number">Blok ${i+1} <span class="isa-block-excerpt">${escape((b.text||'Nowy tekst').replace(/\s+/g,' ').slice(0,70))}</span></span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń</button></summary><div class="isa-block-body"><p class="isa-rich-hint">Kliknij tekst bezpośrednio w makiecie, aby go edytować i formatować zaznaczone słowa.</p><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div></details>`).join('');
-}
+function renderEditors(){ /* Edycja i właściwości bloków są dostępne bezpośrednio w makiecie. */ }
 
 function compose(imageURLs,blocks,template='1',placeholder=false){
  const editor=placeholder===true;
@@ -524,21 +557,38 @@ function renderLivePreview(){
  fitStage(stage,false);scheduleTextFit(stage,true);
 }
 let activeRichId=null,savedRichRange=null;
+const activeCard=()=>[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===activeRichId);
 function updateRichBlock(card){
  const b=draftBlocks.find(x=>x.id===card?.dataset.editBlock);if(!b)return;
  b.text=card.innerText.slice(0,1000).trim();b.html=safeRichHtml(card.innerHTML);
  if(!b.text)b.html='';
- const inspector=$('isaBlocks').querySelector(`[data-block-id="${b.id}"] .isa-block-excerpt`);
- if(inspector)inspector.textContent=b.text.replace(/\s+/g,' ').slice(0,70)||'Nowy tekst';
 }
-function setRichToolbar(id){activeRichId=id;const bar=$('isaRichToolbar');bar.hidden=!id;}
-$('isaRichToolbar').addEventListener('mousedown',e=>{if(e.target.closest('button')){savedRichRange=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0).cloneRange():null;e.preventDefault()}});
+function setRichToolbar(id){
+ if(activeRichId!==id)savedRichRange=null;
+ activeRichId=id;const bar=$('isaRichToolbar');bar.hidden=!id;
+ const b=draftBlocks.find(x=>x.id===id);
+ if(!b)return;
+ $('isaRichBackground').value=b.color;
+ bar.querySelectorAll('[data-rich-align]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.richAlign===b.align)));
+}
+function saveSelection(){const sel=window.getSelection(),card=activeCard();if(!card||!sel?.rangeCount)return;const range=sel.getRangeAt(0);if(card.contains(range.commonAncestorContainer))savedRichRange=range.cloneRange()}
+function applyRich(command,value){
+ const card=activeCard();if(!card)return;
+ card.focus();if(savedRichRange){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRichRange.cloneRange())}
+ document.execCommand(command,false,value??null);updateRichBlock(card);saveSelection();
+}
+$('isaRichToolbar').addEventListener('mousedown',e=>{if(e.target.closest('button,input,select')){saveSelection();if(e.target.closest('button'))e.preventDefault()}});
 $('isaRichToolbar').addEventListener('click',e=>{
- const cmd=e.target.closest('[data-rich-command]')?.dataset.richCommand;if(!cmd||!activeRichId)return;
- const card=[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===activeRichId);
- if(!card)return;
- const sel=window.getSelection();if(savedRichRange&&sel){sel.removeAllRanges();sel.addRange(savedRichRange.cloneRange())}document.execCommand(cmd,false,null);updateRichBlock(card);savedRichRange=null;
+ const cmd=e.target.closest('[data-rich-command]')?.dataset.richCommand;
+ if(cmd){applyRich(cmd);return}
+ const align=e.target.closest('[data-rich-align]')?.dataset.richAlign;
+ if(align){const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.align=align;card.dataset.align=align;$('isaRichToolbar').querySelectorAll('[data-rich-align]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.richAlign===align)))}
 });
+$('isaRichSize').addEventListener('change',e=>applyRich('fontSize',e.target.value));
+$('isaRichColor').addEventListener('input',e=>applyRich('foreColor',e.target.value));
+$('isaRichHighlight').addEventListener('input',e=>applyRich('hiliteColor',e.target.value));
+$('isaRichBackground').addEventListener('change',e=>{const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.color=validColor(e.target.value);card.dataset.color=b.color});
+$('isaRichDelete').addEventListener('click',()=>{const id=activeRichId;if(!id)return;draftBlocks=draftBlocks.filter(x=>x.id!==id);setRichToolbar(null);savedRichRange=null;renderLivePreview()});
 $('isaLivePreview').addEventListener('focusin',e=>{const card=e.target.closest('[data-edit-block]');if(card){setRichToolbar(card.dataset.editBlock);if(card.classList.contains('isa-layout-placeholder-text')){const range=document.createRange();range.selectNodeContents(card);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}}});
 $('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card)});
 $('isaLivePreview').addEventListener('paste',e=>{
@@ -567,13 +617,6 @@ $('isaFiles').onchange=e=>{acceptImages(e.target.files);e.target.value=''};
 $('isaLivePreview').addEventListener('dragover',e=>{if(e.target.closest('[data-edit-image]'))e.preventDefault()});
 $('isaLivePreview').addEventListener('drop',e=>{const slot=e.target.closest('[data-edit-image]');if(!slot)return;e.preventDefault();replaceImageIndex=Number(slot.dataset.editImage);acceptImages(e.dataTransfer.files)});
 $('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];const b=newBlock({slot});draftBlocks.push(b);renderEditors();renderLivePreview();const card=[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===b.id);card?.focus();};
-$('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
-$('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
-$('isaBlocks').addEventListener('click',e=>{
- const color=e.target.closest('[data-color-choice]');
- if(color){const editor=color.closest('[data-block-id]'),b=draftBlocks.find(b=>b.id===editor?.dataset.blockId);if(!b)return;b.color=validColor(color.dataset.colorChoice);editor.querySelectorAll('[data-color-choice]').forEach(x=>x.setAttribute('aria-pressed',String(x===color)));renderLivePreview();return}
- const btn=e.target.closest('[data-remove]');if(!btn)return;e.preventDefault();draftBlocks=draftBlocks.filter(b=>b.id!==btn.dataset.remove);renderEditors();renderLivePreview();
-});
 function choose(r){selectedId=r?.id||null;draftImages=imagesFor(r);selectedTemplate=validTemplate(r?.template);$('isaTitle').value=r?.title||'';draftBlocks=prepareBlocks(selectedTemplate,storedBlocks(r));renderTemplates();renderEditors();preview();$('isaDelete').disabled=!r;message('');drawList()}
 function open(){area.hidden=false;$('infoSlidesTab').classList.add('active');$('assignment').classList.remove('active');$('results').classList.remove('active');$('norms').hidden=true;$('workerArea').hidden=true;$('assign').hidden=true;$('resultViews').hidden=true;$('upload').hidden=true;$('tv').disabled=!records.length;area.classList.remove('tv-view');area.querySelector('.isa-shell').hidden=false;$('isaTV').hidden=true;}
 function close(){area.hidden=true;$('isaTV').hidden=true;revokeTV();$('infoSlidesTab').classList.remove('active');}
