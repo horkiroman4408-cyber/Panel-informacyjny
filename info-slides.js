@@ -342,6 +342,7 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 .isa-blocks-heading{margin-top:10px!important;padding-top:0!important;border:0!important;justify-content:flex-end!important}
 .isa-blocks-heading>.isa-label{display:none!important}
 @media(max-width:780px){.isa-rich-tools{justify-content:flex-start}.isa-rich-field span{display:none}.isa-rich-divider{display:none}.isa-rich-toolbar{max-width:100%;overflow-x:auto}}
+/* v1.1.62 · Reliable paste into editable cards (Range-based insertion). */
 /* v1.1.61 · Floating toolbar anchored to the focused editable card. */
 .isa-editor{position:relative!important;overflow:visible!important}
 .isa-preview-action-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:7px 0 10px;flex-wrap:wrap}
@@ -584,8 +585,9 @@ let activeRichId=null,savedRichRange=null;
 const activeCard=()=>[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===activeRichId);
 function updateRichBlock(card){
  const b=draftBlocks.find(x=>x.id===card?.dataset.editBlock);if(!b)return;
- b.text=card.innerText.slice(0,1000).trim();b.html=safeRichHtml(card.innerHTML);
- if(!b.text)b.html='';
+ // Preserve the previous content until an actual user deletion or insertion occurs.
+ const current=(card.innerText||card.textContent||'').slice(0,1000).trim();
+ b.text=current;b.html=current?safeRichHtml(card.innerHTML):'';
 }
 function positionRichToolbar(){
  const bar=$('isaRichToolbar'),card=activeCard(),editor=area.querySelector('.isa-editor');
@@ -625,10 +627,35 @@ $('isaRichHighlight').addEventListener('input',e=>applyRich('hiliteColor',e.targ
 $('isaRichBackground').addEventListener('change',e=>{const b=draftBlocks.find(x=>x.id===activeRichId),card=activeCard();if(!b||!card)return;b.color=validColor(e.target.value);card.dataset.color=b.color});
 $('isaRichDelete').addEventListener('click',()=>{const id=activeRichId;if(!id)return;draftBlocks=draftBlocks.filter(x=>x.id!==id);setRichToolbar(null);savedRichRange=null;renderLivePreview()});
 $('isaLivePreview').addEventListener('focusin',e=>{const card=e.target.closest('[data-edit-block]');if(card){setRichToolbar(card.dataset.editBlock);if(card.classList.contains('isa-layout-placeholder-text')){const range=document.createRange();range.selectNodeContents(card);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}}});
-$('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card);requestAnimationFrame(positionRichToolbar)});
+$('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;if((card.innerText||'').trim())card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card);requestAnimationFrame(positionRichToolbar)});
+// Paste plain text using the DOM Range API. execCommand('insertText') can fail in
+// scaled contenteditable cards, leaving the selected placeholder deleted.
 $('isaLivePreview').addEventListener('paste',e=>{
- if(!e.target.closest('[data-edit-block]'))return;
- e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');
+ const card=e.target.closest('[data-edit-block]');if(!card)return;
+ const incoming=e.clipboardData?.getData('text/plain');
+ if(typeof incoming!=='string'||!incoming.length)return; // never discard an empty clipboard
+ e.preventDefault();
+ const text=incoming.replace(/\r\n?/g,'\n').slice(0,1000);
+ const sel=window.getSelection();
+ let range=sel?.rangeCount?sel.getRangeAt(0):null;
+ if(!range||!card.contains(range.commonAncestorContainer)){
+  range=document.createRange();range.selectNodeContents(card);range.collapse(false);
+ }
+ // Replace the template hint on first paste, otherwise replace only the selection.
+ if(card.classList.contains('isa-layout-placeholder-text'))range.selectNodeContents(card);
+ range.deleteContents();
+ const parts=text.split('\n');const fragment=document.createDocumentFragment();
+ for(let i=0;i<parts.length;i++){
+  if(i)fragment.append(document.createElement('br'));
+  fragment.append(document.createTextNode(parts[i]));
+ }
+ const tail=document.createTextNode('');fragment.append(tail);
+ range.insertNode(fragment);
+ range.setStartAfter(tail);range.collapse(true);
+ if(sel){sel.removeAllRanges();sel.addRange(range)}
+ card.classList.remove('isa-layout-placeholder-text');
+ updateRichBlock(card);
+ requestAnimationFrame(positionRichToolbar);
 });
 $('isaLivePreview').addEventListener('focusout',e=>{
  const card=e.target.closest('[data-edit-block]');if(card)updateRichBlock(card);
