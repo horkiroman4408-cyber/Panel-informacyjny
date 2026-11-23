@@ -12,7 +12,7 @@ const area=document.createElement('section');area.id='infoSlidesArea';area.hidde
  <div class="isa-heading"><div><div class="eyebrow">INCYDENTY · KOMUNIKATY</div><h2>Tablica informacyjna</h2><p>Zdjęcia i komunikaty do wyświetlania na telewizorach.</p></div><button type="button" class="primary" id="isaNew">＋ Nowa podstrona</button></div>
  <div class="isa-shell"><aside class="isa-list-panel"><div class="isa-panel-title">Zapisane podstrony <span id="isaCount"></span></div><div id="isaList" class="isa-list"></div><p class="isa-helper">Każda podstrona pojawia się osobno w ustawieniach TV, gdzie wybierasz kolejność i czas pokazu.</p></aside>
  <div class="isa-editor"><div class="isa-label">Układ slajdu</div><div class="isa-template-picker" id="isaTemplates" role="group" aria-label="Wybierz układ slajdu"></div><label class="isa-label" for="isaTitle">Tytuł podstrony</label><input id="isaTitle" maxlength="100" placeholder="Np. Informacja dla pracowników" />
- <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij zdjęcie lub tekst, aby edytować</div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
+ <div class="isa-label isa-primary-preview-label">Wypełnij makietę · kliknij tekst, aby pisać; zaznacz słowo, aby formatować</div><div class="isa-rich-toolbar" id="isaRichToolbar" role="toolbar" aria-label="Formatowanie zaznaczonego tekstu" hidden><button type="button" data-rich-command="bold" title="Pogrubienie (Ctrl+B)" aria-label="Pogrubienie"><strong>B</strong></button><button type="button" data-rich-command="italic" title="Kursywa (Ctrl+I)" aria-label="Kursywa"><em>I</em></button><button type="button" data-rich-command="underline" title="Podkreślenie (Ctrl+U)" aria-label="Podkreślenie"><u>U</u></button><button type="button" data-rich-command="strikeThrough" title="Przekreślenie" aria-label="Przekreślenie"><s>S</s></button><span class="isa-rich-divider" aria-hidden="true"></span><button type="button" data-rich-command="insertUnorderedList" title="Lista punktowana" aria-label="Lista punktowana">☷</button><button type="button" data-rich-command="insertOrderedList" title="Lista numerowana" aria-label="Lista numerowana">≡<sup>1</sup></button></div><div id="isaLivePreview" class="isa-live-preview" aria-label="Edytowalny podgląd slajdu"></div>
  <input id="isaFiles" type="file" accept="image/png,image/jpeg,image/webp" hidden />
  <div class="isa-blocks-heading"><span class="isa-label">Bloki tekstowe <span>(opcjonalnie)</span></span><button id="isaAddBlock" type="button" class="isa-add-block">＋ Dodaj blok tekstu</button></div>
  <div id="isaBlocks" class="isa-blocks" aria-label="Bloki tekstowe"></div>
@@ -298,6 +298,21 @@ body.unified-tv .isa-tv-frame .isa-stage .isa-compose-image img{max-height:100%!
 @media (hover:none){.isa-photo-remove{opacity:1}}
 @media (max-width:650px){.isa-block-editor .isa-typography-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* Integrated light formatting toolbar, consistent with INCYDENTY controls. */
+.isa-rich-toolbar[hidden]{display:none!important}
+.isa-rich-toolbar{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 9px;margin:5px auto 9px;width:max-content;max-width:100%;background:#ffffffed;border:1px solid #d7e5ed;border-radius:13px;box-shadow:0 5px 20px #26435e12;position:relative;z-index:10}
+.isa-rich-toolbar button{display:grid;place-items:center;min-width:34px;width:34px;height:31px;padding:0!important;border:1px solid transparent!important;border-radius:8px!important;background:transparent!important;color:#38546a!important;font-size:15px;font-weight:700!important;box-shadow:none!important}
+.isa-rich-toolbar button:hover,.isa-rich-toolbar button:focus-visible{background:#e9f7f6!important;color:#087d79!important;border-color:#b9ddda!important}
+.isa-rich-toolbar button sup{font-size:9px;position:relative;top:-2px}.isa-rich-divider{width:1px;height:20px;background:#d8e5ed;margin:0 3px}
+.isa-rich-hint{font-size:11px;line-height:1.4;color:#7c90a2;margin:9px 0 11px}
+.isa-stage [data-edit-block][contenteditable="true"]{cursor:text!important;user-select:text!important;outline-offset:-3px;white-space:pre-wrap}
+.isa-stage [data-edit-block][contenteditable="true"]:focus{outline:3px solid #2caea7!important}
+.isa-stage [data-edit-block][contenteditable="true"].isa-layout-placeholder-text:empty::before{content:attr(data-placeholder);opacity:.7;pointer-events:none}
+.isa-stage [data-edit-block] strong,.isa-stage [data-edit-block] b{font-weight:850}
+.isa-stage [data-edit-block] ul,.isa-stage [data-edit-block] ol{margin:.2em 0;padding-left:1.4em;text-align:left}
+.isa-stage [data-edit-block] li{margin:.1em 0}
+.isa-stage [data-edit-block] .isa-rich-normal{font-weight:400!important}
+
 /* Match the centered section heading used by Wyniki i normy. */
 body:not(.unified-tv) #infoSlidesArea .isa-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
 body:not(.unified-tv) #infoSlidesArea .isa-heading>div:first-child{grid-column:2;text-align:center;min-width:0}
@@ -332,6 +347,35 @@ const message=s=>{$('isaMsg').textContent=s};
 function list(){return records.map(s=>({id:'info:'+s.id,name:'Informacje · '+s.title,description:'Zdjęcie i bloki tekstowe',available:true}))}
 function drawList(){ $('isaCount').textContent=String(records.length);$('isaList').innerHTML=records.map(r=>`<button type="button" class="${r.id===selectedId?'selected':''}" data-id="${escape(r.id)}"><span>▧ ${escape(r.title)}</span></button>`).join('')||'<p class="isa-helper">Nie ma jeszcze zapisanych podstron.</p>';}
 function preview(){revokePreview();renderImages();renderLivePreview()}
+// Rich text is stored as a restricted, markup-only fragment. Old plain-text slides remain compatible.
+function safeRichHtml(raw){
+ if(!raw)return '';
+ const doc=new DOMParser().parseFromString('<div>'+String(raw).slice(0,25000)+'</div>','text/html');
+ const tags=new Set(['STRONG','B','EM','I','U','S','STRIKE','UL','OL','LI','BR','P','DIV']);
+ const encode=t=>escape(t);
+ const convert=node=>{
+  if(node.nodeType===3)return encode(node.nodeValue||'');
+  if(node.nodeType!==1)return '';
+  const tag=node.tagName;
+  if(tag==='SPAN'&&node.classList.contains('isa-rich-normal'))return '<span class="isa-rich-normal">'+[...node.childNodes].map(convert).join('')+'</span>';
+  if(['SCRIPT','STYLE','IFRAME','SVG','OBJECT','TEMPLATE'].includes(tag))return '';
+  let body=[...node.childNodes].map(convert).join('');
+  if(!tags.has(tag)){
+   if(tag==='SPAN'||tag==='FONT'){
+    const style=node.getAttribute('style')||'';
+    if(/font-weight\s*:\s*(bold|[6-9]00)/i.test(style))body='<strong>'+body+'</strong>';
+    else if(/font-weight\s*:\s*(normal|[1-5]00)/i.test(style))body='<span class="isa-rich-normal">'+body+'</span>';
+    if(/font-style\s*:\s*italic/i.test(style))body='<em>'+body+'</em>';
+    if(/text-decoration[^;]*underline/i.test(style))body='<u>'+body+'</u>';
+    if(/text-decoration[^;]*line-through/i.test(style))body='<s>'+body+'</s>';
+   }
+   return body;
+  }
+  const normalized={B:'strong',STRONG:'strong',I:'em',EM:'em',STRIKE:'s',S:'s'}[tag]||tag.toLowerCase();
+  return normalized==='br'?'<br>':'<'+normalized+'>'+body+'</'+normalized+'>';
+ };
+ return [...(doc.body.firstElementChild?.childNodes||[])].map(convert).join('');
+}
 const POSITIONS=['bottom','top','left','right','overlay-bottom','overlay-top'];
 const STYLES=['light','dark','glass'];
 const validPosition=p=>POSITIONS.includes(p)?p:'bottom';
@@ -345,7 +389,7 @@ const validWeight=v=>WEIGHTS.includes(v)?v:'bold';
 const validAlign=v=>ALIGNS.includes(v)?v:'center';
 const validTextSize=v=>TEXT_SIZES.includes(v)?v:'medium';
 let draftBlocks=[];
-const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize),color:validColor(data.color),slot:String(data.slot||'')});
+const newBlock=(data={})=>({id:data.id||id(),text:String(data.text??''),html:safeRichHtml(data.html||''),position:validPosition(data.position),style:validStyle(data.style||data.cardStyle),weight:validWeight(data.weight),align:validAlign(data.align),textSize:validTextSize(data.textSize),color:validColor(data.color),slot:String(data.slot||'')});
 const TEMPLATE_FIELDS={
  '1':[['header','UWAGA!'],['body','Ważna informacja dla pracowników']],
  '2':[['footer','Porównanie produktów']],
@@ -357,7 +401,7 @@ const TEMPLATE_FIELDS={
 };
 function prepareBlocks(template,blocks){
  const slots=TEMPLATE_FIELDS[template].map(x=>x[0]);
- const copied=blocks.filter(b=>String(b.text||'').trim()).map(b=>({...b}));
+ const copied=blocks.filter(b=>String(b.text||'').trim()||String(b.html||'').trim()).map(b=>({...b}));
  const used=new Set();
  // Older records did not have slot identifiers. Assign them in visible order.
  copied.forEach((b,i)=>{if(!slots.includes(b.slot)||used.has(b.slot)){b.slot=slots.find(x=>!used.has(x))||slots[slots.length-1]}used.add(b.slot)});
@@ -375,8 +419,9 @@ const WEIGHT_LABELS=[['normal','Zwykły'],['bold','Pogrubiony']];
 const TEXT_SIZE_LABELS=[['small','Mały'],['medium','Średni'],['large','Duży']];
 const COLOR_LABELS=[['default','Domyślny'],['white','Biały'],['graphite','Grafit'],['teal','Turkus'],['blue','Błękit'],['amber','Bursztyn'],['rose','Koral']];
 function renderEditors(){
- $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<details class="isa-block-editor" data-block-id="${escape(b.id)}" ${i===0?'open':''}><summary class="isa-block-top"><span class="isa-block-number">Blok ${i+1} <span class="isa-block-excerpt">${escape((b.text||'Nowy tekst').replace(/\s+/g,' ').slice(0,70))}</span></span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń</button></summary><div class="isa-block-body"><label class="isa-label" for="isaBlockText${i}">Treść bloku</label><textarea id="isaBlockText${i}" data-field="text" maxlength="1000" rows="3" placeholder="Wpisz tekst komunikatu">${escape(b.text)}</textarea><div class="isa-format-row"><div><label class="isa-label">Położenie dodatkowe</label><select data-field="position">${POS_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.position?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div></details>`).join('');
+ $('isaBlocks').innerHTML=draftBlocks.map((b,i)=>`<details class="isa-block-editor" data-block-id="${escape(b.id)}" ${i===0?'open':''}><summary class="isa-block-top"><span class="isa-block-number">Blok ${i+1} <span class="isa-block-excerpt">${escape((b.text||'Nowy tekst').replace(/\s+/g,' ').slice(0,70))}</span></span><button type="button" class="isa-block-remove" data-remove="${escape(b.id)}" aria-label="Usuń blok ${i+1}">Usuń</button></summary><div class="isa-block-body"><p class="isa-rich-hint">Kliknij tekst bezpośrednio w makiecie, aby go edytować i formatować zaznaczone słowa.</p><div class="isa-typography-row"><div><label class="isa-label">Wyrównanie</label><select data-field="align">${ALIGN_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.align?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Tekst</label><select data-field="weight">${WEIGHT_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.weight?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="isa-label">Rozmiar</label><select data-field="textSize">${TEXT_SIZE_LABELS.map(([v,l])=>`<option value="${v}" ${v===b.textSize?'selected':''}>${l}</option>`).join('')}</select></div></div><div class="isa-color-row"><span class="isa-label">Kolor karty</span><div class="isa-color-options" role="group" aria-label="Kolor bloku">${COLOR_LABELS.map(([v,l])=>`<button type="button" class="isa-color-choice" data-color-choice="${v}" data-color="${v}" aria-label="${l}" aria-pressed="${v===b.color}" title="${l}"><span></span></button>`).join('')}</div></div></div></details>`).join('');
 }
+
 function compose(imageURLs,blocks,template='1',placeholder=false){
  const editor=placeholder===true;
  const board=document.createElement('div');board.className='isa-template-board isa-layout-'+validTemplate(template);
@@ -397,9 +442,11 @@ function compose(imageURLs,blocks,template='1',placeholder=false){
    if(!b.text.trim()&&!editor)continue;
    const card=document.createElement('div');card.className='isa-caption-card isa-layout-card';card.dataset.style=validStyle(b.style);
    card.dataset.align=validAlign(b.align);card.dataset.weight=validWeight(b.weight);card.dataset.textSize=validTextSize(b.textSize);card.dataset.color=validColor(b.color);
-   card.dataset.editBlock=b.id;card.textContent=b.text.trim()||(TEMPLATE_FIELDS[template].find(x=>x[0]===slotName)?.[1]||'Dodaj tekst');
+    card.dataset.editBlock=b.id;
+    if(b.html&&b.text.trim())card.innerHTML=safeRichHtml(b.html);
+    else card.textContent=b.text.trim()||(TEMPLATE_FIELDS[template].find(x=>x[0]===slotName)?.[1]||'Dodaj tekst');
    if(!b.text.trim())card.classList.add('isa-layout-placeholder-text');
-   if(editor){card.setAttribute('role','button');card.setAttribute('tabindex','0');card.title='Kliknij, aby wpisać tekst'}
+    if(editor){card.contentEditable='true';card.spellcheck=true;card.tabIndex=0;card.title='Kliknij i edytuj tekst; zaznacz słowo, by je sformatować'}
    container.append(card);
   }
   return container;
@@ -476,12 +523,36 @@ function renderLivePreview(){
  const stage=stageFor(urls,draftBlocks,selectedTemplate,true);host.replaceChildren(stage);
  fitStage(stage,false);scheduleTextFit(stage,true);
 }
+let activeRichId=null,savedRichRange=null;
+function updateRichBlock(card){
+ const b=draftBlocks.find(x=>x.id===card?.dataset.editBlock);if(!b)return;
+ b.text=card.innerText.slice(0,1000).trim();b.html=safeRichHtml(card.innerHTML);
+ if(!b.text)b.html='';
+ const inspector=$('isaBlocks').querySelector(`[data-block-id="${b.id}"] .isa-block-excerpt`);
+ if(inspector)inspector.textContent=b.text.replace(/\s+/g,' ').slice(0,70)||'Nowy tekst';
+}
+function setRichToolbar(id){activeRichId=id;const bar=$('isaRichToolbar');bar.hidden=!id;}
+$('isaRichToolbar').addEventListener('mousedown',e=>{if(e.target.closest('button')){savedRichRange=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0).cloneRange():null;e.preventDefault()}});
+$('isaRichToolbar').addEventListener('click',e=>{
+ const cmd=e.target.closest('[data-rich-command]')?.dataset.richCommand;if(!cmd||!activeRichId)return;
+ const card=[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===activeRichId);
+ if(!card)return;
+ const sel=window.getSelection();if(savedRichRange&&sel){sel.removeAllRanges();sel.addRange(savedRichRange.cloneRange())}document.execCommand(cmd,false,null);updateRichBlock(card);savedRichRange=null;
+});
+$('isaLivePreview').addEventListener('focusin',e=>{const card=e.target.closest('[data-edit-block]');if(card){setRichToolbar(card.dataset.editBlock);if(card.classList.contains('isa-layout-placeholder-text')){const range=document.createRange();range.selectNodeContents(card);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}}});
+$('isaLivePreview').addEventListener('input',e=>{const card=e.target.closest('[data-edit-block]');if(!card)return;card.classList.remove('isa-layout-placeholder-text');updateRichBlock(card)});
+$('isaLivePreview').addEventListener('paste',e=>{
+ if(!e.target.closest('[data-edit-block]'))return;
+ e.preventDefault();document.execCommand('insertText',false,e.clipboardData?.getData('text/plain')||'');
+});
+$('isaLivePreview').addEventListener('focusout',e=>{
+ const card=e.target.closest('[data-edit-block]');if(card)updateRichBlock(card);
+ requestAnimationFrame(()=>{if(!document.activeElement?.closest?.('[data-edit-block]')&&!document.activeElement?.closest?.('#isaRichToolbar'))setRichToolbar(null)});
+});
 $('isaLivePreview').addEventListener('click',e=>{
  const remove=e.target.closest('[data-remove-image]');if(remove){e.preventDefault();e.stopPropagation();draftImages[Number(remove.dataset.removeImage)]=null;preview();return}
- const block=e.target.closest('[data-edit-block]');if(block){const editor=$('isaBlocks').querySelector(`[data-block-id="${block.dataset.editBlock}"] textarea`);if(editor){const section=editor.closest('details');if(section)section.open=true;editor.scrollIntoView({behavior:'smooth',block:'center'});editor.focus()}return}
  const photo=e.target.closest('[data-edit-image]');if(photo){replaceImageIndex=Number(photo.dataset.editImage);$('isaFiles').click()}
 });
-$('isaLivePreview').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const target=e.target.closest('[data-edit-block],[data-edit-image]');if(target){e.preventDefault();target.click()}}});
 $('isaTemplates').onclick=e=>{const b=e.target.closest('[data-template]');if(!b)return;selectedTemplate=validTemplate(b.dataset.template);draftBlocks=prepareBlocks(selectedTemplate,draftBlocks);renderTemplates();renderEditors();preview()};
 let replaceImageIndex=-1;
 // All photo actions now live in the template itself.
@@ -495,7 +566,7 @@ $('isaFiles').onchange=e=>{acceptImages(e.target.files);e.target.value=''};
 // Dragging a photo directly onto a picture slot replaces that slot.
 $('isaLivePreview').addEventListener('dragover',e=>{if(e.target.closest('[data-edit-image]'))e.preventDefault()});
 $('isaLivePreview').addEventListener('drop',e=>{const slot=e.target.closest('[data-edit-image]');if(!slot)return;e.preventDefault();replaceImageIndex=Number(slot.dataset.editImage);acceptImages(e.dataTransfer.files)});
-$('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];draftBlocks.push(newBlock({slot}));renderEditors();renderLivePreview();$('isaBlocks').querySelector('.isa-block-editor:last-child textarea')?.focus()};
+$('isaAddBlock').onclick=()=>{const slot=TEMPLATE_FIELDS[selectedTemplate].at(-1)[0];const b=newBlock({slot});draftBlocks.push(b);renderEditors();renderLivePreview();const card=[...$('isaLivePreview').querySelectorAll('[data-edit-block]')].find(x=>x.dataset.editBlock===b.id);card?.focus();};
 $('isaBlocks').addEventListener('input',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('change',e=>{const editor=e.target.closest('[data-block-id]'),field=e.target.dataset.field;if(!editor||!field)return;const b=draftBlocks.find(x=>x.id===editor.dataset.blockId);if(!b)return;b[field]=e.target.value;renderLivePreview()});
 $('isaBlocks').addEventListener('click',e=>{
@@ -510,7 +581,7 @@ function showTV(ref){const slide=records.find(r=>r.id===ref);if(!slide)return;ar
 function restore(){revokeTV();open();}
 $('isaNew').onclick=()=>choose(null);
 $('isaList').onclick=e=>{const b=e.target.closest('button[data-id]');if(b)choose(records.find(r=>r.id===b.dataset.id))};
-$('isaSave').onclick=async()=>{if(saving)return;const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);
+$('isaSave').onclick=async()=>{if(saving)return;const focused=$('isaLivePreview').querySelector('[data-edit-block]:focus');if(focused)updateRichBlock(focused);const title=$('isaTitle').value.trim(),textBlocks=draftBlocks.map(x=>({...x,text:x.text.trim(),html:safeRichHtml(x.html)})).filter(x=>x.text);
  if(!title){message('Wpisz tytuł podstrony.');return}
  if(!draftImages.some(Boolean)&&!['6','7','8','9'].includes(selectedTemplate)){message('Dodaj zdjęcie lub wybierz szablon tekstowy.');return}
  if(!draftImages.some(Boolean)&&!textBlocks.length){message('Dodaj zdjęcie lub blok tekstu.');return}
