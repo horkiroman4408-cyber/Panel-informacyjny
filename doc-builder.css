@@ -116,3 +116,37 @@ body.unified-tv #docTVPage.doc-tv-adapted{
 #docTVPage.doc-tv-adapted .doc-tv-media-col>.doc-element{flex:1;min-height:0}
 #docTVPage.doc-tv-adapted .doc-field{line-height:1.2;max-height:100%;overflow:hidden}
 @media(max-width:900px){body.unified-tv #docTVPage.doc-tv-adapted{padding:14px 18px}#docTVPage.doc-tv-adapted .doc-tv-main{gap:12px}#docTVPage.doc-tv-adapted .doc-tv-content{gap:12px}}
+
+/* INCYDENTY · Scena TV: independent floating elements on application background.
+   Paper exists only in A4 editing; the unified TV NEVER displays a paper sheet. */
+#docBuilder .doc-mode-hint{margin:0 0 12px;color:#57748c;font-size:11px;line-height:1.5}
+#docBuilder.doc-mode-scene .doc-workspace{background:linear-gradient(110deg,#faf0f4 0%,#f4f7fb 48%,#e5f0ff 100%)}
+#docBuilder.doc-mode-scene #docCanvasSize{box-shadow:0 0 0 1px #aac0d49c,0 9px 22px #2d4b6413;border-radius:3px}
+#docBuilder.doc-mode-scene #docCanvas{background:transparent!important}
+#docCanvas .doc-element-content,#docTVPage .doc-element-content{border-radius:var(--doc-radius,16px)}
+#docCanvas .doc-mode-scene .doc-element-content{box-shadow:var(--doc-shadow,none)}
+#docBuilder.doc-mode-scene #docCanvas .doc-element-content{box-shadow:var(--doc-shadow,none)}
+#docCanvas .doc-element.doc-transparent .doc-element-content,
+#docTVPage .doc-element.doc-transparent .doc-element-content{background:transparent!important;box-shadow:none!important}
+#docCanvas .doc-remove-inline{position:absolute;z-index:6;right:-9px;top:-9px;border:1px solid #b6d6e8;background:#fff;color:#ac4e4e;border-radius:8px;padding:2px 8px;cursor:pointer;font-size:19px;font-weight:700;line-height:1.25}
+#docCanvas .doc-element:not(.selected) .doc-remove-inline{opacity:0;pointer-events:none}
+#docCanvas .doc-element.selected .doc-remove-inline{opacity:1;pointer-events:auto}
+body.unified-tv #docTVScreen{background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important}
+body.unified-tv #docTVPage.doc-tv-scene{background:transparent!important;box-shadow:none!important;border:0!important}
+body.unified-tv #docTVPage.doc-tv-scene .doc-element-content{border-radius:var(--doc-radius,18px);box-shadow:var(--doc-shadow,0 12px 27px #1b354e1a)}
+body.unified-tv #docTVPage.doc-tv-scene .doc-type-image .doc-element-content{background:transparent!important;box-shadow:none!important;border-radius:var(--doc-radius,18px);overflow:hidden}
+body.unified-tv #docTVPage.doc-tv-scene .doc-type-image img{object-fit:contain;border-radius:inherit}
+body.unified-tv #docTVPage.doc-tv-scene .doc-type-arrow .doc-element-content{box-shadow:none!important}
+/* Show each card independently instead of revealing one rectangular sheet. */
+body.unified-tv #docTVPage.doc-tv-scene{animation:none!important}
+@keyframes incDocCardRise{from{opacity:0;translate:0 26px}to{opacity:1;translate:0 0}}
+body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:incDocCardRise .68s cubic-bezier(.20,.75,.22,1) both;animation-delay:var(--doc-card-delay,0ms)}
+@media(prefers-reduced-motion:reduce){body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:none!important}}
+
+#docBuilder.doc-mode-scene #docCanvas.doc-canvas-empty::before{content:'Pusta scena TV\a Dodaj elementy z lewego panelu lub wybierz gotowy układ.';white-space:pre-line;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#7890a8;font-size:25px;font-weight:600;line-height:2;pointer-events:none}
+#docBuilder #docPresetPhotoText{border:1px solid #aed0e5;color:#20658d;border-radius:10px;background:#e9f5ff;padding:10px 8px;font-size:11px;font-weight:700;cursor:pointer;text-align:left}
+#docBuilder:not(.doc-mode-scene) #docPresetPhotoText{display:none}
+#docTVPage.doc-tv-adapted .doc-tv-content.doc-tv-single-card{flex:0 1 auto;min-height:0;height:min(46%,410px);width:min(82%,1150px);margin:20px auto;grid-auto-rows:minmax(0,1fr);align-self:center}
+#docTVPage.doc-tv-adapted .doc-tv-content.doc-tv-single-card .doc-element-content{padding:20px 35px}
+#docTVPage.doc-tv-adapted .doc-tv-content>.doc-element,
+#docTVPage.doc-tv-adapted .doc-tv-document-heading>.doc-element{isolation:isolate}

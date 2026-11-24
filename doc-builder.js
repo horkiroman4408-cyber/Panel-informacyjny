@@ -6,7 +6,7 @@ const DB='incydenty-document-builder-v1',STORE='documents',MAX_IMG=6*1024*1024;
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&quot;'}[c]));
 const uid=()=>('dc'+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
-const pages={'a4-portrait':{w:1000,h:1414,label:'A4 · pion'},'a4-landscape':{w:1000,h:707,label:'A4 · poziom'},'tv':{w:1000,h:563,label:'TV · 16:9'}};
+const pages={'a4-portrait':{w:1000,h:1414,label:'Dokument · A4 pion'},'a4-landscape':{w:1000,h:707,label:'Dokument · A4 poziom'},'tv':{w:1000,h:563,label:'Scena TV · 16:9'}};
 const types={heading:'Nagłówek',text:'Tekst',step:'Krok numerowany',yesno:'TAK / NIE',table:'Tabela',image:'Zdjęcie',alert:'Ważne / alert',panel:'Ramka',arrow:'Strzałka'};
 let db=null,items=[],active=null,chosen=null,modified=false,installed=false,scale=1,zoom='auto',tvActive=false,drawPending=false,tvResize=null;
 let undoStack=[];
@@ -19,12 +19,20 @@ const root=()=>$('docCanvas');
 const viewport=()=>$('docCanvasSize');
 const make=(type)=>{
  const [w,h]=baseSize[type];
- return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',alert:'WAŻNE: wpisz komunikat.',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',border:type==='panel'||type==='alert',align:'left',bold:type==='heading',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null};
+ return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',alert:'WAŻNE: wpisz komunikat.',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',bgSolid:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',radius:16,shadow:true,border:type==='panel'||type==='alert',align:'left',bold:type==='heading',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null};
 };
 function defaults(){const heading=make('heading');heading.x=65;heading.y=55;heading.w=870;heading.h=100;heading.text='NOWY DOKUMENT';heading.align='center';
  const subtitle=make('text');subtitle.x=80;subtitle.y=175;subtitle.w=840;subtitle.h=66;subtitle.text='Dodaj bloki z paska po lewej i zaprojektuj własną instrukcję.';subtitle.fontSize=19;subtitle.align='center';
  return [heading,subtitle];}
-const fresh=()=>({id:uid(),title:'Nowy dokument',size:'a4-portrait',blocks:defaults(),updatedAt:Date.now()});
+// Start new work as a TV scene, not a portrait sheet.
+// Existing saved A4 documents are never migrated or modified.
+function sceneDefaults(){
+ const photo=make('image');Object.assign(photo,{x:55,y:60,w:430,h:430,radius:18,shadow:false});
+ const title=make('heading');Object.assign(title,{x:520,y:62,w:420,h:95,text:'TYTUŁ OGŁOSZENIA',fontSize:34,align:'center',color:'#ffffff',bg:'#30485f',bgSolid:'#30485f',radius:20,shadow:false});
+ const text=make('text');Object.assign(text,{x:520,y:181,w:420,h:282,text:'Kliknij tutaj i wpisz treść. Dodaj zdjęcie, tabelę lub alert jako osobny element.',fontSize:28,align:'left',bg:'#ffffff',bgSolid:'#ffffff',radius:18,shadow:true});
+ return [photo,title,text];
+}
+const fresh=()=>({id:uid(),title:'Nowa scena TV',size:'tv',blocks:[],updatedAt:Date.now()});
 function database(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 function transact(mode,work){return new Promise((resolve,reject)=>{const tr=db.transaction(STORE,mode),req=work(tr.objectStore(STORE));tr.oncomplete=()=>resolve(req?.result);tr.onerror=()=>reject(tr.error);});}
 function say(msg,error=false){const n=$('docMessage');if(n){n.textContent=msg;n.dataset.error=error?'true':'false';}}
@@ -71,11 +79,14 @@ function buildBlock(b,editable=false){const n=document.createElement('div');n.cl
  // an inert JS property in Chromium, so inspector changes were invisible.
  Object.assign(n.style,{left:b.x+'px',top:b.y+'px',width:b.w+'px',height:b.h+'px',zIndex:String(b.z||1)});
  n.style.setProperty('--doc-bg',b.bg||'#ffffff');
+ n.style.setProperty('--doc-radius',Number.isFinite(Number(b.radius))&&b.radius!==undefined?clamp(Number(b.radius),0,40)+'px':'16px');
+ n.style.setProperty('--doc-shadow',b.shadow===false?'none':'0 12px 27px rgba(27,53,78,.12)');
+ n.classList.toggle('doc-transparent',b.bg==='transparent');
  n.style.setProperty('--doc-color',b.color||'#233b54');
  n.style.setProperty('--doc-font',(Number(b.fontSize)||22)+'px');
  n.style.setProperty('--doc-align',b.align||'left');
  n.style.setProperty('--doc-weight',b.bold?'750':'450');
- n.innerHTML=editable?`<button class="doc-move" type="button" aria-label="Przesuń element" title="Przeciągnij, aby przenieść">⠿</button><button class="doc-resize" type="button" aria-label="Zmień rozmiar" title="Przeciągnij, aby zmienić rozmiar">↘</button><div class="doc-element-content">${fieldMarkup(b,editable)}</div>`:`<div class="doc-element-content">${fieldMarkup(b,editable)}</div>`;
+ n.innerHTML=editable?`<button class="doc-move" type="button" aria-label="Przesuń element" title="Przeciągnij, aby przenieść">⠿</button><button class="doc-remove-inline" type="button" aria-label="Usuń element" title="Usuń blok">×</button><button class="doc-resize" type="button" aria-label="Zmień rozmiar" title="Przeciągnij, aby zmienić rozmiar">↘</button><div class="doc-element-content">${fieldMarkup(b,editable)}</div>`:`<div class="doc-element-content">${fieldMarkup(b,editable)}</div>`;
  n.classList.toggle('doc-framed',!!b.border);return n;}
 function fit(){if(!active||editor().hidden)return;const width=page().w,height=page().h;
  const box=$('docCanvasViewport');if(!box)return;
@@ -85,11 +96,12 @@ function fit(){if(!active||editor().hidden)return;const width=page().w,height=pa
  Object.assign(root().style,{width:width+'px',height:height+'px',transform:'scale('+scale+')'});
 }
 function render(){if(!active)return;const canvas=root();canvas.replaceChildren(...active.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,true)));
- $('docSize').value=active.size;editInspector();requestAnimationFrame(fit);}
+ $('docSize').value=active.size;root().classList.toggle('doc-canvas-empty',active.blocks.length===0);editor().classList.toggle('doc-mode-scene',active.size==='tv');$('docModeHint').textContent=active.size==='tv'?'Scena TV: tło aplikacji i niezależne karty. Przesuwaj elementy w obrębie formatu 16:9.':'Dokument A4: układ papierowy. Na ekranie TV elementy są pokazywane jako osobne karty, bez białego arkusza.';editInspector();requestAnimationFrame(fit);}
 function editInspector(){const b=active?.blocks.find(x=>x.id===chosen);$('docNoSelection').hidden=!!b;$('docProperties').hidden=!b;
  if(!b)return;
  $('docBlockType').textContent=types[b.type]||b.type;
- for(const [id,val] of [['docColor',b.color],['docBackground',b.bg],['docFontSize',b.fontSize],['docAlign',b.align],['docBorder',b.border]]){$(id).value=val??'';if(id==='docBorder')$(id).checked=!!val;}
+ for(const [id,val] of [['docColor',b.color],['docBackground',b.bg==='transparent'?(b.bgSolid||'#ffffff'):b.bg],['docFontSize',b.fontSize],['docAlign',b.align],['docBorder',b.border]]){$(id).value=val??'';if(id==='docBorder')$(id).checked=!!val;}
+ $('docTransparent').checked=b.bg==='transparent';$('docBackground').disabled=b.bg==='transparent';$('docRadius').value=b.radius??16;$('docShadow').checked=b.shadow!==false;
  $('docImageRow').hidden=b.type!=='image';$('docTextOptions').hidden=['table','image','arrow'].includes(b.type);
  $('docYesNoOptions').hidden=b.type!=='yesno';$('docTableOptions').hidden=b.type!=='table';
  $('docTak').value=b.tak||'';$('docNie').value=b.nie||'';
@@ -107,6 +119,10 @@ function addType(type){if(!active)return;if(!types[type])return;
  }
  if(!place){say('Brak miejsca na kolejny element. Zmniejsz bloki lub wybierz większy format strony.',true);return;}
  history();b.x=place.x;b.y=place.y;b.z=1+Math.max(0,...active.blocks.map(v=>v.z||1));active.blocks.push(b);chosen=b.id;dirty();render();say('Element dodany. Przeciągnij za uchwyt i dopasuj jego rozmiar.');}
+function addScenePreset(){if(!active||active.size!=='tv')return;
+ if(active.blocks.length&&!confirm('Zastąpić obecne bloki układem zdjęcie + tekst?'))return;
+ history();active.blocks=sceneDefaults();chosen=null;dirty();render();say('Dodano układ zdjęcie + tekst. Wybierz zdjęcie i zmień napisy.');
+}
 function saveInput(){if(!active)return;const text=$('docTitle').value.trim().slice(0,110);if(!text){say('Podaj tytuł dokumentu.',true);$('docTitle').focus();return;}active.title=text;dirty();}
 async function save(){if(!active||!db)return;saveInput();if(!active.title)return;
  active.updatedAt=Date.now();const object=JSON.parse(JSON.stringify(active));
@@ -123,8 +139,14 @@ function uploadPhoto(file){if(!file)return;const b=active?.blocks.find(x=>x.id==
  if(!file.type.startsWith('image/')||file.size>MAX_IMG){say('Wybierz obraz JPG, PNG lub WebP do 6 MB.',true);return;}
  const reader=new FileReader();reader.onload=()=>{history();b.src=reader.result;dirty();render();say('Zdjęcie dodane.');};reader.onerror=()=>say('Nie udało się wczytać zdjęcia.',true);reader.readAsDataURL(file);}
 function onInspector(e){const b=active?.blocks.find(x=>x.id===chosen);if(!b)return;const id=e.target.id;
- const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTak:'tak',docNie:'nie'};
- if(!map[id])return;history();b[map[id]]=id==='docFontSize'?clamp(Number(e.target.value)||22,10,90):id==='docBorder'?e.target.checked:e.target.value;
+ const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTransparent:'bg',docRadius:'radius',docShadow:'shadow',docTak:'tak',docNie:'nie'};
+ if(!map[id])return;history();
+ if(id==='docTransparent'){if(e.target.checked){b.bgSolid=b.bg==='transparent'?(b.bgSolid||'#ffffff'):b.bg;b.bg='transparent';}else b.bg=b.bgSolid||'#ffffff';}
+ else if(id==='docBackground'){b.bg=e.target.value;b.bgSolid=e.target.value;}
+ else if(id==='docFontSize')b.fontSize=clamp(Number(e.target.value)||22,10,90);
+ else if(id==='docRadius')b.radius=clamp(Number(e.target.value)||0,0,40);
+ else if(id==='docShadow'||id==='docBorder')b[map[id]]=e.target.checked;
+ else b[map[id]]=e.target.value;
  if(id==='docTak'||id==='docNie')b.text=b.text||'PYTANIE / DECYZJA';dirty();render();}
 function fromContent(e){const block=e.target.closest('[data-block-id]');if(!block||!active)return;
  const b=active.blocks.find(x=>x.id===block.dataset.blockId);if(!b)return;
@@ -162,11 +184,13 @@ function buildResponsiveTV(sheet,saved){
  const cols=count<=1?1:imageLayout?2:count<=2?1:count<=6?2:3;
  content.style.setProperty('--doc-tv-cols',String(cols));
  content.classList.toggle('doc-tv-with-image',imageLayout);
+ content.classList.toggle('doc-tv-single-card',!imageLayout&&count===1);
  if(title){
    const header=document.createElement('div');header.className='doc-tv-document-heading';
    const node=buildBlock(title,false);
    node.style.setProperty('--doc-font',Math.max(46,Math.min(68,(title.fontSize||32)*1.7))+'px');
-   if((title.bg||'#ffffff').toLowerCase()==='#ffffff'&&!title.border)node.style.setProperty('--doc-bg','transparent');
+   // Render the title as its own card; never replace the document with an A4 canvas.
+   if((title.bg||'#ffffff').toLowerCase()==='#ffffff'&&!title.border){node.style.setProperty('--doc-bg','#30485f');node.style.setProperty('--doc-color','#fff');node.classList.remove('doc-transparent');}
    header.append(node);main.append(header);
  }
  // A photo with an announcement next to it is the most common two-column TV
@@ -192,17 +216,18 @@ function buildResponsiveTV(sheet,saved){
      content.append(node);
    }
  }
- main.append(content);
+  main.append(content);
  sheet.replaceChildren(main);
+ [...sheet.querySelectorAll('.doc-element')].forEach((node,i)=>node.style.setProperty('--doc-card-delay',Math.min(i,8)*55+'ms'));
 }
 function configureTVBlock(node,b,total){
   const fontsize=b.type==='heading'?46:total<=2?38:total<=5?30:24;
   if(!['table','image','arrow'].includes(b.type)){
     node.style.setProperty('--doc-font',Math.max(fontsize,Math.min(58,Number(b.fontSize)||24))+'px');
   }
-  if(['text','heading'].includes(b.type)&&!b.border&&(b.bg||'#ffffff').toLowerCase()==='#ffffff'){
-    node.style.setProperty('--doc-bg','transparent');
-  }
+  // Keep each element visually separate. Only explicitly transparent blocks
+  // float without a panel; never infer transparency from a white background.
+  if(b.bg==='transparent')node.classList.add('doc-transparent');
 }
 function tvBuild(id){const saved=items.find(x=>x.id===id);if(!saved)return;
  closeTV();const area=$('infoSlidesArea');if(!area)return;
@@ -219,9 +244,10 @@ function tvBuild(id){const saved=items.find(x=>x.id===id);if(!saved)return;
  // A4 has its own printable proportions, but a TV slide should use the entire
  // 16:9 screen. This is a VIEW transformation: IndexedDB data is untouched.
  sheet.classList.toggle('doc-tv-adapted', saved.size!=='tv');
+ sheet.classList.add('doc-tv-scene');
  sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
  if(saved.size==='tv'){
-   sheet.replaceChildren(...saved.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,false)));
+   sheet.replaceChildren(...saved.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map((b,i)=>{const node=buildBlock(b,false);node.style.setProperty('--doc-card-delay',Math.min(i,8)*55+'ms');return node;}));
  }else{
    buildResponsiveTV(sheet,saved);
  }
@@ -238,7 +264,7 @@ function fitTV(){if(!tvActive)return;const stage=$('docTVScreen'),paper=$('docTV
  const box=stage.getBoundingClientRect(),s=Math.min((box.width-22)/parseFloat(paper.style.width),(h-22)/parseFloat(paper.style.height));
  paper.style.transform='translate(-50%,-50%) scale('+Math.max(.1,s)+')';
 }
-function closeTV(){tvActive=false;const stage=$('docTVScreen');if(stage)stage.hidden=true;$('docTVPage')?.classList.remove('doc-tv-adapted');$('infoSlidesArea')?.classList.remove('doc-tv-open');document.body.classList.remove('inc-doc-tv-screen');}
+function closeTV(){tvActive=false;const stage=$('docTVScreen');if(stage)stage.hidden=true;$('docTVPage')?.classList.remove('doc-tv-adapted','doc-tv-scene');$('infoSlidesArea')?.classList.remove('doc-tv-open');document.body.classList.remove('inc-doc-tv-screen');}
 function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')||!$('infoSlidesArea'))return false;
  installed=true;const info=$('infoSlidesArea'),api=window.incSlides;
  const prev={list:api.list,showTV:api.showTV,close:api.close,open:api.open,restore:api.restore};
@@ -248,15 +274,16 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  const shell=info.querySelector('.isa-shell');if(!shell)return false;
  const pane=document.createElement('section');pane.id='docBuilder';pane.hidden=true;
  pane.innerHTML=`
- <div class="doc-topbar"><div class="doc-title-row"><label>Nazwa dokumentu<input id="docTitle" maxlength="110" placeholder="Nazwa podstrony"></label><label>Format<select id="docSize"><option value="a4-portrait">A4 · pion</option><option value="a4-landscape">A4 · poziom</option><option value="tv">TV · 16:9</option></select></label><label>Widok<select id="docZoom"><option value="auto">Dopasuj</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></label></div>
+ <div class="doc-topbar"><div class="doc-title-row"><label>Nazwa dokumentu<input id="docTitle" maxlength="110" placeholder="Nazwa podstrony"></label><label>Format<select id="docSize"><option value="tv">Scena TV · 16:9</option><option value="a4-portrait">Dokument · A4 pion</option><option value="a4-landscape">Dokument · A4 poziom</option></select></label><label>Widok<select id="docZoom"><option value="auto">Dopasuj</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></label></div>
  <div class="doc-main-actions"><button type="button" id="docDuplicate">Kopiuj</button><button type="button" id="docRemove">Usuń</button><button class="doc-primary" type="button" id="docSave">Zapisz</button></div></div>
+ <p id="docModeHint" class="doc-mode-hint"></p>
  <div class="doc-editor-layout"><aside class="doc-palette"><strong>Dodaj element</strong><div class="doc-palette-grid">
  ${Object.entries(types).map(([type,label])=>`<button type="button" data-doc-type="${type}"><span>${({heading:'H',text:'T',step:'①',yesno:'✓',table:'▦',image:'▧',alert:'!',panel:'▢',arrow:'➜'})[type]}</span>${label}</button>`).join('')}</div>
- <p>Przeciągaj za uchwyt ⠿. Zmieniaj rozmiar za róg ↘. Kliknij tekst, aby go edytować.</p>
+ <button id="docPresetPhotoText" type="button">▦ Układ: zdjęcie + tekst</button><p>Przeciągaj za uchwyt ⠿. Zmieniaj rozmiar za róg ↘. Kliknij tekst, aby go edytować.</p>
  <button id="docUndo" type="button">↶ Cofnij zmianę</button></aside>
  <div class="doc-workspace" id="docCanvasViewport"><div id="docCanvasSize"><div id="docCanvas"></div></div></div>
  <aside class="doc-inspector"><strong>Właściwości bloku</strong><div id="docNoSelection" class="doc-help">Zaznacz element na stronie, aby zmienić jego wygląd.</div>
- <div id="docProperties" hidden><h3 id="docBlockType"></h3><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label>
+ <div id="docProperties" hidden><h3 id="docBlockType"></h3><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label class="doc-inline">Bez tła <input id="docTransparent" type="checkbox"></label><label>Zaokrąglenie (px)<input id="docRadius" type="number" min="0" max="40" step="1"></label><label class="doc-inline">Cień <input id="docShadow" type="checkbox"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label>
  <div id="docTextOptions"><small>Tekst zmieniasz bezpośrednio w bloku.</small></div><div id="docYesNoOptions" hidden><label>TAK<textarea id="docTak" rows="3"></textarea></label><label>NIE<textarea id="docNie" rows="3"></textarea></label></div>
  <div id="docTableOptions" hidden><button id="docAddRow" type="button">＋ Wiersz</button><button id="docAddCol" type="button">＋ Kolumna</button></div>
  <div id="docImageRow" hidden><label class="doc-file-label">Wybierz zdjęcie<input id="docImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden></label></div>
@@ -274,11 +301,18 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  $('pdfSlidesAdd')?.addEventListener('click',closeEditor,true);
  $('docBuilder').addEventListener('click',e=>{
  const type=e.target.closest('[data-doc-type]')?.dataset.docType;if(type){addType(type);return;}
- const block=e.target.closest('[data-block-id]');if(block)activate(block.dataset.blockId);
+ const block=e.target.closest('[data-block-id]');
+ if(block&&e.target.closest('.doc-remove-inline')){activate(block.dataset.blockId);deleteBlock();return;}
+ if(block)activate(block.dataset.blockId);
  });
  $('docCanvas').addEventListener('input',fromContent);
- $('docCanvas').addEventListener('pointerdown',e=>{if(e.target.closest('.doc-move'))dragPointer(e,'move');else if(e.target.closest('.doc-resize'))dragPointer(e,'resize');});
- for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTak','docNie'])$(id).addEventListener('change',onInspector);
+ $('docCanvas').addEventListener('pointerdown',e=>{
+  const block=e.target.closest('[data-block-id]');
+  if(block&&!e.target.closest('[contenteditable=true]'))activate(block.dataset.blockId);
+  if(e.target.closest('.doc-move'))dragPointer(e,'move');
+  else if(e.target.closest('.doc-resize'))dragPointer(e,'resize');
+ });
+ for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTransparent','docRadius','docShadow','docTak','docNie'])$(id).addEventListener('change',onInspector);
  $('docTitle').addEventListener('change',saveInput);
  $('docSize').addEventListener('change',e=>{if(!active)return;
  const next=pages[e.target.value];if(!next){e.target.value=active.size;return;}
@@ -290,8 +324,14 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  }
  active.size=e.target.value;dirty();render();});
  $('docZoom').addEventListener('change',e=>{zoom=e.target.value;fit();});
- $('docSave').onclick=save;$('docRemove').onclick=remove;$('docDuplicate').onclick=duplicate;
- $('docCloneBlock').onclick=duplicateBlock;$('docDeleteBlock').onclick=deleteBlock;$('docFront').onclick=()=>changeOrder('front');$('docBack').onclick=()=>changeOrder('back');
+ $('docSave').onclick=save;$('docRemove').onclick=remove;$('docDuplicate').onclick=duplicate;$('docPresetPhotoText').onclick=addScenePreset;
+ $('docCloneBlock').onclick=duplicateBlock;$('docDeleteBlock').onclick=deleteBlock;
+ editor().addEventListener('keydown',event=>{
+  if(event.key!=='Delete'&&event.key!=='Backspace')return;
+  const target=event.target;
+  if(target.closest('input,textarea,select,[contenteditable=true]')||!chosen||!active)return;
+  event.preventDefault();deleteBlock();
+ });$('docFront').onclick=()=>changeOrder('front');$('docBack').onclick=()=>changeOrder('back');
  $('docAddRow').onclick=addRow;$('docAddCol').onclick=addCol;$('docUndo').onclick=undo;
  $('docImageFile').addEventListener('change',e=>{uploadPhoto(e.target.files?.[0]);e.target.value='';});
  window.addEventListener('resize',()=>{fit();if(tvActive)fitTV();});
