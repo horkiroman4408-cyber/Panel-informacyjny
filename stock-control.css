@@ -232,3 +232,9 @@ body.unified-tv #stockControl.stk-unified-screen .stk-tv-title p{
 }
 body.unified-tv #stockControl.stk-unified-screen .stk-tv-title p[hidden]{display:none!important}
 @media(max-height:850px){body.unified-tv #stockControl.stk-unified-screen .stk-tv-title{margin-bottom:7px}}
+
+/* TV-only: RS1 STOCK is irrelevant to the RTS brand screen.
+   Keep it visible for SINSAY, all brands, and the normal STOCK CONTROL tab. */
+body.unified-tv #stockControl.stk-unified-screen[data-tv-brand="RTS"] .stk-layout > .stk-card:nth-child(4){
+  display:none!important;
+}

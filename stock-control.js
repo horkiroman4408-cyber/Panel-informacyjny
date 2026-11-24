@@ -91,6 +91,7 @@
   if(window.incSlides?.isOpen())window.incSlides.close();
   section.hidden=false;
   section.classList.remove('stk-unified-screen');
+  delete section.dataset.tvBrand;
   el('stkTVTitle').hidden=true;
   tab.classList.add('active');
   for(const id of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(id))el(id).hidden=true;
@@ -102,6 +103,7 @@
   tvBrandScope=null;
   section.hidden=true;
   section.classList.remove('stk-unified-screen');
+  delete section.dataset.tvBrand;
   el('stkTVTitle').hidden=true;
   tab.classList.remove('active');
   el('upload').hidden=false;el('settings').hidden=false;el('tv').hidden=false;
@@ -132,6 +134,7 @@
    // Select brand for this TV screen only, without changing saved edit filters.
    tvBrandScope=id.startsWith('stock-control:brand:')?id.slice('stock-control:brand:'.length):'*';
    original.close();
+   section.dataset.tvBrand=tvBrandScope;
    section.hidden=false;section.classList.add('stk-unified-screen');
    el('stkTVTitle').hidden=false;
    el('stkTVBrand').textContent=tvBrandScope==='*'?'':tvBrandScope;
