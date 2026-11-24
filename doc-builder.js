@@ -66,7 +66,15 @@ function fieldMarkup(b,editable){const cls='doc-field '+(b.type==='heading'?'doc
  return `<div class="${cls}" ${editable?'contenteditable="true" spellcheck="true"':''}>${txt||'&nbsp;'}</div>`;
 }
 function buildBlock(b,editable=false){const n=document.createElement('div');n.className='doc-element doc-type-'+b.type+(editable&&b.id===chosen?' selected':'');n.dataset.blockId=b.id;
- Object.assign(n.style,{left:b.x+'px',top:b.y+'px',width:b.w+'px',height:b.h+'px',zIndex:String(b.z||1),'--doc-bg':b.bg||'#fff','--doc-color':b.color||'#233b54','--doc-font':b.fontSize+'px','--doc-align':b.align||'left','--doc-weight':b.bold?'750':'450'});
+ // Native properties can be assigned normally, but CSS custom properties MUST
+ // use setProperty(). Direct Object.assign(style, {'--doc-font': ...}) creates
+ // an inert JS property in Chromium, so inspector changes were invisible.
+ Object.assign(n.style,{left:b.x+'px',top:b.y+'px',width:b.w+'px',height:b.h+'px',zIndex:String(b.z||1)});
+ n.style.setProperty('--doc-bg',b.bg||'#ffffff');
+ n.style.setProperty('--doc-color',b.color||'#233b54');
+ n.style.setProperty('--doc-font',(Number(b.fontSize)||22)+'px');
+ n.style.setProperty('--doc-align',b.align||'left');
+ n.style.setProperty('--doc-weight',b.bold?'750':'450');
  n.innerHTML=editable?`<button class="doc-move" type="button" aria-label="Przesuń element" title="Przeciągnij, aby przenieść">⠿</button><button class="doc-resize" type="button" aria-label="Zmień rozmiar" title="Przeciągnij, aby zmienić rozmiar">↘</button><div class="doc-element-content">${fieldMarkup(b,editable)}</div>`:`<div class="doc-element-content">${fieldMarkup(b,editable)}</div>`;
  n.classList.toggle('doc-framed',!!b.border);return n;}
 function fit(){if(!active||editor().hidden)return;const width=page().w,height=page().h;
