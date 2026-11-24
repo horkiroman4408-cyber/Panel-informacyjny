@@ -1,0 +1,89 @@
+/* INCYDENTY · Konstruktor dokumentów. All styles scoped. */
+#docBuilder[hidden],#docTVScreen[hidden]{display:none!important}
+#infoSlidesArea .isa-heading #docAdd{border:1px solid #cbddec;background:#f4f9fe;color:#185f91;border-radius:12px;padding:11px 14px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer}
+#infoSlidesArea .isa-heading #docAdd:hover{background:#e4f2fe;border-color:#a5ccec}
+#infoSlidesArea .isa-list .doc-list-entry{display:block;width:100%;text-align:left}
+#infoSlidesArea .isa-editor[hidden],#infoSlidesArea #pdfInlineViewer[hidden]{display:none!important}
+#docBuilder{grid-column:2;min-width:0;background:rgba(255,255,255,.87);border:1px solid #e1e9f1;border-radius:20px;padding:16px;color:#28435a;box-shadow:0 8px 25px #1d37500c}
+#docBuilder *{box-sizing:border-box}
+#docBuilder button,#docBuilder input,#docBuilder textarea,#docBuilder select{font:inherit}
+#docBuilder button{cursor:pointer}
+#docBuilder .doc-topbar{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+#docBuilder .doc-title-row{display:flex;align-items:end;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
+#docBuilder .doc-title-row label{min-width:110px;font-size:10px;color:#6b8193;font-weight:750;display:grid;gap:5px}
+#docBuilder .doc-title-row label:first-child{min-width:190px;flex:1}
+#docBuilder input[type=text],#docBuilder input:not([type]),#docBuilder input[type=number],#docBuilder select,#docBuilder textarea{background:#fff;border:1px solid #d6e3ed;border-radius:10px;color:#2b4b62;padding:9px 10px;max-width:100%;outline:none}
+#docBuilder input:focus,#docBuilder textarea:focus,#docBuilder select:focus{border-color:#4599d8;box-shadow:0 0 0 3px #278dc41a}
+#docBuilder .doc-main-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#docBuilder .doc-main-actions button{padding:9px 13px;border:1px solid #d5e1ec;border-radius:10px;background:#f7fafc;color:#30536a;font-size:11px;font-weight:750}
+#docBuilder .doc-main-actions .doc-primary{color:#fff;background:#087ec5;border-color:#087ec5}
+#docBuilder .doc-editor-layout{display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr) minmax(145px,190px);gap:11px;align-items:start}
+#docBuilder .doc-palette,#docBuilder .doc-inspector{background:#f7f9fc;border:1px solid #dfe8f0;border-radius:14px;padding:12px;display:grid;gap:11px;min-width:0}
+#docBuilder .doc-palette>strong,#docBuilder .doc-inspector>strong{font-size:12px;color:#28455e}
+#docBuilder .doc-palette-grid{display:grid;grid-template-columns:1fr;gap:6px}
+#docBuilder .doc-palette-grid button{border:1px solid #dce5ef;background:#fff;border-radius:9px;padding:8px 7px;display:flex;align-items:center;gap:8px;text-align:left;color:#385269;font-size:11px;font-weight:700}
+#docBuilder .doc-palette-grid button:hover{background:#e8f4fd;border-color:#a7d5f2}
+#docBuilder .doc-palette-grid button>span{display:flex;align-items:center;justify-content:center;min-width:22px;height:22px;background:#edf3f9;border-radius:6px;color:#0f699c;font-size:13px}
+#docBuilder .doc-palette p,#docBuilder .doc-help,#docBuilder .doc-inspector small{font-size:10px;line-height:1.65;color:#718499;margin:0}
+#docBuilder #docUndo{background:#fff;border:1px solid #d9e5ee;border-radius:10px;padding:9px;color:#2d6589;font-weight:750;font-size:11px}
+#docBuilder .doc-workspace{background:#e7edf4;border:1px solid #d7e2eb;border-radius:14px;min-width:0;min-height:540px;max-height:min(75vh,1050px);overflow:auto;padding:16px 12px;display:block}
+#docBuilder #docCanvasSize{position:relative;margin:0 auto;box-shadow:0 12px 35px #26394b2b;}
+#docBuilder #docCanvas{position:absolute;left:0;top:0;transform-origin:top left;background:#fff;overflow:hidden;touch-action:auto}
+#docBuilder .doc-inspector label{font-size:10px;font-weight:750;color:#5d7489;display:grid;gap:5px}
+#docBuilder .doc-inspector label input[type=color]{padding:2px;min-height:35px;width:100%}
+#docBuilder .doc-inspector label.doc-inline{display:flex;align-items:center;justify-content:space-between}
+#docBuilder .doc-inspector #docProperties{display:grid;gap:10px}
+#docBuilder .doc-inspector #docProperties[hidden],#docBuilder #docNoSelection[hidden],#docBuilder #docYesNoOptions[hidden],#docBuilder #docImageRow[hidden],#docBuilder #docTableOptions[hidden],#docBuilder #docTextOptions[hidden]{display:none!important}
+#docBuilder #docYesNoOptions{display:grid;gap:8px}
+#docBuilder #docBlockType{font-size:13px;margin:2px 0}
+#docBuilder #docTableOptions,#docBuilder .doc-element-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+#docBuilder #docTableOptions button,#docBuilder .doc-element-actions button,#docBuilder .doc-file-label{display:block;border:1px solid #d7e3ec;background:#fff;border-radius:8px;padding:7px 6px;text-align:center;font-size:10px;color:#3b5c71;font-weight:750;cursor:pointer}
+#docBuilder .doc-file-label:hover{background:#e7f3fc}
+#docBuilder .doc-inspector textarea{width:100%;resize:vertical;min-height:75px}
+#docBuilder .doc-message{font-size:11px;color:#5f8795;margin:12px 3px 0}
+#docBuilder .doc-message[data-error=true]{color:#b3443e}
+/* Canvas elements: identical content styling in editor and TV, no dependency on old slide templates. */
+#docCanvas .doc-element,#docTVPage .doc-element{position:absolute;min-width:0;min-height:0;overflow:visible;box-sizing:border-box;background:transparent;color:var(--doc-color);font-size:var(--doc-font);text-align:var(--doc-align);font-weight:var(--doc-weight)}
+#docCanvas .doc-element{outline:2px solid transparent;outline-offset:0}
+#docCanvas .doc-element:hover{outline:2px solid #a1c9e5}
+#docCanvas .doc-element.selected{outline:2px solid #1788cb;z-index:999!important}
+#docCanvas .doc-element-content,#docTVPage .doc-element-content{width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;border-radius:10px;background:var(--doc-bg);display:flex;flex-direction:column;justify-content:center;padding:12px 17px;box-sizing:border-box}
+#docCanvas .doc-element.doc-framed .doc-element-content,#docTVPage .doc-element.doc-framed .doc-element-content{border:2px solid #9eb8cc}
+#docCanvas .doc-element-content .doc-field,#docTVPage .doc-element-content .doc-field{font:inherit;color:inherit;text-align:inherit;white-space:pre-wrap;overflow-wrap:anywhere;outline:none;max-height:100%;overflow:hidden;line-height:1.25}
+#docCanvas .doc-element-content .doc-field[contenteditable]:focus{outline:1px dashed #78add0;outline-offset:4px}
+#docCanvas .doc-move,#docCanvas .doc-resize{position:absolute;z-index:5;background:#fff;border:1px solid #b6d6e8;color:#226990;cursor:grab;font-size:17px;font-weight:800;touch-action:none;user-select:none}
+#docCanvas .doc-move{left:-8px;top:-8px;border-radius:8px;padding:2px 8px}
+#docCanvas .doc-resize{right:-9px;bottom:-9px;border-radius:8px;padding:2px 6px;cursor:nwse-resize}
+#docCanvas .doc-element:not(.selected) .doc-move,#docCanvas .doc-element:not(.selected) .doc-resize{opacity:0}
+#docCanvas .doc-element:hover .doc-move,#docCanvas .doc-element:hover .doc-resize{opacity:1}
+.doc-type-heading .doc-element-content{font-weight:800!important;letter-spacing:.025em}
+.doc-type-alert .doc-element-content{border-left:10px solid #b6554f!important}
+.doc-type-step .doc-element-content{border-left:10px solid #3c779b!important}
+#docCanvas .doc-table,#docTVPage .doc-table{width:100%;border-collapse:collapse;font-family:inherit;font-size:.65em;table-layout:fixed}
+#docCanvas .doc-table td,#docCanvas .doc-table th,#docTVPage .doc-table td,#docTVPage .doc-table th{border:1px solid #c8d6e2;padding:10px 7px;overflow-wrap:anywhere;text-align:left;vertical-align:middle;outline:none}
+#docCanvas .doc-table th,#docTVPage .doc-table th{background:#e7f0f7;color:#27475d;font-weight:800}
+#docCanvas .doc-question,#docTVPage .doc-question{font-size:1.04em;font-weight:850;margin:0 0 13px;line-height:1.15}
+#docCanvas .doc-yesno,#docTVPage .doc-yesno{display:grid;grid-template-columns:1fr 1fr;gap:13px;min-height:0;flex:1}
+#docCanvas .doc-yesno>div,#docTVPage .doc-yesno>div{display:flex;gap:10px;align-items:center;border-radius:12px;padding:12px;background:#e4f0e7;overflow:hidden}
+#docCanvas .doc-yesno>div:nth-child(2),#docTVPage .doc-yesno>div:nth-child(2){background:#fff2d1}
+#docCanvas .doc-yesno strong,#docTVPage .doc-yesno strong{font-size:.68em;padding:7px 10px;background:#4a9162;border-radius:8px;color:#fff}
+#docCanvas .doc-yesno>div:nth-child(2) strong,#docTVPage .doc-yesno>div:nth-child(2) strong{background:#cf951d}
+#docCanvas .doc-yesno span,#docTVPage .doc-yesno span{font-size:.72em;font-weight:500;overflow-wrap:anywhere}
+#docCanvas .doc-type-image .doc-element-content,#docTVPage .doc-type-image .doc-element-content{padding:0;background:#edf2f7}
+#docCanvas .doc-type-image img,#docTVPage .doc-type-image img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+#docCanvas .doc-image-empty,#docTVPage .doc-image-empty{text-align:center;color:#9aacbb;font-size:.72em;padding:20px}
+#docCanvas .doc-type-arrow .doc-element-content,#docTVPage .doc-type-arrow .doc-element-content{padding:12px;background:transparent!important}
+#docCanvas .doc-arrowline,#docTVPage .doc-arrowline{position:relative;width:calc(100% - 24px);height:4px;background:#557b9b;margin:auto;border-radius:4px}
+#docCanvas .doc-arrowline:after,#docTVPage .doc-arrowline:after{content:'';position:absolute;right:-14px;top:-10px;border-left:17px solid #557b9b;border-top:12px solid transparent;border-bottom:12px solid transparent}
+/* TV: viewer is a single independent unified-TV screen. */
+#infoSlidesArea.doc-tv-open .isa-heading,#infoSlidesArea.doc-tv-open .isa-shell,#infoSlidesArea.doc-tv-open #isaTV,#infoSlidesArea.doc-tv-open #pdfSlidesTV{display:none!important}
+body.unified-tv #infoSlidesArea.doc-tv-open{display:block!important;max-width:none;width:100%;padding:0!important;margin:0}
+body.unified-tv #docTVScreen{position:relative;display:block!important;width:100%;height:calc(100dvh - 125px);background:#edf3f9;border-radius:18px;overflow:hidden}
+body.unified-tv #docTVScreen[hidden]{display:none!important}
+#docTVPage{position:absolute;left:50%;top:50%;transform-origin:center center;background:#fff;box-shadow:0 9px 30px #11293a21;overflow:hidden}
+@keyframes docTVRise{from{opacity:0;translate:0 26px}to{opacity:1;translate:0 0}}
+body.unified-tv #docTVPage{animation:docTVRise .68s cubic-bezier(.20,.75,.22,1) both}
+body.inc-doc-tv-screen #stockControl,body.inc-doc-tv-screen #norms,body.inc-doc-tv-screen #assign,body.inc-doc-tv-screen #workerArea{display:none!important}
+@media(prefers-reduced-motion:reduce){body.unified-tv #docTVPage{animation:none}}
+@media(max-width:1200px){#docBuilder .doc-editor-layout{grid-template-columns:minmax(120px,145px) minmax(0,1fr)}#docBuilder .doc-inspector{grid-column:1/-1;grid-row:2;display:block}#docBuilder .doc-inspector #docProperties{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:750px){#docBuilder{grid-column:1;padding:10px}#docBuilder .doc-editor-layout{grid-template-columns:1fr}#docBuilder .doc-palette{grid-column:1}#docBuilder .doc-palette-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#docBuilder .doc-inspector{grid-column:1;grid-row:auto}#docBuilder .doc-workspace{min-height:420px;max-height:70vh}}
