@@ -7,6 +7,8 @@
  const number=x=>{if(x==null||x==='')return 0;if(typeof x==='number')return x;const v=Number(String(x).trim().replace(/\s/g,'').replace(',','.'));return Number.isFinite(v)?v:NaN};
  const fmt=(x,d=0)=>Number(x||0).toLocaleString('pl-PL',{minimumFractionDigits:d,maximumFractionDigits:d});
  const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0;
+ // Exports Power BI can include a descriptive filter row, not an RS1 system.
+ const isRS1Metadata=value=>/^(?:ZASTOSOWANE\s+FILTRY|APPLIED\s+FILTERS|ПРИМЕНЕННЫЕ\s+ФИЛЬТРЫ)\b/i.test(String(value??'').trim());
  const STORE='incydenty-stock-powerbi-v2';
  let datasets={shelves:null,units:null,rs1:null},selected=new Set(),originStockTV=false;
  try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&typeof obj==='object'){for(const k of Object.keys(datasets)){if(obj.datasets?.[k]&&Array.isArray(obj.datasets[k].rows))datasets[k]=obj.datasets[k];}if(Array.isArray(obj.selected))selected=new Set(obj.selected)}}catch{}
@@ -61,7 +63,7 @@
  el('stkShelves').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','ALL SHELVES','AVG UNITS','TOTAL UNITS','MP1','MP2','MP3','WITH STOCK','% FULL','MP1','MP2','MP3','EMPTY','% EMPTY'],s.map(r=>[r.brand,r.loc,...r.a,r.all,{value:r.avg,dec:2},{value:r.totalUnits,dec:2},...r.f,r.full,P(r.fullPct),...r.e,r.empty,P(r.emptyPct,'empty')]),['Suma','',...['','',''],all,'','',...['','',''],full,all?fmt(full/all*100,2)+'%':'—',...['','',''],empty,all?fmt(empty/all*100,2)+'%':'—']);
  el('stkUnits').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','MP STOCKING','% FULL','MP1','MP2','MP3','TO BE STOCKED','% EMPTY'],u.map(r=>[r.brand,r.loc,...r.a,r.stock,P(r.fullPct),...r.b,r.todo,P(r.emptyPct,'empty')]),['Suma','',...['','',''],stock,'',...['','',''],todo,'']);
  const per=new Map();for(const r of u){const item=per.get(r.brand)||{brand:r.brand,stock:0,todo:0};item.stock+=r.stock;item.todo+=r.todo;per.set(r.brand,item)}el('stkByBrand').innerHTML=table(['BRAND','MP STOCKING','TO BE STOCKED'],[...per.values()].map(r=>[r.brand,r.stock,r.todo]),['Suma',stock,todo]);
- const rs=datasets.rs1?.rows||[];el('stkRS1').innerHTML=table(['SYSTEM','NO OF ITEMS','NO OF TSUS','AVG NO OF ITEMS'],rs.map(r=>[r.system,r.items,r.tsus,{value:r.avg,dec:2}]),['Suma',sum(rs,'items'),sum(rs,'tsus'),'']);
+ const rs=(datasets.rs1?.rows||[]).filter(r=>!isRS1Metadata(r.system));el('stkRS1').innerHTML=table(['SYSTEM','NO OF ITEMS','NO OF TSUS','AVG NO OF ITEMS'],rs.map(r=>[r.system,r.items,r.tsus,{value:r.avg,dec:2}]),['Suma',sum(rs,'items'),sum(rs,'tsus'),'']);
  const weighted=s.reduce((acc,r)=>acc+r.avg*r.all,0);el('stkAvg').textContent=s.length&&all>0?fmt(weighted/all,2):'—';
  }
  function readRows(rows,kind,file){if(!Array.isArray(rows)||!rows.length)throw Error('Pusty arkusz Export');const h=(rows[0]||[]).map(name);const at=(x,start=0)=>h.findIndex((v,i)=>i>=start&&v===x);let parsed=[];
@@ -73,7 +75,7 @@
   parsed=rows.slice(1).filter(r=>r[0]&&r[1]&&!['TOTAL','SUMA'].includes(name(r[0]))).map(r=>({brand:name(r[0]),loc:String(r[1]).trim(),a:[2,3,4].map(i=>number(r[i])),stock:number(r[5]),fullPct:number(r[6]),b:[7,8,9].map(i=>number(r[i])),todo:number(r[10]),emptyPct:number(r[11])}));
  }else{
   if(h[0]!=='SYSTEM'||h[1]!=='NO OF ITEMS'||h[2]!=='NO OF TSUS'||h[3]!=='AVG NO OF ITEMS')throw Error('Niewłaściwa struktura RS1 STOCK');
-  parsed=rows.slice(1).filter(r=>r[0]&&!['TOTAL','SUMA'].includes(name(r[0]))&&!name(r[0]).startsWith('ZASTOSOWANE FILTRY')).map(r=>({system:name(r[0]),items:number(r[1]),tsus:number(r[2]),avg:number(r[3])}));
+  parsed=rows.slice(1).filter(r=>r[0]&&!['TOTAL','SUMA'].includes(name(r[0]))&&!isRS1Metadata(r[0])).map(r=>({system:name(r[0]),items:number(r[1]),tsus:number(r[2]),avg:number(r[3])}));
  }
  if(!parsed.length)throw Error('Nie znaleziono wierszy danych');if(parsed.length>5000)throw Error('Za dużo wierszy: limit 5000');
  for(const r of parsed)for(const value of Object.values(r))if(typeof value==='number'&&!valid(value)||Array.isArray(value)&&!value.every(valid))throw Error('Nieprawidłowa liczba w '+file);
