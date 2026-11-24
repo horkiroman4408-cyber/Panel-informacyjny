@@ -118,3 +118,66 @@ body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child
  #stockControl .stk-actions{justify-content:flex-start}
  #stockControl .stk-actions .stk-sources{justify-content:flex-start}
 }
+
+/* Header layout: truly centered title, independent of the left sources and right actions. */
+#stockControl .stk-heading{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  grid-template-areas:"sources title actions";
+  align-items:center;
+  column-gap:14px;
+  row-gap:8px;
+  margin:2px 0 16px;
+}
+#stockControl .stk-heading>.stk-heading-title{
+  grid-area:title;
+  min-width:0;
+  flex:none;
+  text-align:center;
+  justify-self:center;
+}
+#stockControl .stk-heading>.stk-sources{
+  grid-area:sources;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  align-items:center;
+  min-width:0;
+  gap:5px;
+  margin:0;
+}
+#stockControl .stk-heading>.stk-sources .stk-source{
+  padding:5px 9px;
+  gap:5px;
+  min-height:28px;
+}
+#stockControl .stk-heading>.stk-sources .stk-source strong{
+  max-width:115px;
+}
+#stockControl .stk-heading>.stk-actions{
+  grid-area:actions;
+  display:flex;
+  justify-self:end;
+  justify-content:flex-end;
+  align-items:center;
+  flex:none;
+  width:auto;
+  min-width:0;
+  flex-wrap:nowrap;
+  gap:8px;
+}
+@media(max-width:1400px){
+  #stockControl .stk-heading{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:"title title" "sources actions";
+  }
+  #stockControl .stk-heading>.stk-heading-title{text-align:center}
+}
+@media(max-width:700px){
+  #stockControl .stk-heading{
+    grid-template-columns:1fr;
+    grid-template-areas:"title" "actions" "sources";
+  }
+  #stockControl .stk-heading>.stk-actions{justify-self:center;flex-wrap:wrap;justify-content:center}
+  #stockControl .stk-heading>.stk-sources{justify-content:center}
+}
