@@ -11,7 +11,20 @@
   function message(text,error=false){const e=$('pdfInlineMessage');if(e){e.textContent=text;e.dataset.error=error?'true':'false';}}
   function revokeView(){if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=null;}}
   function revokeTV(){if(tvUrl){URL.revokeObjectURL(tvUrl);tvUrl=null;}}
-  function closeTV(){const wrap=$('pdfSlidesTV'),area=$('infoSlidesArea');if(wrap){wrap.hidden=true;wrap.querySelector('iframe')?.removeAttribute('src');}area?.classList.remove('pdf-tv-mode');revokeTV();}
+  function fitPDFScreen(){
+    const area=$('infoSlidesArea'),stage=$('pdfSlidesTV');
+    if(!area||!stage||!document.body.classList.contains('inc-pdf-tv-screen'))return;
+    // Fill the space underneath the INCYDENTY header without overflowing the TV.
+    const top=Math.max(0,area.getBoundingClientRect().top);
+    stage.style.height=Math.max(240,Math.floor(window.innerHeight-top-12))+'px';
+  }
+  function closeTV(){
+    const wrap=$('pdfSlidesTV'),area=$('infoSlidesArea');
+    if(wrap){wrap.hidden=true;wrap.style.height='';wrap.querySelector('iframe')?.removeAttribute('src');}
+    area?.classList.remove('pdf-tv-mode');
+    document.body.classList.remove('inc-pdf-tv-screen');
+    revokeTV();
+  }
   function pdfList(){
     const list=$('isaList');if(!list)return;
     // Existing editor rebuilds #isaList after saving/deleting slides. Keep PDF
@@ -39,7 +52,7 @@
     $('pdfInlineTitle').textContent=r.title;
     $('pdfInlineFile').textContent=r.fileName;
     viewerUrl=URL.createObjectURL(r.blob);
-    $('pdfInlineFrame').src=viewerUrl+'#toolbar=0&navpanes=0&view=Fit';
+    $('pdfInlineFrame').src=viewerUrl+'#toolbar=0&navpanes=0&scrollbar=0&view=Fit&zoom=page-fit';
     $('pdfInlineOpen').href=viewerUrl;$('pdfInlineOpen').download=r.fileName;
     pdfList();
   }
@@ -53,12 +66,21 @@
     const r=records.find(v=>v.id===id);if(!r)return;
     closeTV();revokeTV();
     const area=$('infoSlidesArea'),wrap=$('pdfSlidesTV');if(!area||!wrap)return;
+    // An information slide must replace the previous TV screen completely.
+    // STOCK CONTROL is another dynamically appended section; the old controller
+    // doesn't automatically hide it when switching from stock to PDF.
+    const stock=$('stockControl');
+    if(stock){stock.hidden=true;stock.classList.remove('stk-unified-screen');}
+    for(const id of ['norms','assign','workerArea']){const node=$(id);if(node)node.hidden=true;}
+    const stockHeading=$('stkTVTitle');if(stockHeading)stockHeading.hidden=true;
+    document.body.classList.add('inc-pdf-tv-screen');
     tvUrl=URL.createObjectURL(r.blob);
     $('pdfTVName').textContent=r.title;
-    $('pdfTVFrame').src=tvUrl+'#toolbar=0&navpanes=0&view=Fit';
+    $('pdfTVFrame').src=tvUrl+'#toolbar=0&navpanes=0&scrollbar=0&view=Fit&zoom=page-fit';
     $('pdfTVOpen').href=tvUrl;$('pdfTVOpen').download=r.fileName;
     area.hidden=false;area.classList.add('pdf-tv-mode');wrap.hidden=false;
     $('isaTV')?.setAttribute('hidden','');
+    requestAnimationFrame(()=>requestAnimationFrame(fitPDFScreen));
   }
   async function add(file){
     if(!file)return;
@@ -127,7 +149,12 @@
       #pdfInlineMessage{font-size:11px;color:#16816b;margin:0}#pdfInlineMessage[data-error=true]{color:#b63e32}
       #infoSlidesArea.pdf-tv-mode .isa-heading,#infoSlidesArea.pdf-tv-mode .isa-shell,#infoSlidesArea.pdf-tv-mode #isaTV{display:none!important}
       body.unified-tv #infoSlidesArea.pdf-tv-mode{display:block!important;width:100%;max-width:none;margin:0;padding:0!important}
-      body.unified-tv #infoSlidesArea.pdf-tv-mode #pdfSlidesTV{display:flex!important;flex-direction:column;gap:5px;width:100%;height:calc(100dvh - 125px);min-height:320px}
+      body.unified-tv #infoSlidesArea.pdf-tv-mode #pdfSlidesTV{display:flex!important;flex-direction:column;gap:0;width:100%;height:calc(100dvh - 125px);min-height:240px}
+      body.inc-pdf-tv-screen #stockControl,body.inc-pdf-tv-screen #norms,body.inc-pdf-tv-screen #assign,body.inc-pdf-tv-screen #workerArea{display:none!important}
+      body.inc-pdf-tv-screen #infoSlidesArea.pdf-tv-mode{position:relative;z-index:2;overflow:hidden}
+      body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-title,body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-fallback{display:none!important}
+      body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-stage{border:0;border-radius:0;background:transparent;min-height:0;flex:1;width:100%;overflow:hidden}
+      body.inc-pdf-tv-screen #pdfTVFrame{display:block;width:100%;height:100%;border:0;background:white}
       #pdfSlidesTV .pdfs-tv-title{font-size:clamp(16px,1.25vw,25px);font-weight:800;color:#25435d;text-align:center;padding:3px}
       #pdfSlidesTV .pdfs-tv-stage{flex:1;min-height:0;border:1px solid #d8e4ed;border-radius:10px;overflow:hidden;background:#fff}
       #pdfSlidesTV iframe{width:100%;height:100%;border:0;display:block;background:#fff}
@@ -135,6 +162,8 @@
       #pdfSlidesTV .pdfs-tv-fallback a{color:#176ca7}
       @media(max-width:780px){#infoSlidesArea .isa-heading>.pdfs-header-actions{grid-column:1;justify-self:center;justify-content:center}#pdfInlineViewer{grid-column:1;min-height:400px}}
     `;document.head.append(style);
+    window.addEventListener('resize',fitPDFScreen);
+    document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitPDFScreen));
     pdfList();return true;
   }
   let tries=0;const timer=setInterval(()=>{if(install()||++tries>=200)clearInterval(timer)},50);
