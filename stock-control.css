@@ -214,3 +214,21 @@ body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child
 }
 /* Brand selection is configured per screen in the shared TV playlist, not on TV. */
 body.unified-tv #stockControl.stk-unified-screen .stk-brandnav{display:none!important}
+
+/* TV-only STOCK CONTROL heading, with optional brand subtitle. */
+#stockControl .stk-tv-title[hidden]{display:none!important}
+#stockControl .stk-tv-title{display:none}
+body.unified-tv #stockControl.stk-unified-screen .stk-tv-title{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:2px;text-align:center;margin:0 auto 12px;padding:0;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-tv-title h2{
+ margin:0;font-size:clamp(21px,1.65vw,38px);font-weight:850;
+ letter-spacing:-.035em;line-height:1.12;color:#203b50;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-tv-title p{
+ margin:2px 0 0;font-size:clamp(13px,.95vw,23px);font-weight:750;
+ letter-spacing:.08em;color:#52738b;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-tv-title p[hidden]{display:none!important}
+@media(max-height:850px){body.unified-tv #stockControl.stk-unified-screen .stk-tv-title{margin-bottom:7px}}

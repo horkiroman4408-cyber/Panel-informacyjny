@@ -15,6 +15,7 @@
  if(!document.querySelector('.tabs')||el('stockTab'))return;
  const nav=document.querySelector('.tabs'),tab=document.createElement('button');tab.id='stockTab';tab.type='button';tab.textContent='STOCK CONTROL';nav.append(tab);
  const section=document.createElement('section');section.id='stockControl';section.hidden=true;section.innerHTML=`
+ <div class="stk-tv-title" id="stkTVTitle" hidden><h2>STOCK CONTROL</h2><p id="stkTVBrand" hidden></p></div>
  <div class="stk-heading"><div class="stk-heading-title"><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><div class="stk-actionbuttons"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div><div class="stk-sources" id="stkSources"></div></div></div>
  <div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
  <div class="stk-brandnav" id="stkBrands"></div>
@@ -90,6 +91,7 @@
   if(window.incSlides?.isOpen())window.incSlides.close();
   section.hidden=false;
   section.classList.remove('stk-unified-screen');
+  el('stkTVTitle').hidden=true;
   tab.classList.add('active');
   for(const id of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(id))el(id).hidden=true;
   for(const id of ['results','assignment','infoSlidesTab'])el(id)?.classList.remove('active');
@@ -100,6 +102,7 @@
   tvBrandScope=null;
   section.hidden=true;
   section.classList.remove('stk-unified-screen');
+  el('stkTVTitle').hidden=true;
   tab.classList.remove('active');
   el('upload').hidden=false;el('settings').hidden=false;el('tv').hidden=false;
  }
@@ -130,6 +133,9 @@
    tvBrandScope=id.startsWith('stock-control:brand:')?id.slice('stock-control:brand:'.length):'*';
    original.close();
    section.hidden=false;section.classList.add('stk-unified-screen');
+   el('stkTVTitle').hidden=false;
+   el('stkTVBrand').textContent=tvBrandScope==='*'?'':tvBrandScope;
+   el('stkTVBrand').hidden=tvBrandScope==='*';
    for(const k of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(k))el(k).hidden=true;
    el('infoSlidesTab')?.classList.remove('active');
    el('upload').hidden=true;el('settings').hidden=true;
