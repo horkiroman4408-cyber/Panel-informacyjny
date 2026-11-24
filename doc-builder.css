@@ -173,10 +173,10 @@ body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:incDocCardRise .6
 #docBuilder #docCanvasViewport{min-width:0}
 #docBuilder #docInspector[hidden]{display:none!important}
 #docBuilder #docInspector{position:fixed!important;z-index:2147;display:block!important;width:min(460px,calc(100vw - 24px));max-height:min(62vh,580px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;background:rgba(255,255,255,.98);backdrop-filter:blur(14px);box-shadow:0 16px 55px rgba(24,53,74,.22);border:1px solid #cadfed;border-radius:15px;padding:11px 13px;min-width:0;gap:7px}
-#docBuilder #docInspector .doc-inspector-head{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+#docBuilder #docInspector .doc-inspector-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:10px;margin-bottom:9px}
 #docBuilder #docInspector .doc-inspector-head strong{font-size:12px;font-weight:800}
 #docBuilder #docInspector #docBlockType{font-size:11px;color:#668094;font-weight:650;margin:0;flex:1}
-#docBuilder #docInspector #docInspectorClose{border:0;background:#edf4fa;border-radius:7px;width:25px;height:25px;font-size:19px;cursor:pointer}
+#docBuilder #docInspector #docInspectorClose{border:0;background:#edf4fa;border-radius:8px;width:28px;height:28px;font-size:19px;line-height:1;cursor:pointer;display:grid;place-items:center;flex:0 0 auto;margin-left:auto;align-self:start}
 #docBuilder #docInspector #docProperties{display:block}
 #docBuilder #docInspector #docProperties[hidden]{display:none!important}
 #docBuilder #docInspector .doc-quick{display:grid;grid-template-columns:82px 74px 74px minmax(110px,1fr);gap:8px;align-items:end}
@@ -187,11 +187,18 @@ body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:incDocCardRise .6
 #docBuilder #docInspector .doc-inspector-actions button{border:1px solid #d3e3ef;background:#f6fafc;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:700;color:#295876;cursor:pointer}
 #docBuilder #docInspector .doc-inspector-actions button:first-child{margin-right:auto}
 #docBuilder #docInspector .doc-advanced[hidden],#docBuilder #docInspector #docYesNoOptions[hidden],#docBuilder #docInspector #docImageRow[hidden],#docBuilder #docInspector #docTableOptions[hidden],#docBuilder #docInspector #docAlertRow[hidden],#docBuilder #docInspector #docListRow[hidden],#docBuilder #docInspector #docStepRow[hidden]{display:none!important}
-#docBuilder #docInspector .doc-advanced{border-top:1px solid #e3edf5;margin-top:9px;padding-top:9px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start}
+#docBuilder #docInspector .doc-advanced{border-top:1px solid #e3edf5;margin-top:9px;padding-top:9px;display:grid;grid-template-columns:minmax(140px,.88fr) minmax(170px,1.12fr);gap:10px 12px;align-items:start}
+#docBuilder #docInspector .doc-advanced>.doc-basic-toggles,#docBuilder #docInspector .doc-advanced>.doc-basic-fields,#docBuilder #docInspector .doc-advanced>#docYesNoOptions,#docBuilder #docInspector .doc-advanced>#docTableOptions,#docBuilder #docInspector .doc-advanced>#docImageRow,#docBuilder #docInspector .doc-advanced>#docTextOptions,#docBuilder #docInspector .doc-advanced>.doc-element-actions{min-width:0}
 #docBuilder #docInspector .doc-advanced>#docYesNoOptions,#docBuilder #docInspector .doc-advanced>#docTableOptions,#docBuilder #docInspector .doc-advanced>#docImageRow,#docBuilder #docInspector .doc-advanced>#docTextOptions,#docBuilder #docInspector .doc-advanced>.doc-element-actions{grid-column:1/-1}
 #docBuilder #docInspector #docImageRow{display:grid;gap:8px}
 #docBuilder #docInspector #docYesNoOptions{display:grid;gap:9px}
 #docBuilder #docInspector .doc-file-label{font-size:11px}
+#docBuilder #docInspector .doc-basic-toggles{display:grid;gap:8px}
+#docBuilder #docInspector .doc-basic-toggles .doc-inline{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:36px;padding:7px 10px;border:1px solid #e3edf5;border-radius:10px;background:#fbfdff}
+#docBuilder #docInspector .doc-basic-toggles .doc-inline input[type=checkbox]{margin:0 0 0 auto}
+#docBuilder #docInspector .doc-basic-fields{display:grid;gap:8px}
+#docBuilder #docInspector .doc-basic-fields label{display:grid;gap:5px}
+#docBuilder #docInspector .doc-basic-fields input{height:36px}
 #docCanvas .doc-type-image img,#docTVPage .doc-type-image img{object-fit:var(--doc-image-fit,contain);object-position:var(--doc-image-position,center)}
 #docCanvas .doc-type-step .doc-step,#docTVPage .doc-type-step .doc-step{display:flex;gap:14px;align-items:center;width:100%;min-height:0}
 #docCanvas .doc-type-step .doc-step-number,#docTVPage .doc-type-step .doc-step-number{flex:0 0 auto;display:grid;place-items:center;width:1.9em;height:1.9em;border-radius:9px;color:#fff;background:#346d94;font-size:.9em;font-weight:800}
@@ -201,7 +208,7 @@ body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:incDocCardRise .6
 #docCanvas .doc-type-list .doc-list-input{white-space:pre-wrap;line-height:1.5}
 #docCanvas .doc-type-list .doc-list-input:focus{outline:1px dashed #67a8d2}
 #docTVPage .doc-list-view{width:100%;margin:0;padding-left:1.4em;font-size:inherit;line-height:1.45}
-@media(max-width:720px){#docBuilder .doc-editor-layout{grid-template-columns:1fr!important}#docBuilder #docInspector .doc-quick{grid-template-columns:repeat(2,minmax(0,1fr))}#docBuilder #docInspector .doc-advanced{grid-template-columns:1fr}}
+@media(max-width:720px){#docBuilder .doc-editor-layout{grid-template-columns:1fr!important}#docBuilder #docInspector .doc-quick{grid-template-columns:repeat(2,minmax(0,1fr))}#docBuilder #docInspector .doc-advanced{grid-template-columns:1fr}#docBuilder #docInspector .doc-basic-toggles .doc-inline{padding:8px 10px}}
 
 body.unified-tv #docTVPage.doc-tv-scene .doc-type-image img{object-fit:var(--doc-image-fit,contain)!important;object-position:var(--doc-image-position,center)!important}
 
