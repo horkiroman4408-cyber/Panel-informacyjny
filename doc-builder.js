@@ -7,10 +7,11 @@ const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&quot;'}[c]));
 const uid=()=>('dc'+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
 const pages={'a4-portrait':{w:1000,h:1414,label:'Dokument · A4 pion'},'a4-landscape':{w:1000,h:707,label:'Dokument · A4 poziom'},'tv':{w:1000,h:563,label:'Scena TV · 16:9'}};
-const types={heading:'Nagłówek',text:'Tekst',step:'Krok numerowany',yesno:'TAK / NIE',table:'Tabela',image:'Zdjęcie',alert:'Ważne / alert',panel:'Ramka',arrow:'Strzałka'};
+const types={heading:'Nagłówek',text:'Tekst',step:'Krok numerowany',yesno:'TAK / NIE',table:'Tabela',image:'Zdjęcie',alert:'Ważne / alert',list:'Lista',separator:'Sekcja',panel:'Ramka',arrow:'Strzałka'};
+const paletteTypes=['heading','text','step','yesno','table','image','alert','list','separator'];
 let db=null,items=[],active=null,chosen=null,modified=false,installed=false,scale=1,zoom='auto',tvActive=false,drawPending=false,tvResize=null;
-let undoStack=[];
-const baseSize={heading:[760,95],text:[660,150],step:[780,124],yesno:[840,208],table:[830,280],image:[500,310],alert:[790,136],panel:[480,185],arrow:[270,55]};
+let undoStack=[],inspectorFor=null;
+const baseSize={heading:[760,95],text:[660,150],step:[780,124],yesno:[840,208],table:[830,280],image:[500,310],alert:[790,136],panel:[480,185],arrow:[270,55],list:[600,165],separator:[760,60]};
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const snap=v=>Math.round(v/10)*10;
 const page=()=>pages[active?.size]||pages.tv;
@@ -19,7 +20,7 @@ const root=()=>$('docCanvas');
 const viewport=()=>$('docCanvasSize');
 const make=(type)=>{
  const [w,h]=baseSize[type];
- return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',yesno:'PYTANIE / DECYZJA',alert:'WAŻNE: wpisz komunikat.',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',bgSolid:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',radius:16,shadow:true,border:type==='panel'||type==='alert',align:'left',bold:type==='heading',takLabel:'TAK',nieLabel:'NIE',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',yesBg:'#e4f0e7',noBg:'#fff2d1',yesBadge:'#4a9162',noBadge:'#cf951d',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null};
+ return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',yesno:'PYTANIE / DECYZJA',alert:'WAŻNE: wpisz komunikat.',list:'Pierwszy punkt\nDrugi punkt\nTrzeci punkt',separator:'NOWA SEKCJA',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',bgSolid:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',radius:16,shadow:true,border:type==='panel'||type==='alert',align:'left',bold:type==='heading',takLabel:'TAK',nieLabel:'NIE',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',yesBg:'#e4f0e7',noBg:'#fff2d1',yesBadge:'#4a9162',noBadge:'#cf951d',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null,imageFit:'contain',imagePosition:'center',alertPreset:'warning',stepNumber:null,listStyle:'bullet'};
 };
 function defaults(){const heading=make('heading');heading.x=65;heading.y=55;heading.w=870;heading.h=100;heading.text='NOWY DOKUMENT';heading.align='center';
  const subtitle=make('text');subtitle.x=80;subtitle.y=175;subtitle.w=840;subtitle.h=66;subtitle.text='Dodaj bloki z paska po lewej i zaprojektuj własną instrukcję.';subtitle.fontSize=19;subtitle.align='center';
@@ -86,7 +87,7 @@ function openEditor(){if(!active)return;const info=$('infoSlidesArea');if(!info)
  $('infoSlidesTab')?.classList.add('active');
  const stock=$('stockControl');if(stock)stock.hidden=true;
 }
-function closeEditor(){if(editor()){editor().hidden=true;editor().classList.remove('doc-TV');}const normal=$('infoSlidesArea')?.querySelector('.isa-editor');if(normal)normal.hidden=false;docList();}
+function closeEditor(){chosen=null;if($('docInspector'))$('docInspector').hidden=true;if(editor()){editor().hidden=true;editor().classList.remove('doc-TV');}const normal=$('infoSlidesArea')?.querySelector('.isa-editor');if(normal)normal.hidden=false;docList();}
 function fieldMarkup(b,editable){const cls='doc-field '+(b.type==='heading'?'doc-heading':'');const txt=esc(b.text).replace(/\n/g,'<br>');
  if(b.type==='table')return `<table class="doc-table"><tbody>${(b.rows||[]).map((row,ri)=>`<tr>${row.map((v,ci)=>`<${ri?'td':'th'} data-row="${ri}" data-col="${ci}" ${editable?'contenteditable="true"':''}>${esc(v)}</${ri?'td':'th'}>`).join('')}</tr>`).join('')}</tbody></table>`;
  if(b.type==='yesno'){
@@ -98,7 +99,17 @@ function fieldMarkup(b,editable){const cls='doc-field '+(b.type==='heading'?'doc
    `<div><strong ${edit('nieLabel','NIE')}>${val(b.nieLabel,'NIE')}</strong><span ${edit('nie','Opisz działanie')}>${val(b.nie,'')}</span></div>`+
    `</div>`;
  }
- if(b.type==='image')return b.src?`<img src="${b.src}" alt="Zdjęcie dokumentu" draggable="false">`:'<div class="doc-image-empty">▧ Dodaj zdjęcie w panelu właściwości</div>';
+ if(b.type==='list'){
+  const lines=String(b.text||'').split(/\n/).filter(Boolean);
+  const ordered=b.listStyle==='number';
+  return `<${ordered?'ol':'ul'} class="doc-field doc-list-view" ${editable?'contenteditable="true" spellcheck="true" data-list-editor="true"':''}>${lines.map(s=>`<li>${esc(s)}</li>`).join('')}</${ordered?'ol':'ul'}>`;
+ }
+ if(b.type==='separator')return `<div class="doc-section-line"><span class="doc-field" ${editable?'contenteditable="true" spellcheck="true"':''}>${txt||'&nbsp;'}</span></div>`;
+ if(b.type==='step'){
+  const ordinal=Number.isFinite(Number(b.stepNumber))&&Number(b.stepNumber)>0?Math.round(Number(b.stepNumber)):1;
+  return `<div class="doc-step"><span class="doc-step-number">${ordinal}</span><div class="doc-field" ${editable?'contenteditable="true" spellcheck="true"':''}>${txt||'&nbsp;'}</div></div>`;
+ }
+ if(b.type==='image')return b.src?`<img src="${b.src}" alt="Zdjęcie dokumentu" draggable="false">`:'<div class="doc-image-empty">▧ Dodaj zdjęcie we właściwościach</div>';
  if(b.type==='arrow')return `<div class="doc-arrowline"></div>`;
  return `<div class="${cls}" ${editable?'contenteditable="true" spellcheck="true"':''}>${txt||'&nbsp;'}</div>`;
 }
@@ -115,6 +126,9 @@ function buildBlock(b,editable=false){const n=document.createElement('div');n.cl
  n.style.setProperty('--doc-font',(Number(b.fontSize)||22)+'px');
  n.style.setProperty('--doc-align',b.align||'left');
  n.style.setProperty('--doc-weight',b.bold?'750':'450');
+ n.style.setProperty('--doc-alert-accent',({info:'#4b88b7',warning:'#d5a024',danger:'#c45757',priority:'#315f84'})[b.alertPreset]||'#c45757');
+ n.style.setProperty('--doc-image-fit',b.imageFit||'contain');
+ n.style.setProperty('--doc-image-position',b.imagePosition||'center');
  if(b.type==='yesno'){
   n.style.setProperty('--doc-yes-bg',b.yesBg||'#e4f0e7');
   n.style.setProperty('--doc-no-bg',b.noBg||'#fff2d1');
@@ -131,31 +145,60 @@ function fit(){if(!active||editor().hidden)return;const width=page().w,height=pa
  Object.assign(root().style,{width:width+'px',height:height+'px',transform:'scale('+scale+')'});
 }
 function render(){if(!active)return;const canvas=root();canvas.replaceChildren(...active.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,true)));
- root().classList.toggle('doc-canvas-empty',active.blocks.length===0);editor().classList.add('doc-mode-scene');$('docModeHint').textContent='Scena TV: tło aplikacji i niezależne karty. Przesuwaj elementy w obrębie formatu 16:9.';editInspector();requestAnimationFrame(fit);}
-function editInspector(){const b=active?.blocks.find(x=>x.id===chosen);$('docNoSelection').hidden=!!b;$('docProperties').hidden=!b;
- if(!b)return;
+ root().classList.toggle('doc-canvas-empty',active.blocks.length===0);editor().classList.add('doc-mode-scene');$('docModeHint').textContent='Scena TV: tło aplikacji i niezależne karty. Przesuwaj elementy w obrębie formatu 16:9.';editInspector();requestAnimationFrame(()=>{fit();positionInspector();});}
+function editInspector(){const b=active?.blocks.find(x=>x.id===chosen);const pop=$('docInspector');if(!pop)return;pop.hidden=!b;$('docProperties').hidden=!b;
+ if(!b){inspectorFor=null;return;}
+ if(inspectorFor!==chosen){inspectorFor=chosen;$('docAdvanced').hidden=true;$('docMoreSettings').setAttribute('aria-expanded','false');}
  $('docBlockType').textContent=types[b.type]||b.type;
  for(const [id,val] of [['docColor',b.color],['docBackground',b.bg==='transparent'?(b.bgSolid||'#ffffff'):b.bg],['docFontSize',b.fontSize],['docAlign',b.align],['docBorder',b.border]]){$(id).value=val??'';if(id==='docBorder')$(id).checked=!!val;}
  $('docTransparent').checked=b.bg==='transparent';$('docBackground').disabled=b.bg==='transparent';$('docRadius').value=b.radius??16;$('docShadow').checked=b.shadow!==false;
- $('docImageRow').hidden=b.type!=='image';$('docTextOptions').hidden=['table','image','arrow'].includes(b.type);
+ $('docImageRow').hidden=b.type!=='image';$('docPickImage').hidden=b.type!=='image';$('docTextOptions').hidden=['table','image','arrow'].includes(b.type);
+ $('docImageFit').value=b.imageFit||'contain';$('docImagePosition').value=b.imagePosition||'center';
+ $('docAlertRow').hidden=b.type!=='alert';$('docAlertPreset').value=b.alertPreset||'warning';
+ $('docStepRow').hidden=b.type!=='step';$('docStepNumber').value=b.stepNumber??1;
+ $('docListRow').hidden=b.type!=='list';$('docListStyle').value=b.listStyle||'bullet';
  $('docYesNoOptions').hidden=b.type!=='yesno';$('docTableOptions').hidden=b.type!=='table';
  if(b.type==='yesno'){
   for(const [id,value] of [['docQuestion',b.text??'PYTANIE / DECYZJA'],['docTakLabel',b.takLabel??'TAK'],['docTak',b.tak??''],['docNieLabel',b.nieLabel??'NIE'],['docNie',b.nie??''],['docYesBg',b.yesBg||'#e4f0e7'],['docNoBg',b.noBg||'#fff2d1'],['docYesBadge',b.yesBadge||'#4a9162'],['docNoBadge',b.noBadge||'#cf951d']])$(id).value=value;
  }
 }
-function activate(id){if(chosen===id)return;chosen=id;for(const n of root().querySelectorAll('.doc-element'))n.classList.toggle('selected',n.dataset.blockId===id);editInspector();}
-function addType(type){if(!active)return;if(!types[type])return;
- const b=make(type);b.w=Math.min(b.w,page().w-80);b.h=Math.min(b.h,page().h-80);
- // Find unused space so adding a new block never silently covers an old one.
+function activate(id){
+ if(chosen===id){positionInspector();return;}
+ chosen=id;
+ for(const n of root().querySelectorAll('.doc-element'))n.classList.toggle('selected',n.dataset.blockId===id);
+ editInspector();requestAnimationFrame(positionInspector);
+}
+function positionInspector(){
+ const pop=$('docInspector'),card=chosen&&root()?.querySelector(`[data-block-id="${chosen}"]`);
+ if(!pop||pop.hidden||!card||editor().hidden)return;
+ const r=card.getBoundingClientRect();const w=pop.offsetWidth||460,h=pop.offsetHeight||115;
+ const x=clamp(r.left+r.width/2-w/2,12,Math.max(12,innerWidth-w-12));
+ const roomAbove=r.top-12,roomBelow=innerHeight-r.bottom-12;
+ const expanded=!$('docAdvanced').hidden;
+ const y=expanded&&roomBelow>Math.min(h+12,innerHeight*.55)?r.bottom+12:roomAbove>h+16?r.top-h-12:roomBelow>Math.min(h,220)?r.bottom+12:clamp(r.top-h-12,10,innerHeight-h-10);
+ pop.style.left=Math.round(x)+'px';pop.style.top=Math.round(clamp(y,10,Math.max(10,innerHeight-h-10)))+'px';
+}
+function closeInspector(){chosen=null;editInspector();root()?.querySelectorAll('.doc-element.selected').forEach(n=>n.classList.remove('selected'));}
+
+function addType(type){if(!active||!paletteTypes.includes(type))return;
+ const b=make(type);if(type==='step')b.stepNumber=active.blocks.filter(x=>x.type==='step').length+1;
+ // Search for a truly empty rectangle; shrink a new item only when necessary.
+ // Never modify existing elements to force a new one onto the canvas.
  let place=null;
- for(let y=50;y<=page().h-b.h-20&&!place;y+=20){
-  for(let x=50;x<=page().w-b.w-20;x+=20){
-   const overlap=active.blocks.some(v=>x<v.x+v.w+12&&x+b.w+12>v.x&&y<v.y+v.h+12&&y+b.h+12>v.y);
-   if(!overlap){place={x,y};break;}
+ for(const factor of [1,.9,.8,.7,.6]){
+  const w=Math.min(snap(baseSize[type][0]*factor),page().w-80);
+  const h=Math.min(snap(baseSize[type][1]*factor),page().h-80);
+  for(let y=40;y<=page().h-h-20&&!place;y+=10){
+   for(let x=40;x<=page().w-w-20;x+=10){
+    const overlap=active.blocks.some(v=>x<v.x+v.w+10&&x+w+10>v.x&&y<v.y+v.h+10&&y+h+10>v.y);
+    if(!overlap){place={x,y,w,h};break;}
+   }
   }
+  if(place)break;
  }
- if(!place){say('Brak miejsca na kolejny element. Zmniejsz albo przesuń istniejące bloki.',true);return;}
- history();b.x=place.x;b.y=place.y;b.z=1+Math.max(0,...active.blocks.map(v=>v.z||1));active.blocks.push(b);chosen=b.id;dirty();render();say('Element dodany. Przeciągnij za uchwyt i dopasuj jego rozmiar.');}
+ if(!place){say('Brak wolnego miejsca. Zmniejsz lub przesuń bloki, aby dodać kolejny.',true);return;}
+ history();Object.assign(b,place);b.z=1+Math.max(0,...active.blocks.map(v=>v.z||1));active.blocks.push(b);chosen=b.id;dirty();render();say('Element dodany. Przeciągnij za uchwyt i dopasuj rozmiar.');
+}
 function addScenePreset(){if(!active||active.size!=='tv')return;
  if(active.blocks.length&&!confirm('Zastąpić obecne bloki układem zdjęcie + tekst?'))return;
  history();active.blocks=sceneDefaults();chosen=null;dirty();render();say('Dodano układ zdjęcie + tekst. Wybierz zdjęcie i zmień napisy.');
@@ -176,12 +219,14 @@ function uploadPhoto(file){if(!file)return;const b=active?.blocks.find(x=>x.id==
  if(!file.type.startsWith('image/')||file.size>MAX_IMG){say('Wybierz obraz JPG, PNG lub WebP do 6 MB.',true);return;}
  const reader=new FileReader();reader.onload=()=>{history();b.src=reader.result;dirty();render();say('Zdjęcie dodane.');};reader.onerror=()=>say('Nie udało się wczytać zdjęcia.',true);reader.readAsDataURL(file);}
 function onInspector(e){const b=active?.blocks.find(x=>x.id===chosen);if(!b)return;const id=e.target.id;
- const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTransparent:'bg',docRadius:'radius',docShadow:'shadow',docQuestion:'text',docTakLabel:'takLabel',docNieLabel:'nieLabel',docTak:'tak',docNie:'nie',docYesBg:'yesBg',docNoBg:'noBg',docYesBadge:'yesBadge',docNoBadge:'noBadge'};
+ const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTransparent:'bg',docRadius:'radius',docShadow:'shadow',docQuestion:'text',docTakLabel:'takLabel',docNieLabel:'nieLabel',docTak:'tak',docNie:'nie',docYesBg:'yesBg',docNoBg:'noBg',docYesBadge:'yesBadge',docNoBadge:'noBadge',docImageFit:'imageFit',docImagePosition:'imagePosition',docListStyle:'listStyle',docStepNumber:'stepNumber',docAlertPreset:'alertPreset'};
  if(!map[id])return;history();
  if(id==='docTransparent'){if(e.target.checked){b.bgSolid=b.bg==='transparent'?(b.bgSolid||'#ffffff'):b.bg;b.bg='transparent';}else b.bg=b.bgSolid||'#ffffff';}
  else if(id==='docBackground'){b.bg=e.target.value;b.bgSolid=e.target.value;}
  else if(id==='docFontSize')b.fontSize=clamp(Number(e.target.value)||22,10,90);
  else if(id==='docRadius')b.radius=clamp(Number(e.target.value)||0,0,40);
+ else if(id==='docStepNumber')b.stepNumber=clamp(Number(e.target.value)||1,1,99);
+ else if(id==='docAlertPreset'){const presets={info:['#e9f3ff','#305b80'],warning:['#fff0c8','#8c651c'],danger:['#fbe6e6','#963737'],priority:['#e4ecf5','#23475e']};b.alertPreset=e.target.value;const [bg,color]=presets[b.alertPreset]||presets.warning;b.bg=bg;b.bgSolid=bg;b.color=color;}
  else if(id==='docShadow'||id==='docBorder')b[map[id]]=e.target.checked;
  else b[map[id]]=e.target.value;
  dirty();render();}
@@ -209,7 +254,7 @@ function dragPointer(e,mode){const block=e.target.closest('[data-block-id]'),b=a
  const move=ev=>{if(ev.pointerId!==pointer)return;const dx=(ev.clientX-from.x)/scale,dy=(ev.clientY-from.y)/scale;
  if(mode==='move'){b.x=clamp(snap(from.left+dx),0,page().w-b.w);b.y=clamp(snap(from.top+dy),0,page().h-b.h);}
  else{b.w=clamp(snap(from.w+dx),80,page().w-b.x);b.h=clamp(snap(from.h+dy),45,page().h-b.y);}
- block.style.left=b.x+'px';block.style.top=b.y+'px';block.style.width=b.w+'px';block.style.height=b.h+'px';dirty();};
+ block.style.left=b.x+'px';block.style.top=b.y+'px';block.style.width=b.w+'px';block.style.height=b.h+'px';dirty();requestAnimationFrame(positionInspector);};
  const end=ev=>{if(ev.pointerId!==pointer)return;e.target.removeEventListener('pointermove',move);e.target.removeEventListener('pointerup',end);e.target.removeEventListener('pointercancel',end);};
  e.target.addEventListener('pointermove',move);e.target.addEventListener('pointerup',end);e.target.addEventListener('pointercancel',end);
 }
@@ -218,6 +263,9 @@ function deleteBlock(){if(!active||!chosen)return;history();active.blocks=active
 function changeOrder(dir){const b=active?.blocks.find(x=>x.id===chosen);if(!b)return;history();b.z=dir==='front'?1+Math.max(...active.blocks.map(v=>v.z||1)):Math.min(...active.blocks.map(v=>v.z||1))-1;dirty();render();}
 function addRow(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows.length>=15)return;history();b.rows.push(Array(b.rows[0].length).fill(''));dirty();render();}
 function addCol(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows[0].length>=6)return;history();b.rows.forEach(row=>row.push(''));dirty();render();}
+function deleteRow(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows.length<=2)return;history();b.rows.pop();dirty();render();}
+function deleteCol(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows[0].length<=1)return;history();b.rows.forEach(row=>row.pop());dirty();render();}
+
 function undo(){if(!active||!undoStack.length)return;active.blocks=JSON.parse(undoStack.pop());chosen=null;dirty();render();}
 // TV is a slide, not a zoomed-out sheet of A4 paper. Reflow the *view only*.
 // The editor remains freeform and saved block geometry remains unmodified.
@@ -327,21 +375,24 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  <div class="doc-main-actions"><button type="button" id="docDuplicate">Kopiuj</button><button type="button" id="docRemove">Usuń</button><button class="doc-primary" type="button" id="docSave">Zapisz</button></div></div>
  <p id="docModeHint" class="doc-mode-hint"></p>
  <div class="doc-editor-layout"><aside class="doc-palette"><strong>Dodaj element</strong><div class="doc-palette-grid">
- ${Object.entries(types).map(([type,label])=>`<button type="button" data-doc-type="${type}"><span>${({heading:'H',text:'T',step:'①',yesno:'✓',table:'▦',image:'▧',alert:'!',panel:'▢',arrow:'➜'})[type]}</span>${label}</button>`).join('')}</div>
+ ${paletteTypes.map(type=>`<button type="button" data-doc-type="${type}"><span>${({heading:'H',text:'T',step:'①',yesno:'✓',table:'▦',image:'▧',alert:'!',list:'☷',separator:'≡'})[type]}</span>${types[type]}</button>`).join('')}</div>
  <button id="docPresetPhotoText" type="button">▦ Układ: zdjęcie + tekst</button><p>Przeciągaj za uchwyt ⠿. Zmieniaj rozmiar za róg ↘. Kliknij tekst, aby go edytować.</p>
  <button id="docUndo" type="button">↶ Cofnij zmianę</button></aside>
  <div class="doc-workspace" id="docCanvasViewport"><div id="docCanvasSize"><div id="docCanvas"></div></div></div>
- <aside class="doc-inspector"><strong>Właściwości bloku</strong><div id="docNoSelection" class="doc-help">Zaznacz element na stronie, aby zmienić jego wygląd.</div>
- <div id="docProperties" hidden><h3 id="docBlockType"></h3><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label class="doc-inline">Bez tła <input id="docTransparent" type="checkbox"></label><label>Zaokrąglenie (px)<input id="docRadius" type="number" min="0" max="40" step="1"></label><label class="doc-inline">Cień <input id="docShadow" type="checkbox"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label>
+ </div><aside class="doc-inspector" id="docInspector" hidden role="toolbar" aria-label="Właściwości bloku"><div class="doc-inspector-head"><strong>Właściwości bloku</strong><span id="docBlockType"></span><button type="button" id="docInspectorClose" title="Zamknij">×</button></div>
+ <div id="docProperties" hidden><div class="doc-quick"><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label></div><div class="doc-inspector-actions"><button id="docMoreSettings" type="button" aria-expanded="false">Więcej ustawień <span>⌄</span></button><button id="docPickImage" type="button" hidden>Wybierz zdjęcie</button><button id="docCloneBlock" type="button">Kopiuj</button><button id="docDeleteBlock" type="button">Usuń</button></div><div class="doc-advanced" id="docAdvanced" hidden><label class="doc-inline">Bez tła <input id="docTransparent" type="checkbox"></label><label>Zaokrąglenie (px)<input id="docRadius" type="number" min="0" max="40" step="1"></label><label class="doc-inline">Cień <input id="docShadow" type="checkbox"></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label>
  <div id="docTextOptions"><small>Tekst zmieniasz bezpośrednio w bloku.</small></div><div id="docYesNoOptions" hidden>
  <small>Każdy napis możesz edytować również bezpośrednio na scenie.</small>
  <label>Pytanie<textarea id="docQuestion" rows="2"></textarea></label>
  <div class="doc-yesno-inspector-group"><strong>TAK</strong><label>Etykieta<input id="docTakLabel" type="text" maxlength="35"></label><label>Odpowiedź<textarea id="docTak" rows="3"></textarea></label><label>Kolor pola<input id="docYesBg" type="color"></label><label>Kolor etykiety<input id="docYesBadge" type="color"></label></div>
  <div class="doc-yesno-inspector-group"><strong>NIE</strong><label>Etykieta<input id="docNieLabel" type="text" maxlength="35"></label><label>Odpowiedź<textarea id="docNie" rows="3"></textarea></label><label>Kolor pola<input id="docNoBg" type="color"></label><label>Kolor etykiety<input id="docNoBadge" type="color"></label></div>
  </div>
- <div id="docTableOptions" hidden><button id="docAddRow" type="button">＋ Wiersz</button><button id="docAddCol" type="button">＋ Kolumna</button></div>
- <div id="docImageRow" hidden><label class="doc-file-label">Wybierz zdjęcie<input id="docImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden></label></div>
- <div class="doc-element-actions"><button type="button" id="docFront">Na wierzch</button><button type="button" id="docBack">Pod spód</button><button type="button" id="docCloneBlock">Kopiuj blok</button><button type="button" id="docDeleteBlock">Usuń blok</button></div></div></aside></div>
+ <div id="docTableOptions" hidden><button id="docAddRow" type="button">＋ Wiersz</button><button id="docAddCol" type="button">＋ Kolumna</button><button id="docRemoveRow" type="button">− Wiersz</button><button id="docRemoveCol" type="button">− Kolumna</button></div>
+ <div id="docAlertRow" hidden><label>Rodzaj alertu<select id="docAlertPreset"><option value="info">Informacja</option><option value="warning">Uwaga</option><option value="danger">Ważne</option><option value="priority">Priorytet</option></select></label></div>
+ <div id="docStepRow" hidden><label>Numer kroku<input type="number" id="docStepNumber" min="1" max="99"></label></div>
+ <div id="docListRow" hidden><label>Rodzaj listy<select id="docListStyle"><option value="bullet">Punktowana</option><option value="number">Numerowana</option></select></label></div>
+ <div id="docImageRow" hidden><label class="doc-file-label">Wybierz zdjęcie<input id="docImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><label>Dopasowanie<select id="docImageFit"><option value="contain">Dopasuj (całość)</option><option value="cover">Wypełnij (kadruj)</option></select></label><label>Położenie<select id="docImagePosition"><option value="center">Środek</option><option value="top">Góra</option><option value="bottom">Dół</option></select></label></div>
+ <div class="doc-element-actions"><button type="button" id="docFront">Na wierzch</button><button type="button" id="docBack">Pod spód</button></div></div></div></aside>
  <p id="docMessage" class="doc-message" role="status" aria-live="polite"></p>`;
  shell.append(pane);
  const tv=document.createElement('div');tv.id='docTVScreen';tv.hidden=true;tv.innerHTML='<div id="docTVPage"></div>';info.append(tv);
@@ -377,7 +428,7 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
   if(e.target.closest('.doc-move'))dragPointer(e,'move');
   else if(e.target.closest('.doc-resize'))dragPointer(e,'resize');
  });
- for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTransparent','docRadius','docShadow','docQuestion','docTakLabel','docTak','docNieLabel','docNie','docYesBg','docNoBg','docYesBadge','docNoBadge'])$(id).addEventListener('change',onInspector);
+ for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTransparent','docRadius','docShadow','docQuestion','docTakLabel','docTak','docNieLabel','docNie','docYesBg','docNoBg','docYesBadge','docNoBadge','docImageFit','docImagePosition','docAlertPreset','docStepNumber','docListStyle'])$(id).addEventListener('change',onInspector);
  $('docTitle').addEventListener('change',saveInput);
   $('docZoom').addEventListener('change',e=>{zoom=e.target.value;fit();});
  $('docSave').onclick=save;$('docRemove').onclick=remove;$('docDuplicate').onclick=duplicate;$('docPresetPhotoText').onclick=addScenePreset;
@@ -388,9 +439,23 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
   if(target.closest('input,textarea,select,[contenteditable=true]')||!chosen||!active)return;
   event.preventDefault();deleteBlock();
  });$('docFront').onclick=()=>changeOrder('front');$('docBack').onclick=()=>changeOrder('back');
- $('docAddRow').onclick=addRow;$('docAddCol').onclick=addCol;$('docUndo').onclick=undo;
+ $('docAddRow').onclick=addRow;$('docAddCol').onclick=addCol;$('docRemoveRow').onclick=deleteRow;$('docRemoveCol').onclick=deleteCol;$('docUndo').onclick=undo;
  $('docImageFile').addEventListener('change',e=>{uploadPhoto(e.target.files?.[0]);e.target.value='';});
- window.addEventListener('resize',()=>{fit();if(tvActive)fitTV();});
+ $('docInspectorClose').onclick=closeInspector;$('docPickImage').onclick=()=>$('docImageFile').click();
+ $('docMoreSettings').onclick=()=>{
+  const details=$('docAdvanced'),open=details.hidden;details.hidden=!open;
+  $('docMoreSettings').setAttribute('aria-expanded',String(open));
+  requestAnimationFrame(positionInspector);
+ };
+ // Outside click clears the selection; clicking an input inside the popup is safe.
+ document.addEventListener('pointerdown',e=>{
+  if(!chosen||editor().hidden)return;
+  if(e.target.closest('#docInspector,#docCanvas .doc-element,#docBuilder .doc-palette'))return;
+  if(e.target.closest('#docCanvas'))closeInspector();
+ },true);
+ window.addEventListener('scroll',()=>requestAnimationFrame(positionInspector),true);
+
+ window.addEventListener('resize',()=>{fit();if(tvActive)fitTV();requestAnimationFrame(positionInspector);});
  const list=$('isaList');const observer=new MutationObserver(()=>docList());observer.observe(list,{childList:true});
  // Integrate with the existing unified TV provider, preserving previous wrappers.
  api.list=()=>[...prev.list(),...items.map(x=>({id:'info:doc:'+x.id,name:'Dokument · '+x.title,description:'Konstruktor · '+pages[x.size]?.label,available:true}))];
