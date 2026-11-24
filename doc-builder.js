@@ -148,6 +148,62 @@ function changeOrder(dir){const b=active?.blocks.find(x=>x.id===chosen);if(!b)re
 function addRow(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows.length>=15)return;history();b.rows.push(Array(b.rows[0].length).fill(''));dirty();render();}
 function addCol(){const b=active?.blocks.find(x=>x.id===chosen);if(!b||b.type!=='table'||b.rows[0].length>=6)return;history();b.rows.forEach(row=>row.push(''));dirty();render();}
 function undo(){if(!active||!undoStack.length)return;active.blocks=JSON.parse(undoStack.pop());chosen=null;dirty();render();}
+// TV is a slide, not a zoomed-out sheet of A4 paper. Reflow the *view only*.
+// The editor remains freeform and saved block geometry remains unmodified.
+function buildResponsiveTV(sheet,saved){
+ const blocks=saved.blocks.slice().sort((a,b)=>a.y-b.y||a.x-b.x||a.z-b.z);
+ const titleIndex=blocks.findIndex(b=>b.type==='heading'&&b.y<260);
+ const title=titleIndex<0?null:blocks.splice(titleIndex,1)[0];
+ const primaryImage=blocks.findIndex(b=>b.type==='image');
+ const main=document.createElement('div');main.className='doc-tv-main';
+ const content=document.createElement('div');content.className='doc-tv-content';
+ const count=blocks.length;
+ const imageLayout=primaryImage>=0 && count<=6;
+ const cols=count<=1?1:imageLayout?2:count<=2?1:count<=6?2:3;
+ content.style.setProperty('--doc-tv-cols',String(cols));
+ content.classList.toggle('doc-tv-with-image',imageLayout);
+ if(title){
+   const header=document.createElement('div');header.className='doc-tv-document-heading';
+   const node=buildBlock(title,false);
+   node.style.setProperty('--doc-font',Math.max(46,Math.min(68,(title.fontSize||32)*1.7))+'px');
+   if((title.bg||'#ffffff').toLowerCase()==='#ffffff'&&!title.border)node.style.setProperty('--doc-bg','transparent');
+   header.append(node);main.append(header);
+ }
+ // A photo with an announcement next to it is the most common two-column TV
+ // composition. The same applies to a single text card without an image.
+ if(imageLayout){
+   content.style.gridTemplateColumns='minmax(0, 0.95fr) minmax(0, 1.05fr)';
+   const image=blocks.splice(primaryImage,1)[0];
+   const media=document.createElement('div');media.className='doc-tv-media-col';
+   media.append(buildBlock(image,false));
+   content.append(media);
+   const side=document.createElement('div');side.className='doc-tv-text-col';
+   for(const b of blocks){
+     const node=buildBlock(b,false);
+     configureTVBlock(node,b,count);
+     side.append(node);
+   }
+   content.append(side);
+ }else{
+   for(const b of blocks){
+     const node=buildBlock(b,false);
+     configureTVBlock(node,b,count);
+     if(cols>1&&['table','yesno'].includes(b.type))node.style.gridColumn='1 / -1';
+     content.append(node);
+   }
+ }
+ main.append(content);
+ sheet.replaceChildren(main);
+}
+function configureTVBlock(node,b,total){
+  const fontsize=b.type==='heading'?46:total<=2?38:total<=5?30:24;
+  if(!['table','image','arrow'].includes(b.type)){
+    node.style.setProperty('--doc-font',Math.max(fontsize,Math.min(58,Number(b.fontSize)||24))+'px');
+  }
+  if(['text','heading'].includes(b.type)&&!b.border&&(b.bg||'#ffffff').toLowerCase()==='#ffffff'){
+    node.style.setProperty('--doc-bg','transparent');
+  }
+}
 function tvBuild(id){const saved=items.find(x=>x.id===id);if(!saved)return;
  closeTV();const area=$('infoSlidesArea');if(!area)return;
  // Close prior Stock / PDF / KPI views, but don't call our wrapped close recursively.
@@ -158,17 +214,31 @@ function tvBuild(id){const saved=items.find(x=>x.id===id);if(!saved)return;
  document.body.classList.add('inc-doc-tv-screen');
  area.hidden=false;$('isaTV').hidden=true;editor().hidden=true;
  area.classList.add('doc-tv-open');const stage=$('docTVScreen');stage.hidden=false;
- const p=pages[saved.size]||pages['a4-portrait'];const sheet=$('docTVPage');sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
- sheet.replaceChildren(...saved.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,false)));
+ const p=pages[saved.size]||pages['a4-portrait'];const sheet=$('docTVPage');
+ // Keep the exact authored layout only for pages explicitly designed for TV.
+ // A4 has its own printable proportions, but a TV slide should use the entire
+ // 16:9 screen. This is a VIEW transformation: IndexedDB data is untouched.
+ sheet.classList.toggle('doc-tv-adapted', saved.size!=='tv');
+ sheet.style.width=p.w+'px';sheet.style.height=p.h+'px';
+ if(saved.size==='tv'){
+   sheet.replaceChildren(...saved.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,false)));
+ }else{
+   buildResponsiveTV(sheet,saved);
+ }
  tvActive=true;requestAnimationFrame(()=>requestAnimationFrame(fitTV));
 }
 function fitTV(){if(!tvActive)return;const stage=$('docTVScreen'),paper=$('docTVPage');if(!stage||!paper)return;
  const top=stage.getBoundingClientRect().top;
- const h=clamp(Math.floor(innerHeight-top-28),250,innerHeight);stage.style.height=h+'px';
+ const h=clamp(Math.floor(innerHeight-top-20),250,innerHeight);stage.style.height=h+'px';
+ if(paper.classList.contains('doc-tv-adapted')){
+   // Real responsive canvas: no A4 letterbox, no CSS stretch and no clipping.
+   paper.style.width='100%';paper.style.height='100%';paper.style.transform='none';
+   return;
+ }
  const box=stage.getBoundingClientRect(),s=Math.min((box.width-22)/parseFloat(paper.style.width),(h-22)/parseFloat(paper.style.height));
  paper.style.transform='translate(-50%,-50%) scale('+Math.max(.1,s)+')';
 }
-function closeTV(){tvActive=false;const stage=$('docTVScreen');if(stage)stage.hidden=true;$('infoSlidesArea')?.classList.remove('doc-tv-open');document.body.classList.remove('inc-doc-tv-screen');}
+function closeTV(){tvActive=false;const stage=$('docTVScreen');if(stage)stage.hidden=true;$('docTVPage')?.classList.remove('doc-tv-adapted');$('infoSlidesArea')?.classList.remove('doc-tv-open');document.body.classList.remove('inc-doc-tv-screen');}
 function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')||!$('infoSlidesArea'))return false;
  installed=true;const info=$('infoSlidesArea'),api=window.incSlides;
  const prev={list:api.list,showTV:api.showTV,close:api.close,open:api.open,restore:api.restore};

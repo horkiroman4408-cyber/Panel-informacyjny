@@ -87,3 +87,32 @@ body.inc-doc-tv-screen #stockControl,body.inc-doc-tv-screen #norms,body.inc-doc-
 @media(prefers-reduced-motion:reduce){body.unified-tv #docTVPage{animation:none}}
 @media(max-width:1200px){#docBuilder .doc-editor-layout{grid-template-columns:minmax(120px,145px) minmax(0,1fr)}#docBuilder .doc-inspector{grid-column:1/-1;grid-row:2;display:block}#docBuilder .doc-inspector #docProperties{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:750px){#docBuilder{grid-column:1;padding:10px}#docBuilder .doc-editor-layout{grid-template-columns:1fr}#docBuilder .doc-palette{grid-column:1}#docBuilder .doc-palette-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#docBuilder .doc-inspector{grid-column:1;grid-row:auto}#docBuilder .doc-workspace{min-height:420px;max-height:70vh}}
+
+/* A4 in the editor stays paper-sized. The unified TV view is a readable, full
+   16:9 composition instead of a narrow scaled portrait document. */
+body.unified-tv #docTVScreen:has(#docTVPage.doc-tv-adapted){background:transparent;border-radius:0}
+body.unified-tv #docTVPage.doc-tv-adapted{
+ left:0;top:0;right:0;bottom:0;transform:none!important;
+ transform-origin:top left;box-shadow:none;background:transparent;
+ width:100%!important;height:100%!important;padding:24px 46px 18px;
+ overflow:hidden;box-sizing:border-box;
+}
+#docTVPage.doc-tv-adapted .doc-tv-main{height:100%;width:100%;display:flex;flex-direction:column;gap:24px;min-height:0}
+#docTVPage.doc-tv-adapted .doc-tv-document-heading{min-height:80px;max-height:22%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
+#docTVPage.doc-tv-adapted .doc-tv-document-heading>.doc-element{width:100%!important;height:100%!important}
+#docTVPage.doc-tv-adapted .doc-tv-document-heading .doc-field{text-align:center!important}
+#docTVPage.doc-tv-adapted .doc-tv-content{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--doc-tv-cols,2),minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:26px;align-items:stretch}
+#docTVPage.doc-tv-adapted .doc-tv-content:empty{display:none}
+#docTVPage.doc-tv-adapted .doc-tv-main:has(.doc-tv-content:empty) .doc-tv-document-heading{max-height:none;flex:1}
+#docTVPage.doc-tv-adapted .doc-element{position:relative!important;left:auto!important;top:auto!important;width:100%!important;height:100%!important;max-height:none;z-index:auto!important;min-height:0}
+#docTVPage.doc-tv-adapted .doc-element-content{padding:16px 24px;overflow:hidden}
+#docTVPage.doc-tv-adapted .doc-type-image .doc-element-content{border-radius:16px;background:transparent}
+#docTVPage.doc-tv-adapted .doc-type-image img{object-fit:contain}
+#docTVPage.doc-tv-adapted .doc-tv-media-col,
+#docTVPage.doc-tv-adapted .doc-tv-text-col{min-width:0;min-height:0;display:flex;flex-direction:column;gap:24px}
+#docTVPage.doc-tv-adapted .doc-tv-text-col>.doc-element{flex:1 1 0;min-height:0}
+#docTVPage.doc-tv-adapted .doc-tv-text-col>.doc-type-heading{flex:0 0 25%}
+#docTVPage.doc-tv-adapted .doc-tv-text-col>.doc-type-alert{flex:0 0 22%}
+#docTVPage.doc-tv-adapted .doc-tv-media-col>.doc-element{flex:1;min-height:0}
+#docTVPage.doc-tv-adapted .doc-field{line-height:1.2;max-height:100%;overflow:hidden}
+@media(max-width:900px){body.unified-tv #docTVPage.doc-tv-adapted{padding:14px 18px}#docTVPage.doc-tv-adapted .doc-tv-main{gap:12px}#docTVPage.doc-tv-adapted .doc-tv-content{gap:12px}}
