@@ -103,3 +103,18 @@ body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child
  #stockControl .stk-source{padding:6px 9px}
  #stockControl .stk-source strong{max-width:110px}
 }
+
+/* Source badges on the same header row, directly before the Excel upload button. */
+#stockControl .stk-heading{align-items:center;gap:12px}
+#stockControl .stk-heading>div:first-child{flex:0 1 auto;min-width:205px}
+#stockControl .stk-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:1 1 auto;min-width:0;flex-wrap:wrap}
+#stockControl .stk-actions .stk-sources{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;margin:0 3px 0 0;min-width:0}
+#stockControl .stk-actions .stk-source{padding:5px 9px;min-height:28px;gap:5px}
+#stockControl .stk-actions .stk-source span,#stockControl .stk-actions .stk-source strong{font-size:10px}
+#stockControl .stk-actions .stk-source strong{max-width:125px}
+#stockControl .stk-actions #stkChoose,#stockControl .stk-actions #stkDelete{flex:0 0 auto}
+@media(max-width:950px){
+ #stockControl .stk-heading{align-items:flex-start}
+ #stockControl .stk-actions{justify-content:flex-start}
+ #stockControl .stk-actions .stk-sources{justify-content:flex-start}
+}

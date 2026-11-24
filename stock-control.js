@@ -15,8 +15,8 @@
  if(!document.querySelector('.tabs')||el('stockTab'))return;
  const nav=document.querySelector('.tabs'),tab=document.createElement('button');tab.id='stockTab';tab.type='button';tab.textContent='STOCK CONTROL';nav.append(tab);
  const section=document.createElement('section');section.id='stockControl';section.hidden=true;section.innerHTML=`
- <div class="stk-heading"><div><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div></div>
- <div class="stk-sources" id="stkSources"></div><div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
+ <div class="stk-heading"><div><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><div class="stk-sources" id="stkSources"></div><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div></div>
+ <div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
  <div class="stk-brandnav" id="stkBrands"></div>
  <div class="stk-kpis" id="stkKpis"></div>
  <div class="stk-layout"><article class="stk-card stk-wide"><div class="stk-cardtop"><h3>ALL SHELVES</h3><span>Liczba półek według typu lokalizacji</span></div><div class="stk-scroller" id="stkShelves"></div></article>
