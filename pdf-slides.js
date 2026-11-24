@@ -9,6 +9,46 @@
   // The TV uses an actual page canvas rather than Edge's built-in PDF viewer.
   // The viewer remains available as a fallback if the renderer cannot load.
   let tvRenderToken=0, tvPDFDocument=null, pdfLoaderPromise=null, tvRecord=null;
+  // User-controlled per-document TV framing; never alter the original PDF.
+  const viewKey=id=>'incydenty-pdf-tv-view-'+id;
+  function framing(record){
+    let saved={};try{saved=JSON.parse(localStorage.getItem(viewKey(record.id)))||{}}catch{}
+    return {zoom:Math.max(65,Math.min(150,Number(saved.zoom)||100)),trim:saved.trim!==false};
+  }
+  function saveFraming(record,settings){try{localStorage.setItem(viewKey(record.id),JSON.stringify(settings))}catch{}}
+  function updateTVTools(){
+    const bar=$('pdfTVTools');if(!bar)return;
+    const visible=!!tvRecord&&document.body.classList.contains('inc-pdf-tv-screen');
+    bar.hidden=!visible;
+    if(visible){const v=framing(tvRecord);$('pdfTVZoom').textContent=v.zoom+'%';$('pdfTVTrim').textContent=v.trim?'Marginesy: auto':'Marginesy: pełne';}
+  }
+  function changeTVFraming(diff,trimToggle=false){
+    if(!tvRecord)return;
+    const v=framing(tvRecord);
+    if(trimToggle)v.trim=!v.trim;else v.zoom=Math.max(65,Math.min(150,v.zoom+diff));
+    saveFraming(tvRecord,v);updateTVTools();drawTVPDF(tvRecord,++tvRenderToken);
+  }
+  // Find true blank margins only, leaving a safety border around print content.
+  // If the page has tinted paper/background, retain the full page.
+  function detectContentBounds(canvas){
+    const w=canvas.width,h=canvas.height,ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const data=ctx.getImageData(0,0,w,h).data;
+    const background=(x,y)=>{const i=(y*w+x)*4;return data[i]>244&&data[i+1]>244&&data[i+2]>244};
+    if(!background(0,0)||!background(w-1,0)||!background(0,h-1)||!background(w-1,h-1))return {x:0,y:0,w,h};
+    let minX=w,minY=h,maxX=-1,maxY=-1;
+    const step=Math.max(1,Math.round(Math.max(w,h)/1300));
+    for(let y=0;y<h;y+=step)for(let x=0;x<w;x+=step){
+      if(!background(x,y)){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)}
+    }
+    if(maxX<minX||maxY<minY)return {x:0,y:0,w,h};
+    const pad=Math.max(10,Math.round(Math.min(w,h)*.013));
+    minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);
+    maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);
+    // Safety guard: never crop more than 28% from any edge automatically.
+    minX=Math.min(minX,Math.floor(w*.28));minY=Math.min(minY,Math.floor(h*.28));
+    maxX=Math.max(maxX,Math.ceil(w*.72));maxY=Math.max(maxY,Math.ceil(h*.72));
+    return {x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1};
+  }
   const PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
   const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   function pdfEngine(){
@@ -26,7 +66,7 @@
   async function drawTVPDF(record,token){
     const canvas=$('pdfTVCanvas'),frame=$('pdfTVFrame'),status=$('pdfTVStatus');
     if(!canvas||!record)return;
-    status.hidden=true; canvas.hidden=true; frame.hidden=true;
+    status.hidden=true;frame.hidden=true;
     try{
       const lib=await pdfEngine();if(token!==tvRenderToken)return;
       lib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
@@ -36,33 +76,48 @@
       if(token!==tvRenderToken){pdf.destroy();return;}
       if(tvPDFDocument&&tvPDFDocument!==pdf)tvPDFDocument.destroy();
       tvPDFDocument=pdf;
-      const page=await pdf.getPage(1);
-      if(token!==tvRenderToken)return;
-      const vp=page.getViewport({scale:1});
-      const host=$('pdfSlidesTV').querySelector('.pdfs-tv-stage');
-      const box=host.getBoundingClientRect();
-      // Keep the entire PDF page inside the softly padded TV mat.
+      const page=await pdf.getPage(1);if(token!==tvRenderToken)return;
+      const base=page.getViewport({scale:1}),settings=framing(record);
+      // Scan page at moderate resolution and trim only verified blank margins.
+      let crop={x:0,y:0,w:base.width,h:base.height};
+      if(settings.trim){
+        const scanScale=Math.min(1.5,Math.max(.4,1100/Math.max(base.width,base.height)));
+        const v=page.getViewport({scale:scanScale});
+        const buffer=document.createElement('canvas');buffer.width=Math.max(1,Math.ceil(v.width));buffer.height=Math.max(1,Math.ceil(v.height));
+        const scanCtx=buffer.getContext('2d',{alpha:false,willReadFrequently:true});
+        scanCtx.fillStyle='#fff';scanCtx.fillRect(0,0,buffer.width,buffer.height);
+        await page.render({canvasContext:scanCtx,viewport:v}).promise;
+        if(token!==tvRenderToken)return;
+        const b=detectContentBounds(buffer);
+        crop={x:b.x/scanScale,y:b.y/scanScale,w:b.w/scanScale,h:b.h/scanScale};
+      }
+      const host=$('pdfSlidesTV').querySelector('.pdfs-tv-stage'),box=host.getBoundingClientRect();
       const mat=getComputedStyle(host);
-      const usableWidth=box.width-(parseFloat(mat.paddingLeft)||0)-(parseFloat(mat.paddingRight)||0)-4;
-      const usableHeight=box.height-(parseFloat(mat.paddingTop)||0)-(parseFloat(mat.paddingBottom)||0)-4;
-      const scale=Math.max(.1,Math.min(usableWidth/vp.width,usableHeight/vp.height));
+      const width=Math.max(120,box.width-(parseFloat(mat.paddingLeft)||0)-(parseFloat(mat.paddingRight)||0)-6);
+      const height=Math.max(120,box.height-(parseFloat(mat.paddingTop)||0)-(parseFloat(mat.paddingBottom)||0)-6);
+      const fit=Math.max(.1,Math.min(width/crop.w,height/crop.h));
+      const displayScale=fit*settings.zoom/100;
       const dpr=Math.min(2,window.devicePixelRatio||1);
-      const renderViewport=page.getViewport({scale:scale*dpr});
-      canvas.width=Math.max(1,Math.ceil(renderViewport.width));
-      canvas.height=Math.max(1,Math.ceil(renderViewport.height));
-      canvas.style.width=(renderViewport.width/dpr)+'px';
-      canvas.style.height=(renderViewport.height/dpr)+'px';
-      const ctx=canvas.getContext('2d',{alpha:false});
-      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
-      await page.render({canvasContext:ctx,viewport:renderViewport}).promise;
+      const viewport=page.getViewport({scale:displayScale*dpr});
+      // Render with original page transform, then copy only the content bounds.
+      const original=document.createElement('canvas');
+      original.width=Math.max(1,Math.ceil(viewport.width));original.height=Math.max(1,Math.ceil(viewport.height));
+      const renderCtx=original.getContext('2d',{alpha:false});
+      renderCtx.fillStyle='#fff';renderCtx.fillRect(0,0,original.width,original.height);
+      await page.render({canvasContext:renderCtx,viewport}).promise;
       if(token!==tvRenderToken)return;
-      canvas.hidden=false;
+      const sx=Math.floor(crop.x*displayScale*dpr),sy=Math.floor(crop.y*displayScale*dpr);
+      const sw=Math.min(original.width-sx,Math.max(1,Math.ceil(crop.w*displayScale*dpr)));
+      const sh=Math.min(original.height-sy,Math.max(1,Math.ceil(crop.h*displayScale*dpr)));
+      canvas.width=sw;canvas.height=sh;
+      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,sw,sh);
+      ctx.drawImage(original,sx,sy,sw,sh,0,0,sw,sh);
+      canvas.style.width=(sw/dpr)+'px';canvas.style.height=(sh/dpr)+'px';
+      canvas.hidden=false;updateTVTools();
     }catch(err){
       if(token!==tvRenderToken)return;
       console.warn('INCYDENTY: PDF canvas renderer unavailable:',err);
-      // Fallback keeps the document accessible, although Edge can show margins.
-      frame.hidden=false;
-      status.hidden=false;
+      canvas.hidden=true;frame.hidden=false;status.hidden=false;
       status.textContent='Podgląd PDF: używany jest tryb awaryjny przeglądarki.';
     }
   }
@@ -80,7 +135,7 @@
     stage.style.height=Math.max(240,Math.floor(window.innerHeight-top-12))+'px';
   }
   function closeTV(){
-    tvRenderToken++;tvRecord=null;
+    tvRenderToken++;tvRecord=null;updateTVTools();
     if(tvPDFDocument){tvPDFDocument.destroy();tvPDFDocument=null;}
     if($('pdfTVCanvas'))$('pdfTVCanvas').hidden=true;
     if($('pdfTVStatus'))$('pdfTVStatus').hidden=true;
@@ -145,6 +200,7 @@
     $('pdfTVOpen').href=tvUrl;$('pdfTVOpen').download=r.fileName;
     area.hidden=false;area.classList.add('pdf-tv-mode');wrap.hidden=false;
     $('isaTV')?.setAttribute('hidden','');
+    updateTVTools();
     const renderToken=++tvRenderToken;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{fitPDFScreen();drawTVPDF(r,renderToken)}));
   }
@@ -184,6 +240,17 @@
     const tv=document.createElement('div');tv.id='pdfSlidesTV';tv.hidden=true;
     tv.innerHTML='<div class="pdfs-tv-title" id="pdfTVName"></div><div class="pdfs-tv-stage"><canvas id="pdfTVCanvas" aria-label="Plan ewakuacji" hidden></canvas><iframe id="pdfTVFrame" title="Plan ewakuacji PDF" loading="eager" hidden></iframe></div><div id="pdfTVStatus" hidden></div><div class="pdfs-tv-fallback"><a id="pdfTVOpen" target="_blank" rel="noopener">Otwórz oryginalny PDF</a></div>';
     area.append(tv);
+    // Controls are part of the EXISTING unified TV toolbar, not a second toolbar.
+    const sharedBar=$('unifiedTVbar');
+    if(sharedBar&&!$('pdfTVTools')){
+      const tools=document.createElement('span');tools.id='pdfTVTools';tools.hidden=true;
+      tools.innerHTML='<button type="button" id="pdfTVMinus" title="Zmniejsz PDF">−</button><button type="button" id="pdfTVZoom" title="Dopasuj PDF">100%</button><button type="button" id="pdfTVPlus" title="Powiększ PDF">+</button><button type="button" id="pdfTVTrim" title="Automatycznie usuń białe marginesy">Marginesy: auto</button>';
+      sharedBar.insertBefore(tools,sharedBar.querySelector('button'));
+      $('pdfTVMinus').onclick=()=>changeTVFraming(-10);
+      $('pdfTVPlus').onclick=()=>changeTVFraming(10);
+      $('pdfTVZoom').onclick=()=>{if(!tvRecord)return;const v=framing(tvRecord);v.zoom=100;saveFraming(tvRecord,v);updateTVTools();drawTVPDF(tvRecord,++tvRenderToken)};
+      $('pdfTVTrim').onclick=()=>changeTVFraming(0,true);
+    }
     // Select a PDF through the existing "Zapisane podstrony" list.
     $('isaList').addEventListener('click',e=>{
       const b=e.target.closest('[data-pdf-page]');if(b){e.preventDefault();e.stopImmediatePropagation();view(b.dataset.pdfPage);}
@@ -237,6 +304,11 @@
         border-radius:14px!important;
         box-shadow:inset 0 1px 2px rgba(34,62,82,.04)!important;
       }
+      #pdfTVTools[hidden]{display:none!important}
+      #pdfTVTools{display:inline-flex;align-items:center;gap:4px;margin-right:5px}
+      #pdfTVTools button{border:1px solid #dce5ef;border-radius:9px;background:#fff;color:#36536b;padding:5px 9px;font-size:11px;white-space:nowrap;cursor:pointer}
+      #pdfTVTools button:hover{background:#eff6fd}
+      body.inc-pdf-tv-screen #pdfTVCanvas{max-width:none!important;max-height:none!important}
       body.inc-pdf-tv-screen #pdfTVCanvas:not([hidden]){
         flex:none;
         border:1px solid rgba(99,124,145,.22);
