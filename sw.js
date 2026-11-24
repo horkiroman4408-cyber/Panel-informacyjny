@@ -1,7 +1,7 @@
 /* INCYDENTY PWA · STOCK CONTROL cache revision. App version unchanged. */
 const VERSION = '1.1.63';
 const PREFIX = 'incydenty-' + new URL(self.registration.scope).pathname + '-';
-const CACHE = PREFIX + VERSION + '-stock5-exclusive-tv';
+const CACHE = PREFIX + VERSION + '-stock6-tv-three-tables-soft-colors';
 const FILES = ['./','index.html','style.css','theme-typography.css','data.js','app.js','workers.js','schedule.js','info-slides.js','tv-fit.js','pwa.js','stock-control.js','stock-control.css','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png','icons/icon-32.png','icons/icon-48.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(path => new Request(new URL(path,self.registration.scope),{cache:'reload'})))));

@@ -1,17 +1,86 @@
 #stockControl[hidden]{display:none!important}#stockControl{padding:20px 0 48px;color:#223747;max-width:1800px;margin:auto}#stockControl *{box-sizing:border-box}.stk-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:2px 0 16px}.stk-heading h2{font-size:clamp(26px,2.6vw,40px);letter-spacing:-.045em;margin:3px 0}.stk-heading p{color:#78889a;font-size:13px;margin:0}.stk-eyebrow{font-size:10px;letter-spacing:.16em;color:#258c9a;font-weight:800}.stk-actions{display:flex;gap:8px;flex-wrap:wrap}.stk-actions button{border:1px solid #dbe5ec;border-radius:11px;padding:10px 14px;background:#fff;color:#36536b;font-weight:750;cursor:pointer}.stk-actions #stkChoose{background:#087ec5;color:white;border-color:#087ec5}.stk-sources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.stk-source{background:#fff;border:1px solid #e0e8ef;border-radius:13px;padding:13px 16px;min-width:0;display:flex;flex-direction:column;gap:7px}.stk-source span{font-size:11px;color:#7f91a1;font-weight:850}.stk-source.loaded span{color:#00886f}.stk-source strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stk-alert{margin:9px 0;color:#96611a;background:#fff7e6;border-radius:10px;padding:10px 13px;font-size:12px;overflow-wrap:anywhere}.stk-alert:empty{display:none}.stk-brandnav{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:20px auto 18px}.stk-brandnav button{border:1px solid #d8e3ed;background:#fff;border-radius:24px;font-size:11px;font-weight:850;color:#536e83;padding:9px 18px;cursor:pointer}.stk-brandnav button.active{color:#fff;background:#13689f;border-color:#13689f;box-shadow:0 3px 12px #2b749526}.stk-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px;margin:0 0 17px}.stk-kpi{background:#fff;border-radius:15px;padding:15px 13px;border:1px solid #e2e9ef;min-width:0;box-shadow:0 3px 14px #132b4010}.stk-kpi span{display:block;color:#7c8b99;font-size:10px;font-weight:760;letter-spacing:.025em;min-height:28px}.stk-kpi strong{display:block;margin-top:5px;font-size:clamp(19px,1.7vw,28px);font-weight:800;color:#213e56}.stk-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.stk-card{background:#fff;border:1px solid #e1e9f1;border-radius:17px;padding:15px;min-width:0;box-shadow:0 5px 22px #1733440d}.stk-card.stk-wide{grid-column:1/-1}.stk-cardtop{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 13px}.stk-cardtop h3{font-size:12px;letter-spacing:.045em;color:#234869;margin:0;font-weight:850}.stk-cardtop span,.stk-note{font-size:11px;color:#8091a0}.stk-scroller{width:100%;overflow:auto;scrollbar-width:thin}.stk-table{border-collapse:collapse;width:100%;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}.stk-table th{background:#f0f4f8;padding:10px 9px;text-align:right;color:#3d6381;font-size:9px;letter-spacing:.018em;font-weight:850;white-space:normal;min-width:55px}.stk-table th:nth-child(1),.stk-table th:nth-child(2),.stk-table td:nth-child(1),.stk-table td:nth-child(2){text-align:left}.stk-table td{padding:8px 9px;text-align:right;border-bottom:1px solid #edf1f5;color:#405467}.stk-table tbody tr:nth-child(even){background:#fafbfd}.stk-table tbody tr:hover{background:#edf8ff}.stk-table .stk-percent{font-weight:830;color:#17344a}.stk-percent.stk-bad{background:#e9534b33}.stk-percent.stk-mid{background:#f5cf6f66}.stk-percent.stk-good{background:#4bc5a344}.stk-table tfoot td{font-weight:850;border-top:2px solid #cbdde8;color:#14608c;background:#f4f9fc}.stk-empty{padding:27px 12px;text-align:center;color:#8696a4;font-size:12px}.stk-bigmetric{font-size:clamp(38px,4vw,70px);font-weight:850;color:#1f4968;text-align:center;padding:18px}.stk-note{text-align:center}.stk-footer{font-size:11px;color:#94a3af;margin-top:15px;text-align:center}body.stk-tv-active{overflow:hidden}#stockControl.stk-tv{background:#f5f8fb;width:100%;height:100%;max-width:none;padding:20px;overflow:auto}#stockControl.stk-tv .stk-kpis{grid-template-columns:repeat(6,1fr)}#stockControl.stk-tv .stk-table{font-size:clamp(11px,.8vw,18px)}@media(max-width:1100px){.stk-kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.stk-sources{grid-template-columns:1fr}.stk-kpis{grid-template-columns:repeat(2,1fr)}.stk-layout{grid-template-columns:1fr}.stk-card{grid-column:1!important}.stk-heading{align-items:flex-start}}
 
-/* Only conditional formatting was revised; the original table layout is intact. */
-#stockControl .stk-percent{color:#111!important;font-weight:750}
-#stockControl .stk-percent.stk-red{background:#f52516!important}
-#stockControl .stk-percent.stk-orange{background:#c47d00!important}
-#stockControl .stk-percent.stk-yellow{background:#d5c51a!important}
-#stockControl .stk-percent.stk-olive{background:#a5ac08!important}
-#stockControl .stk-percent.stk-green{background:#3adc23!important}
-/* Show STOCK as a stand-alone screen in the existing TV slideshow. */
-body.unified-tv #stockControl.stk-unified-screen{display:block!important;width:100%;max-width:none;margin:0;padding:16px 18px 90px;min-height:100dvh}
+/* Soft, legible Power BI-like thresholds; the table design is unchanged. */
+#stockControl .stk-percent{color:#263b43!important;font-weight:780}
+#stockControl .stk-percent.stk-red{background:#e7aba4!important}
+#stockControl .stk-percent.stk-orange{background:#e9c08c!important}
+#stockControl .stk-percent.stk-yellow{background:#ecdda5!important}
+#stockControl .stk-percent.stk-olive{background:#d4dfa6!important}
+#stockControl .stk-percent.stk-green{background:#acd8b8!important}
+/* STOCK CONTROL in the shared INCYDENTY TV slideshow.
+   Keep the six summary KPIs and the three requested tables only. */
+body.unified-tv #stockControl.stk-unified-screen{
+ display:block!important;width:100%;max-width:none;margin:0;
+ padding:4px 14px 78px;min-height:0;overflow:visible;
+}
 body.unified-tv #stockControl.stk-unified-screen .stk-heading,
 body.unified-tv #stockControl.stk-unified-screen .stk-sources,
-body.unified-tv #stockControl.stk-unified-screen .stk-footer{display:none!important}
-body.unified-tv #stockControl.stk-unified-screen .stk-layout{gap:9px}
-body.unified-tv #stockControl.stk-unified-screen .stk-card{padding:10px}
-body.unified-tv #stockControl.stk-unified-screen .stk-kpis{margin-bottom:9px}
+body.unified-tv #stockControl.stk-unified-screen .stk-footer,
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(3),
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(5){display:none!important}
+body.unified-tv #stockControl.stk-unified-screen .stk-brandnav{
+ margin:5px auto 10px;gap:6px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-brandnav button{
+ padding:6px 11px;font-size:11px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-kpis{
+ display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+ gap:8px;margin:0 0 9px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-kpi{
+ padding:9px 11px;border-radius:13px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-kpi span{
+ min-height:0;font-size:10px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-kpi strong{
+ font-size:clamp(17px,1.6vw,27px);margin-top:5px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-layout{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:9px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(1),
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(2),
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(4){
+ display:block;grid-column:1/-1!important;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-card{
+ padding:9px 11px;border-radius:12px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-cardtop{
+ margin:0 0 6px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-cardtop h3{
+ font-size:clamp(11px,.82vw,15px);letter-spacing:.02em;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-cardtop span{
+ font-size:10px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-scroller{
+ overflow-x:auto;overflow-y:visible;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-table{
+ font-size:clamp(10px,.69vw,14px);line-height:1.16;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-table th{
+ padding:5px 6px;font-size:clamp(8px,.53vw,11px);min-width:0;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-table td{
+ padding:5px 6px;
+}
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(4) .stk-table th,
+body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child(4) .stk-table td{
+ text-align:left;
+}
+/* The three tables need to stay visible together on a 1080p television. */
+@media(max-height:850px){
+ body.unified-tv #stockControl.stk-unified-screen .stk-brandnav{margin:2px auto 5px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-kpi{padding:6px 9px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-kpis{margin-bottom:6px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-layout{gap:6px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-card{padding:7px 9px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-cardtop{margin-bottom:4px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-table td{padding:3px 5px}
+ body.unified-tv #stockControl.stk-unified-screen .stk-table th{padding:4px 5px}
+}
