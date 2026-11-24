@@ -139,7 +139,9 @@ function buildBlock(b,editable=false){const n=document.createElement('div');n.cl
  n.classList.toggle('doc-framed',!!b.border);return n;}
 function fit(){if(!active||editor().hidden)return;const width=page().w,height=page().h;
  const box=$('docCanvasViewport');if(!box)return;
- const auto=clamp((box.clientWidth-30)/width,.2,1.1);
+ const inset=getComputedStyle(box);
+ const available=box.clientWidth-parseFloat(inset.paddingLeft)-parseFloat(inset.paddingRight);
+ const auto=Math.max(.1,available/width);
  scale=zoom==='auto'?auto:Number(zoom)||auto;
  Object.assign(viewport().style,{width:(width*scale)+'px',height:(height*scale)+'px'});
  Object.assign(root().style,{width:width+'px',height:height+'px',transform:'scale('+scale+')'});
@@ -379,7 +381,7 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  <button id="docPresetPhotoText" type="button">▦ Układ: zdjęcie + tekst</button><p>Przeciągaj za uchwyt ⠿. Zmieniaj rozmiar za róg ↘. Kliknij tekst, aby go edytować.</p>
  <button id="docUndo" type="button">↶ Cofnij zmianę</button></aside>
  <div class="doc-workspace" id="docCanvasViewport"><div id="docCanvasSize"><div id="docCanvas"></div></div></div>
- </div><aside class="doc-inspector" id="docInspector" hidden role="toolbar" aria-label="Właściwości bloku"><div class="doc-inspector-head"><strong>Właściwości bloku</strong><span id="docBlockType"></span><button type="button" id="docInspectorClose" title="Zamknij">×</button></div>
+ </div><aside class="doc-inspector" id="docInspector" hidden role="toolbar" aria-label="Właściwości bloku"><div class="doc-inspector-head"><strong>Właściwości bloku</strong><span id="docBlockType"></span><button type="button" id="docInspectorClose" title="Zamknij" aria-label="Zamknij"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
  <div id="docProperties" hidden><div class="doc-quick"><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label></div><div class="doc-inspector-actions"><button id="docMoreSettings" type="button" aria-expanded="false">Więcej ustawień <span>⌄</span></button><button id="docPickImage" type="button" hidden>Wybierz zdjęcie</button><button id="docCloneBlock" type="button">Kopiuj</button><button id="docDeleteBlock" type="button">Usuń</button></div><div class="doc-advanced" id="docAdvanced" hidden><div class="doc-basic-toggles"><label class="doc-inline">Bez tła <input id="docTransparent" type="checkbox"></label><label class="doc-inline">Cień <input id="docShadow" type="checkbox"></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label></div><div class="doc-basic-fields"><label>Zaokrąglenie (px)<input id="docRadius" type="number" min="0" max="40" step="1"></label></div>
  <div id="docTextOptions"><small>Tekst zmieniasz bezpośrednio w bloku.</small></div><div id="docYesNoOptions" hidden>
  <small>Każdy napis możesz edytować również bezpośrednio na scenie.</small>

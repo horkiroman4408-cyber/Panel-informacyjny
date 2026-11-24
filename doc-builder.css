@@ -218,3 +218,13 @@ body.unified-tv #docTVPage.doc-tv-scene .doc-type-image img{object-fit:var(--doc
 #docCanvas .doc-type-list .doc-list-view,#docTVPage .doc-type-list .doc-list-view{padding-left:1.4em;margin:0;line-height:1.48;overflow-wrap:anywhere;max-height:100%;overflow:auto;white-space:normal;}
 #docCanvas .doc-type-list .doc-list-view li,#docTVPage .doc-type-list .doc-list-view li{margin:0;padding-left:3px;}
 #docCanvas .doc-type-list .doc-list-view:focus{outline:1px dashed #67a8d2;outline-offset:2px}
+
+/* Scene editor: use the full available width without nested frames. */
+#docBuilder.doc-mode-scene #docCanvasViewport{background:transparent;border:0;border-radius:0;box-shadow:none;padding:8px;min-height:0;max-height:none;overflow:auto;min-width:0}
+#docBuilder.doc-mode-scene #docCanvasSize{background:linear-gradient(110deg,#faf0f4 0%,#f4f7fb 48%,#e5f0ff 100%);box-shadow:none;border:0;border-radius:10px;margin:0 auto}
+#docBuilder.doc-mode-scene #docCanvas{background:transparent!important}
+/* A true icon button, insulated from global app button padding and typography. */
+#docBuilder #docInspector .doc-inspector-head{align-items:center}
+#docBuilder #docInspector #docInspectorClose{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;max-width:28px!important;max-height:28px!important;padding:0!important;margin:0!important;line-height:1!important;border:0!important;align-self:center!important;justify-self:end;overflow:hidden;color:#38546a;flex:none}
+#docBuilder #docInspector #docInspectorClose svg{display:block!important;flex:none;width:15px!important;height:15px!important;margin:0!important;padding:0!important;pointer-events:none}
+#docBuilder #docInspector #docInspectorClose:hover{background:#e1edf7}
