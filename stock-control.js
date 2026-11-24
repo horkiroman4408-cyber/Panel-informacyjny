@@ -1,57 +1,76 @@
 'use strict';
-/* INCYDENTY · STOCK CONTROL. Independent module, no changes to KPI calculations. */
+/* INCYDENTY · STOCK CONTROL. 3 native Power BI Excel exports; isolated module. */
 (()=>{
- const $=id=>document.getElementById(id), E=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const key='incydenty-stock-control-v1';
- const brands=['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'];
- let records=[],source='',chosen=new Set(),isTV=false;
- try {const value=JSON.parse(localStorage.getItem(key));if(Array.isArray(value?.rows)&&value.rows.length<=10000){records=value.rows;source=String(value.source||'')}}catch{}
- const nav=document.querySelector('.tabs');if(!nav)return;
- const tab=document.createElement('button');tab.id='stockTab';tab.textContent='STOCK CONTROL';tab.type='button';nav.append(tab);
- const area=document.createElement('section');area.id='stockControl';area.hidden=true;
- area.innerHTML=`<div class="stk-top"><div><span class="stk-kicker">INCYDENTY · POWER BI EXPORT</span><h2>STOCK CONTROL</h2><p>Stan regałów i jednostek · dane z pliku Excel</p></div><div class="stk-actions"><button type="button" id="stkImport">↥ Wczytaj Excel</button><input id="stkFile" type="file" accept=".xlsx" hidden><button type="button" id="stkReset">Wyczyść dane</button><button type="button" id="stkTv">▣ Tryb TV</button></div></div><div id="stkMessage" role="status" class="stk-message"></div><div class="stk-brands" id="stkBrands"></div><div class="stk-stats" id="stkStats"></div><div class="stk-grid"><article class="stk-panel"><h3>ALL SHELVES</h3><div id="stkAll" class="stk-table-wrap"></div></article><article class="stk-panel"><h3>NO OF SHELVES WITH STOCK</h3><div id="stkFull" class="stk-table-wrap"></div></article><article class="stk-panel"><h3>NO OF EMPTY SHELVES</h3><div id="stkEmpty" class="stk-table-wrap"></div></article><article class="stk-panel"><h3>MP STOCK BY BRAND</h3><div id="stkBrand" class="stk-table-wrap"></div></article><article class="stk-panel"><h3>NO OF UNITS · STOCKING</h3><div id="stkStocking" class="stk-table-wrap"></div></article><article class="stk-panel"><h3>NO OF UNITS TO BE STOCKED</h3><div id="stkToStock" class="stk-table-wrap"></div></article></div><div class="stk-foot"><span id="stkSource"></span><span>Źródło: ręczny import Excel · aktualizacja danych Power BI nie jest automatyczna</span></div>`;
- document.querySelector('.shell').append(area);
- const style=document.createElement('link');style.rel='stylesheet';style.href='stock-control.css';document.head.append(style);
- const n=v=>Number.isFinite(Number(v))?Number(v):0;
- const fmt=(x,d=0)=>Number(x||0).toLocaleString('pl-PL',{maximumFractionDigits:d});
- const norm=x=>String(x??'').trim().toUpperCase().replace(/\s+/g,' ');
- const num=x=>typeof x==='number'?x:Number(String(x??'').trim().replace(/\s/g,'').replace(',','.'));
- const alias={brand:['BRAND','BRAND (LOC SUBAREA)','MARKA'],loc:['LOCATION TYPE','LOCATION TYPE ','TYP LOKALIZACJI'],shelves:['ALL SHELVES','SHELVES','MP1+MP2+MP3','TOTAL SHELVES','MP'],full:['SHELVES WITH STOCK','NO OF SHELVES WITH STOCK','FULL SHELVES','ZAPEŁNIONE'],empty:['EMPTY SHELVES','NO OF EMPTY SHELVES','PUSTE'],stocking:['NO OF UNITS - STOCKING','UNITS STOCKING','MP STOCKING','STOCKING UNITS','TOTAL UNITS'],toStock:['NO OF UNITS TO BE STOCKED','UNITS TO BE STOCKED','MP TO BE STOCKED'],rsItems:['RS1 ITEMS','NO OF ITEMS'],rsTsus:['RS1 TSUS','NO OF TSUS']};
- const sum=(rs,col)=>rs.reduce((a,r)=>a+n(r[col]),0);
- function buildTable(items,cols){if(!items.length)return '<div class="stk-none">Brak danych dla wybranych filtrów.</div>';
- const head=cols.map(([k,label])=>`<th>${E(label)}</th>`).join(''); const body=items.map(r=>`<tr>${cols.map(([k])=>`<td>${k==='brand'||k==='loc'?E(r[k]):fmt(r[k])}</td>`).join('')}</tr>`).join('');return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;}
- function aggregated(){const groups=new Map();for(const r of records){if(chosen.size&&!chosen.has(r.brand))continue;const id=r.brand+'|'+r.loc;let g=groups.get(id);if(!g){g={brand:r.brand,loc:r.loc,shelves:0,full:0,empty:0,stocking:0,toStock:0,rsItems:0,rsTsus:0};groups.set(id,g)}for(const k of ['shelves','full','empty','stocking','toStock','rsItems','rsTsus'])g[k]+=n(r[k]);}return [...groups.values()].sort((a,b)=>a.brand.localeCompare(b.brand)||a.loc.localeCompare(b.loc));}
- function render(){const rs=aggregated(),shelves=sum(rs,'shelves'),full=sum(rs,'full'),empty=sum(rs,'empty'),stocking=sum(rs,'stocking'),toStock=sum(rs,'toStock');
- const exists=[...new Set(records.map(r=>r.brand))].sort();$('stkBrands').innerHTML=`<button class="${chosen.size?'':'on'}" data-brand="*">Wszystkie marki</button>`+exists.map(x=>`<button class="${chosen.has(x)?'on':''}" data-brand="${E(x)}">${E(x)}</button>`).join('');
- const cards=[['Wszystkie półki',shelves],['Z towarem',full],['Puste półki',empty],['Zapełnienie',shelves?fmt(full/shelves*100,1)+'%':'—'],['Jednostki · stocking',stocking],['Do rozłożenia',toStock]];
- $('stkStats').innerHTML=cards.map(([k,v])=>`<div class="stk-stat"><span>${E(k)}</span><strong>${typeof v==='number'?fmt(v):E(v)}</strong></div>`).join('');
- const base=[['brand','BRAND'],['loc','LOCATION TYPE']];
- $('stkAll').innerHTML=buildTable(rs,[...base,['shelves','SHELVES']]);$('stkFull').innerHTML=buildTable(rs,[...base,['full','WITH STOCK']]);$('stkEmpty').innerHTML=buildTable(rs,[...base,['empty','EMPTY']]);$('stkStocking').innerHTML=buildTable(rs,[...base,['stocking','UNITS STOCKING']]);$('stkToStock').innerHTML=buildTable(rs,[...base,['toStock','UNITS TO BE STOCKED']]);
- const byBrand=new Map();for(const r of rs){let x=byBrand.get(r.brand)||{brand:r.brand,loc:'',stocking:0,shelves:0};x.stocking+=r.stocking;x.shelves+=r.shelves;byBrand.set(r.brand,x)}$('stkBrand').innerHTML=buildTable([...byBrand.values()],[['brand','BRAND'],['stocking','NO OF ITEMS']]);
- $('stkSource').textContent=source?`Plik: ${source} · ${fmt(records.length)} wierszy`:'Nie wczytano danych';
- $('stkMessage').textContent=records.length?'':'Wczytaj testowy wzór STOCK_CONTROL.xlsx, aby rozpocząć.';
+ const el=id=>document.getElementById(id);
+ const html=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const name=x=>String(x??'').trim().toUpperCase().replace(/\s+/g,' ');
+ const number=x=>{if(x==null||x==='')return 0;if(typeof x==='number')return x;const v=Number(String(x).trim().replace(/\s/g,'').replace(',','.'));return Number.isFinite(v)?v:NaN};
+ const fmt=(x,d=0)=>Number(x||0).toLocaleString('pl-PL',{minimumFractionDigits:d,maximumFractionDigits:d});
+ const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0;
+ const STORE='incydenty-stock-powerbi-v2';
+ let datasets={shelves:null,units:null,rs1:null},selected=new Set(),tv=false;
+ try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&typeof obj==='object'){for(const k of Object.keys(datasets)){if(obj.datasets?.[k]&&Array.isArray(obj.datasets[k].rows))datasets[k]=obj.datasets[k];}if(Array.isArray(obj.selected))selected=new Set(obj.selected)}}catch{}
+ if(!document.querySelector('.tabs')||el('stockTab'))return;
+ const nav=document.querySelector('.tabs'),tab=document.createElement('button');tab.id='stockTab';tab.type='button';tab.textContent='STOCK CONTROL';nav.append(tab);
+ const section=document.createElement('section');section.id='stockControl';section.hidden=true;section.innerHTML=`
+ <div class="stk-heading"><div><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkTV" type="button">▣ Pełny ekran</button><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div></div>
+ <div class="stk-sources" id="stkSources"></div><div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
+ <div class="stk-brandnav" id="stkBrands"></div>
+ <div class="stk-kpis" id="stkKpis"></div>
+ <div class="stk-layout"><article class="stk-card stk-wide"><div class="stk-cardtop"><h3>ALL SHELVES</h3><span>Liczba półek według typu lokalizacji</span></div><div class="stk-scroller" id="stkShelves"></div></article>
+ <article class="stk-card stk-wide"><div class="stk-cardtop"><h3>NO OF UNITS · STOCKING / TO BE STOCKED</h3><span>Jednostki w lokalizacjach</span></div><div class="stk-scroller" id="stkUnits"></div></article>
+ <article class="stk-card"><div class="stk-cardtop"><h3>MP STOCK BY BRAND</h3></div><div class="stk-scroller" id="stkByBrand"></div></article>
+ <article class="stk-card"><div class="stk-cardtop"><h3>RS1 STOCK</h3></div><div class="stk-scroller" id="stkRS1"></div></article>
+ <article class="stk-card"><div class="stk-cardtop"><h3>AVG UNITS IN SHELVES GLOBALLY</h3></div><div class="stk-bigmetric" id="stkAvg">—</div><div class="stk-note">Średnia ważona liczbą półek z eksportu</div></article></div><div class="stk-footer">Dane są lokalne w tej przeglądarce. Import nie aktualizuje danych w Power BI. Procenty przedstawiają wartości z eksportu (0–100).</div>`;
+ document.querySelector('.shell').append(section);
+ const css=document.createElement('link');css.rel='stylesheet';css.href='stock-control.css';document.head.append(css);
+ const key=(b,l)=>name(b)+'\u0000'+name(l);
+ const groups=()=>{const names=new Set();for(const t of ['shelves','units'])for(const r of datasets[t]?.rows||[])names.add(r.brand);return [...names].sort((a,b)=>['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(a)-['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(b)||a.localeCompare(b))};
+ const filtered=rows=>(rows||[]).filter(x=>!selected.size||selected.has(x.brand));
+ function fail(s){el('stkAlert').textContent=s;el('stkAlert').hidden=!s}
+ function table(heads,rows,footer){if(!rows.length)return '<div class="stk-empty">Brak danych dla wybranych marek. Wczytaj odpowiedni plik Export lub zmień filtr.</div>';
+ const th=heads.map(h=>`<th>${html(h)}</th>`).join('');const tr=rows.map(row=>'<tr>'+row.map(cell=>{const obj=typeof cell==='object'&&cell!==null?cell:{value:cell};return `<td${obj.pct?' class="stk-percent '+(obj.value>=90?'stk-bad':obj.value>=70?'stk-mid':'stk-good')+'"':''}${obj.text?' class="stk-text"':''}>${html(typeof obj.value==='number'?fmt(obj.value,obj.dec??0):obj.value??'—')}</td>`}).join('')+'</tr>').join('');const end=footer?'<tfoot><tr>'+footer.map(x=>`<td>${html(typeof x==='number'?fmt(x):x)}</td>`).join('')+'</tr></tfoot>':'';return `<table class="stk-table"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody>${end}</table>`;}
+ const P=(x)=>({value:x,pct:true,dec:2});
+ function sum(rows,k){return rows.reduce((s,r)=>s+(r[k]||0),0)}
+ function render(){const br=groups();for(const b of [...selected])if(!br.includes(b))selected.delete(b);
+ el('stkBrands').innerHTML=`<button type="button" data-brand="*" class="${selected.size?'':'active'}">Wszystkie marki</button>`+br.map(b=>`<button type="button" data-brand="${html(b)}" class="${selected.has(b)?'active':''}">${html(b)}</button>`).join('');
+ const labels={shelves:'ALL SHELVES',units:'NO OF UNITS',rs1:'RS1 STOCK'};el('stkSources').innerHTML=Object.entries(labels).map(([k,label])=>`<div class="stk-source ${datasets[k]?'loaded':''}"><span>${datasets[k]?'✓':'○'} ${label}</span><strong>${html(datasets[k]?.file||'Nie wczytano')}</strong></div>`).join('');
+ const s=filtered(datasets.shelves?.rows),u=filtered(datasets.units?.rows);
+ const all=sum(s,'all'),full=sum(s,'full'),empty=sum(s,'empty'),stock=sum(u,'stock'),todo=sum(u,'todo');
+ const kpis=[['Wszystkie półki',all,!!datasets.shelves],['Z towarem',full,!!datasets.shelves],['Puste półki',empty,!!datasets.shelves],['% zapełnienia',all?full/all*100:0,!!datasets.shelves,true],['MP STOCKING',stock,!!datasets.units],['DO ROZŁOŻENIA',todo,!!datasets.units]];
+ el('stkKpis').innerHTML=kpis.map(([label,v,has,percent])=>`<div class="stk-kpi"><span>${label}</span><strong>${has?(fmt(v,percent?2:0)+(percent?'%':'')):'—'}</strong></div>`).join('');
+ el('stkShelves').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','ALL SHELVES','AVG UNITS','TOTAL UNITS','MP1','MP2','MP3','WITH STOCK','% FULL','MP1','MP2','MP3','EMPTY','% EMPTY'],s.map(r=>[r.brand,r.loc,...r.a,r.all,{value:r.avg,dec:2},{value:r.totalUnits,dec:2},...r.f,r.full,P(r.fullPct),...r.e,r.empty,P(r.emptyPct)]),['Suma','',...['','',''],all,'','',...['','',''],full,all?fmt(full/all*100,2)+'%':'—',...['','',''],empty,all?fmt(empty/all*100,2)+'%':'—']);
+ el('stkUnits').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','MP STOCKING','% FULL','MP1','MP2','MP3','TO BE STOCKED','% EMPTY'],u.map(r=>[r.brand,r.loc,...r.a,r.stock,P(r.fullPct),...r.b,r.todo,P(r.emptyPct)]),['Suma','',...['','',''],stock,'',...['','',''],todo,'']);
+ const per=new Map();for(const r of u){const item=per.get(r.brand)||{brand:r.brand,stock:0,todo:0};item.stock+=r.stock;item.todo+=r.todo;per.set(r.brand,item)}el('stkByBrand').innerHTML=table(['BRAND','MP STOCKING','TO BE STOCKED'],[...per.values()].map(r=>[r.brand,r.stock,r.todo]),['Suma',stock,todo]);
+ const rs=datasets.rs1?.rows||[];el('stkRS1').innerHTML=table(['SYSTEM','NO OF ITEMS','NO OF TSUS','AVG NO OF ITEMS'],rs.map(r=>[r.system,r.items,r.tsus,{value:r.avg,dec:2}]),['Suma',sum(rs,'items'),sum(rs,'tsus'),'']);
+ const weighted=s.reduce((acc,r)=>acc+r.avg*r.all,0);el('stkAvg').textContent=s.length&&all>0?fmt(weighted/all,2):'—';
  }
- function parseRows(rows){let start=-1,mapping={};for(let i=0;i<Math.min(rows.length,35);i++){const cells=rows[i].map(norm);let map={};for(const [name,possible] of Object.entries(alias)){const idx=cells.findIndex(v=>possible.includes(v));if(idx>=0)map[name]=idx;}if(map.brand!==undefined&&map.loc!==undefined&&map.shelves!==undefined&&Object.keys(map).length>=4){start=i;mapping=map;break;}}
- if(start<0)throw Error('Nie rozpoznano kolumn. Wymagane: BRAND, LOCATION TYPE, SHELVES oraz co najmniej jedna kolumna liczbowa. Użyj załączonego wzoru.');
- const data=[];for(let i=start+1;i<rows.length;i++){let row=rows[i],brand=norm(row[mapping.brand]),loc=String(row[mapping.loc]??'').trim();if(!brand||!loc||/^(SUMA|TOTAL|RAZEM)$/i.test(brand))continue;
- const r={brand,loc};for(const k of ['shelves','full','empty','stocking','toStock','rsItems','rsTsus']){const value=mapping[k]===undefined?0:num(row[mapping[k]]);if(!Number.isFinite(value)||value<0)throw Error('Nieprawidłowa liczba w wierszu '+(i+1)+': '+k);r[k]=value;}
- if(mapping.full===undefined&&mapping.empty!==undefined)r.full=Math.max(0,r.shelves-r.empty);if(mapping.empty===undefined&&mapping.full!==undefined)r.empty=Math.max(0,r.shelves-r.full);
- data.push(r);if(data.length>10000)throw Error('Limit: 10 000 wierszy');}
- if(!data.length)throw Error('Plik nie zawiera danych.');return data;}
- async function importFile(file){if(!file)return;if(file.size>10_000_000){$('stkMessage').textContent='Plik przekracza 10 MB.';return;}try{const buf=await file.arrayBuffer();let rows,errors=[];for(const sheet of ['STOCK','STOCK CONTROL','Sheet1','Arkusz1','Dane','Data','RAPORT']){try{rows=await xlsxRows(buf,sheet);break}catch(e){errors.push(e.message);if(!/Brak arkusza/.test(e.message))throw e}}
- if(!rows)throw Error('Brak obsługiwanego arkusza STOCK / Sheet1 / Arkusz1 / Dane / Data / RAPORT.');const parsed=parseRows(rows);records=parsed;source=file.name;chosen.clear();try{localStorage.setItem(key,JSON.stringify({rows:records,source}))}catch(e){$('stkMessage').textContent='Zaimportowano, ale brak miejsca na zapis lokalny.'}render();$('stkMessage').textContent=`Wczytano ${parsed.length} wierszy z ${file.name}.`;}
- catch(e){$('stkMessage').textContent='Nie wczytano pliku: '+e.message}}
- function show(){area.hidden=false;tab.classList.add('active');for(const el of ['norms','assign','workerArea','resultViews','infoSlidesArea']){const node=$(el);if(node)node.hidden=true}for(const id of ['results','assignment','infoSlidesTab'])$(id)?.classList.remove('active');$('upload').hidden=true;$('settings').hidden=true;$('tv').hidden=true;render()}
- function hide(){if(area.hidden)return;area.hidden=true;tab.classList.remove('active');if(document.activeElement?.id==='results')$('resultViews').hidden=false;$('upload').hidden=false;$('settings').hidden=false;$('tv').hidden=false;if(isTV)stopTV()}
- function startTV(){isTV=true;area.classList.add('stock-tv');document.body.classList.add('stock-tv-active');$('stkTv').textContent='✕ Wyjdź z TV';area.requestFullscreen?.().catch(()=>{});}
- function stopTV(){isTV=false;area.classList.remove('stock-tv');document.body.classList.remove('stock-tv-active');$('stkTv').textContent='▣ Tryb TV';if(document.fullscreenElement===area)document.exitFullscreen?.().catch(()=>{})}
- tab.addEventListener('click',show);
- for(const id of ['results','assignment','infoSlidesTab'])$(id)?.addEventListener('click',()=>{hide();if(id==='results')$('resultViews').hidden=false},true);
- document.addEventListener('click',e=>{if(!area.hidden&&e.target.closest?.('#back'))hide()});
- $('stkImport').onclick=()=>$('stkFile').click();$('stkFile').onchange=e=>{importFile(e.target.files[0]);e.target.value=''};
- $('stkReset').onclick=()=>{if(!confirm('Usunąć zaimportowane dane STOCK CONTROL z tej przeglądarki?'))return;records=[];source='';chosen.clear();localStorage.removeItem(key);render()};
- $('stkTv').onclick=()=>isTV?stopTV():startTV();
- $('stkBrands').onclick=e=>{const target=e.target.closest('button[data-brand]');if(!target)return;const b=target.dataset.brand;if(b==='*')chosen.clear();else if(chosen.has(b))chosen.delete(b);else chosen.add(b);render()};
- document.addEventListener('fullscreenchange',()=>{if(isTV&&document.fullscreenElement!==area)stopTV()});
+ function readRows(rows,kind,file){if(!Array.isArray(rows)||!rows.length)throw Error('Pusty arkusz Export');const h=(rows[0]||[]).map(name);const at=(x,start=0)=>h.findIndex((v,i)=>i>=start&&v===x);let parsed=[];
+ if(kind==='shelves'){
+  if(h[0]!=='BRAND (LOC SUBAREA)'||h[1]!=='LOCATION TYPE'||h[5]!=='MP1+MP2+MP3'||h[12]!=='% OF FULNESS'||h[17]!=='% OF EMPTY')throw Error('Niewłaściwa struktura data (1): wymagane kolumny ALL SHELVES');
+  parsed=rows.slice(1).filter(r=>r[0]&&r[1]&&!['TOTAL','SUMA'].includes(name(r[0]))).map(r=>({brand:name(r[0]),loc:String(r[1]).trim(),a:[2,3,4].map(i=>number(r[i])),all:number(r[5]),avg:number(r[6]),totalUnits:number(r[7]),f:[8,9,10].map(i=>number(r[i])),full:number(r[11]),fullPct:number(r[12]),e:[13,14,15].map(i=>number(r[i])),empty:number(r[16]),emptyPct:number(r[17])}));
+ }else if(kind==='units'){
+  if(h[0]!=='BRAND (LOC SUBAREA)'||h[1]!=='LOCATION TYPE'||h[5]!=='MP STOCKING'||h[10]!=='MP TO BE STOCKED')throw Error('Niewłaściwa struktura data (2): wymagane MP STOCKING / MP TO BE STOCKED');
+  parsed=rows.slice(1).filter(r=>r[0]&&r[1]&&!['TOTAL','SUMA'].includes(name(r[0]))).map(r=>({brand:name(r[0]),loc:String(r[1]).trim(),a:[2,3,4].map(i=>number(r[i])),stock:number(r[5]),fullPct:number(r[6]),b:[7,8,9].map(i=>number(r[i])),todo:number(r[10]),emptyPct:number(r[11])}));
+ }else{
+  if(h[0]!=='SYSTEM'||h[1]!=='NO OF ITEMS'||h[2]!=='NO OF TSUS'||h[3]!=='AVG NO OF ITEMS')throw Error('Niewłaściwa struktura RS1 STOCK');
+  parsed=rows.slice(1).filter(r=>r[0]&&!['TOTAL','SUMA'].includes(name(r[0]))).map(r=>({system:name(r[0]),items:number(r[1]),tsus:number(r[2]),avg:number(r[3])}));
+ }
+ if(!parsed.length)throw Error('Nie znaleziono wierszy danych');if(parsed.length>5000)throw Error('Za dużo wierszy: limit 5000');
+ for(const r of parsed)for(const value of Object.values(r))if(typeof value==='number'&&!valid(value)||Array.isArray(value)&&!value.every(valid))throw Error('Nieprawidłowa liczba w '+file);
+ return {file,rows:parsed};
+ }
+ function identify(rows){const h=(rows[0]||[]).map(name);if(h[0]==='SYSTEM'&&h.includes('NO OF ITEMS'))return'rs1';if(h[0]==='BRAND (LOC SUBAREA)'&&h.includes('MP STOCKING'))return'units';if(h[0]==='BRAND (LOC SUBAREA)'&&h.includes('AVG UNITS'))return'shelves';return null}
+ function persist(){try{localStorage.setItem(STORE,JSON.stringify({datasets,selected:[...selected]}));return true}catch{return false}}
+ async function ingest(files){if(!files.length)return;let successful=[],failed=[];let pending={...datasets};for(const file of files){try{if(!/\.xlsx$/i.test(file.name))throw Error('Tylko .xlsx');if(file.size>10_000_000)throw Error('Plik powyżej 10 MB');const rows=await xlsxRows(await file.arrayBuffer(),'Export');const kind=identify(rows);if(!kind)throw Error('Nieznany format Export');pending[kind]=readRows(rows,kind,file.name);successful.push(file.name+' → '+kind)}catch(e){failed.push(file.name+': '+e.message)}}
+ datasets=pending;selected.clear();const saved=persist();render();fail(`${successful.length?'Wczytano: '+successful.join(' · ')+'. ':''}${failed.length?'Błędy: '+failed.join(' · ')+'. ':''}${saved?'':'Dane wyświetlono, ale nie udało się ich zapisać w przeglądarce.'}`)}
+ function open(){section.hidden=false;tab.classList.add('active');for(const k of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(k))el(k).hidden=true;for(const k of ['results','assignment','infoSlidesTab'])el(k)?.classList.remove('active');el('upload').hidden=true;el('settings').hidden=true;el('tv').hidden=true;render()}
+ function close(){section.hidden=true;tab.classList.remove('active');el('upload').hidden=false;el('settings').hidden=false;el('tv').hidden=false;if(tv)toggleTV(false)}
+ function toggleTV(on){tv=on;section.classList.toggle('stk-tv',on);document.body.classList.toggle('stk-tv-active',on);el('stkTV').textContent=on?'✕ Zakończ':'▣ Pełny ekran';if(on)section.requestFullscreen?.().catch(()=>{});else if(document.fullscreenElement===section)document.exitFullscreen?.().catch(()=>{})}
+ tab.addEventListener('click',open);for(const id of ['assignment','results','infoSlidesTab'])el(id)?.addEventListener('click',close,true);
+ el('stkChoose').onclick=()=>el('stkFiles').click();el('stkFiles').onchange=e=>{ingest([...e.target.files]);e.target.value=''};
+ el('stkBrands').onclick=e=>{const b=e.target.closest('button[data-brand]')?.dataset.brand;if(!b)return;if(b==='*')selected.clear();else if(selected.has(b))selected.delete(b);else selected.add(b);persist();render()};
+ el('stkTV').onclick=()=>toggleTV(!tv);document.addEventListener('fullscreenchange',()=>{if(tv&&document.fullscreenElement!==section)toggleTV(false)});
+ el('stkDelete').onclick=()=>{if(!confirm('Usunąć wyłącznie lokalne dane STOCK CONTROL?'))return;datasets={shelves:null,units:null,rs1:null};selected.clear();localStorage.removeItem(STORE);render();fail('Usunięto dane STOCK CONTROL.');};
  render();
 })();
