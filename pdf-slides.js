@@ -6,6 +6,63 @@
   const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&amp;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const uid=()=>`pdf${Date.now().toString(36)}${Math.random().toString(36).slice(2,9)}`;
   let db=null,records=[],selectedPdf=null,viewerUrl=null,tvUrl=null,installed=false,observer=null;
+  // The TV uses an actual page canvas rather than Edge's built-in PDF viewer.
+  // The viewer remains available as a fallback if the renderer cannot load.
+  let tvRenderToken=0, tvPDFDocument=null, pdfLoaderPromise=null, tvRecord=null;
+  const PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  function pdfEngine(){
+    if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+    if(pdfLoaderPromise)return pdfLoaderPromise;
+    pdfLoaderPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');script.src=PDFJS_URL;
+      script.crossOrigin='anonymous';script.async=true;
+      script.onload=()=>window.pdfjsLib?resolve(window.pdfjsLib):reject(Error('Brak renderer PDF'));
+      script.onerror=()=>reject(Error('Nie można pobrać modułu podglądu PDF'));
+      document.head.append(script);
+    }).catch(err=>{pdfLoaderPromise=null;throw err});
+    return pdfLoaderPromise;
+  }
+  async function drawTVPDF(record,token){
+    const canvas=$('pdfTVCanvas'),frame=$('pdfTVFrame'),status=$('pdfTVStatus');
+    if(!canvas||!record)return;
+    status.hidden=true; canvas.hidden=true; frame.hidden=true;
+    try{
+      const lib=await pdfEngine();if(token!==tvRenderToken)return;
+      lib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+      const bytes=new Uint8Array(await record.blob.arrayBuffer());
+      const task=lib.getDocument({data:bytes});
+      const pdf=await task.promise;
+      if(token!==tvRenderToken){pdf.destroy();return;}
+      if(tvPDFDocument&&tvPDFDocument!==pdf)tvPDFDocument.destroy();
+      tvPDFDocument=pdf;
+      const page=await pdf.getPage(1);
+      if(token!==tvRenderToken)return;
+      const vp=page.getViewport({scale:1});
+      const host=$('pdfSlidesTV').querySelector('.pdfs-tv-stage');
+      const box=host.getBoundingClientRect();
+      const scale=Math.max(.1,Math.min((box.width-12)/vp.width,(box.height-12)/vp.height));
+      const dpr=Math.min(2,window.devicePixelRatio||1);
+      const renderViewport=page.getViewport({scale:scale*dpr});
+      canvas.width=Math.max(1,Math.ceil(renderViewport.width));
+      canvas.height=Math.max(1,Math.ceil(renderViewport.height));
+      canvas.style.width=(renderViewport.width/dpr)+'px';
+      canvas.style.height=(renderViewport.height/dpr)+'px';
+      const ctx=canvas.getContext('2d',{alpha:false});
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx,viewport:renderViewport}).promise;
+      if(token!==tvRenderToken)return;
+      canvas.hidden=false;
+    }catch(err){
+      if(token!==tvRenderToken)return;
+      console.warn('INCYDENTY: PDF canvas renderer unavailable:',err);
+      // Fallback keeps the document accessible, although Edge can show margins.
+      frame.hidden=false;
+      status.hidden=false;
+      status.textContent='Podgląd PDF: używany jest tryb awaryjny przeglądarki.';
+    }
+  }
+
   const openDB=()=>new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'});};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
   const tx=(mode,fn)=>new Promise((res,rej)=>{const t=db.transaction(STORE,mode),r=fn(t.objectStore(STORE));t.oncomplete=()=>res(r?.result);t.onerror=()=>rej(t.error);});
   function message(text,error=false){const e=$('pdfInlineMessage');if(e){e.textContent=text;e.dataset.error=error?'true':'false';}}
@@ -19,6 +76,10 @@
     stage.style.height=Math.max(240,Math.floor(window.innerHeight-top-12))+'px';
   }
   function closeTV(){
+    tvRenderToken++;tvRecord=null;
+    if(tvPDFDocument){tvPDFDocument.destroy();tvPDFDocument=null;}
+    if($('pdfTVCanvas'))$('pdfTVCanvas').hidden=true;
+    if($('pdfTVStatus'))$('pdfTVStatus').hidden=true;
     const wrap=$('pdfSlidesTV'),area=$('infoSlidesArea');
     if(wrap){wrap.hidden=true;wrap.style.height='';wrap.querySelector('iframe')?.removeAttribute('src');}
     area?.classList.remove('pdf-tv-mode');
@@ -74,13 +135,14 @@
     for(const id of ['norms','assign','workerArea']){const node=$(id);if(node)node.hidden=true;}
     const stockHeading=$('stkTVTitle');if(stockHeading)stockHeading.hidden=true;
     document.body.classList.add('inc-pdf-tv-screen');
-    tvUrl=URL.createObjectURL(r.blob);
+    tvRecord=r;tvUrl=URL.createObjectURL(r.blob);
     $('pdfTVName').textContent=r.title;
     $('pdfTVFrame').src=tvUrl+'#toolbar=0&navpanes=0&scrollbar=0&view=Fit&zoom=page-fit';
     $('pdfTVOpen').href=tvUrl;$('pdfTVOpen').download=r.fileName;
     area.hidden=false;area.classList.add('pdf-tv-mode');wrap.hidden=false;
     $('isaTV')?.setAttribute('hidden','');
-    requestAnimationFrame(()=>requestAnimationFrame(fitPDFScreen));
+    const renderToken=++tvRenderToken;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitPDFScreen();drawTVPDF(r,renderToken)}));
   }
   async function add(file){
     if(!file)return;
@@ -116,7 +178,7 @@
     if(editor)editor.insertAdjacentElement('afterend',box);else area.querySelector('.isa-shell')?.append(box);
     $('pdfInlineDelete').onclick=remove;
     const tv=document.createElement('div');tv.id='pdfSlidesTV';tv.hidden=true;
-    tv.innerHTML='<div class="pdfs-tv-title" id="pdfTVName"></div><div class="pdfs-tv-stage"><iframe id="pdfTVFrame" title="Plan ewakuacji PDF" loading="eager"></iframe></div><div class="pdfs-tv-fallback"><a id="pdfTVOpen" target="_blank" rel="noopener">Otwórz oryginalny PDF</a></div>';
+    tv.innerHTML='<div class="pdfs-tv-title" id="pdfTVName"></div><div class="pdfs-tv-stage"><canvas id="pdfTVCanvas" aria-label="Plan ewakuacji" hidden></canvas><iframe id="pdfTVFrame" title="Plan ewakuacji PDF" loading="eager" hidden></iframe></div><div id="pdfTVStatus" hidden></div><div class="pdfs-tv-fallback"><a id="pdfTVOpen" target="_blank" rel="noopener">Otwórz oryginalny PDF</a></div>';
     area.append(tv);
     // Select a PDF through the existing "Zapisane podstrony" list.
     $('isaList').addEventListener('click',e=>{
@@ -160,10 +222,18 @@
       #pdfSlidesTV iframe{width:100%;height:100%;border:0;display:block;background:#fff}
       #pdfSlidesTV .pdfs-tv-fallback{text-align:center;font-size:11px;color:#667e90}
       #pdfSlidesTV .pdfs-tv-fallback a{color:#176ca7}
+      body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-stage{display:flex;align-items:center;justify-content:center;background:#fff!important;overflow:hidden}
+      body.inc-pdf-tv-screen #pdfTVCanvas{display:block;max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+      body.inc-pdf-tv-screen #pdfTVCanvas[hidden],body.inc-pdf-tv-screen #pdfTVFrame[hidden]{display:none!important}
+      body.inc-pdf-tv-screen #pdfTVStatus{position:absolute;bottom:12px;left:20px;font-size:11px;color:#718096}
+      body.inc-pdf-tv-screen #pdfTVFrame:not([hidden]){clip-path:inset(0 11% 0 11%)}
       @media(max-width:780px){#infoSlidesArea .isa-heading>.pdfs-header-actions{grid-column:1;justify-self:center;justify-content:center}#pdfInlineViewer{grid-column:1;min-height:400px}}
     `;document.head.append(style);
-    window.addEventListener('resize',fitPDFScreen);
-    document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitPDFScreen));
+    let tvResizeId;
+    window.addEventListener('resize',()=>{fitPDFScreen();if(tvRecord){clearTimeout(tvResizeId);tvResizeId=setTimeout(()=>drawTVPDF(tvRecord,++tvRenderToken),140);}});
+    document.addEventListener('fullscreenchange',()=>requestAnimationFrame(()=>{
+      fitPDFScreen();if(tvRecord)drawTVPDF(tvRecord,++tvRenderToken);
+    }));
     pdfList();return true;
   }
   let tries=0;const timer=setInterval(()=>{if(install()||++tries>=200)clearInterval(timer)},50);
