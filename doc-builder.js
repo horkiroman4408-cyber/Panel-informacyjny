@@ -1,5 +1,5 @@
 'use strict';
-/* INCYDENTY · Konstruktor dokumentów · v1.1.64 compatible.
+/* INCYDENTY · Konstruktor scen TV · v1.1.64 compatible.
    Isolated editor, saved subpages, and unified TV. No changes to KPI or existing slides. */
 (()=>{
 const DB='incydenty-document-builder-v1',STORE='documents',MAX_IMG=6*1024*1024;
@@ -13,13 +13,13 @@ let undoStack=[];
 const baseSize={heading:[760,95],text:[660,150],step:[780,124],yesno:[840,208],table:[830,280],image:[500,310],alert:[790,136],panel:[480,185],arrow:[270,55]};
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const snap=v=>Math.round(v/10)*10;
-const page=()=>pages[active?.size]||pages['a4-portrait'];
+const page=()=>pages[active?.size]||pages.tv;
 const editor=()=>$('docBuilder');
 const root=()=>$('docCanvas');
 const viewport=()=>$('docCanvasSize');
 const make=(type)=>{
  const [w,h]=baseSize[type];
- return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',alert:'WAŻNE: wpisz komunikat.',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',bgSolid:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',radius:16,shadow:true,border:type==='panel'||type==='alert',align:'left',bold:type==='heading',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null};
+ return {id:uid(),type,x:70,y:80,w,h,z:1,text:({heading:'TYTUŁ DOKUMENTU',text:'Kliknij i wpisz treść…',step:'Opisz kolejny krok procedury.',yesno:'PYTANIE / DECYZJA',alert:'WAŻNE: wpisz komunikat.',panel:'Wpisz treść.',arrow:''})[type]||'',fontSize:type==='heading'?33:type==='text'?24:type==='step'?24:22,color:'#263d52',bg:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',bgSolid:type==='alert'?'#f9e6e2':type==='panel'?'#eef4f9':'#ffffff',radius:16,shadow:true,border:type==='panel'||type==='alert',align:'left',bold:type==='heading',takLabel:'TAK',nieLabel:'NIE',tak:'Działanie po potwierdzeniu.',nie:'Działanie w przypadku odmowy.',yesBg:'#e4f0e7',noBg:'#fff2d1',yesBadge:'#4a9162',noBadge:'#cf951d',rows:[['OBSZAR','ODPOWIEDZIALNY','MIEJSCE'],['Zespół 1','Osoba funkcyjna','Brama T4'],['Zespół 2','Koordynator','Sala konferencyjna']],src:null};
 };
 function defaults(){const heading=make('heading');heading.x=65;heading.y=55;heading.w=870;heading.h=100;heading.text='NOWY DOKUMENT';heading.align='center';
  const subtitle=make('text');subtitle.x=80;subtitle.y=175;subtitle.w=840;subtitle.h=66;subtitle.text='Dodaj bloki z paska po lewej i zaprojektuj własną instrukcję.';subtitle.fontSize=19;subtitle.align='center';
@@ -50,13 +50,34 @@ function docList(){const target=$('isaList');if(!target||!db)return;
  const count=$('isaCount');if(count){count.textContent=String(target.querySelectorAll('button[data-id],button[data-pdf-page],button[data-doc-page]').length);}
 }
 function blank(){if(modified&&!confirm('Masz niezapisane zmiany. Utworzyć nowy dokument?'))return;active=fresh();chosen=null;modified=true;undoStack=[];openEditor();say('Nowa strona jest gotowa. Dodaj elementy i zapisz dokument.');}
+function convertedLegacyScene(source){
+ // Keep original A4 untouched. This is a separate editable copy for the TV.
+ const copy=JSON.parse(JSON.stringify(source));copy.id=uid();copy.title+=' · Scena TV';copy.size='tv';copy.updatedAt=Date.now();
+ const blocks=copy.blocks.slice().sort((a,b)=>a.y-b.y||a.x-b.x);
+ const count=blocks.length,cols=count<=2?1:2,rows=Math.max(1,Math.ceil(count/cols));
+ const gap=16,pad=36,cellW=(1000-2*pad-gap*(cols-1))/cols,cellH=(563-2*pad-gap*(rows-1))/rows;
+ blocks.forEach((b,i)=>{
+  const col=i%cols,row=Math.floor(i/cols);
+  b.x=Math.round(pad+col*(cellW+gap));b.y=Math.round(pad+row*(cellH+gap));
+  b.w=Math.round(cellW);b.h=Math.round(Math.max(45,cellH));
+  b.fontSize=Math.min(Number(b.fontSize)||22,Math.max(13,rows>3?17:26));
+  b.radius=b.radius??16;b.shadow=b.shadow!==false;
+ });
+ copy.blocks=blocks;return copy;
+}
 function openStored(id){if(active?.id===id){openEditor();return;}if(modified&&!confirm('Masz niezapisane zmiany. Otworzyć inny dokument?'))return;
- const found=items.find(x=>x.id===id);if(!found)return;active=JSON.parse(JSON.stringify(found));chosen=null;modified=false;undoStack=[];openEditor();say('Dokument otwarty.');}
+ const found=items.find(x=>x.id===id);if(!found)return;
+ if(found.size!=='tv'){
+  if(!confirm('To archiwalny dokument A4. Utworzyć jego osobną kopię jako Scena TV 16:9? Oryginał A4 zostanie zachowany bez zmian.'))return;
+  active=convertedLegacyScene(found);modified=true;
+ }else{active=JSON.parse(JSON.stringify(found));modified=false;}
+ chosen=null;undoStack=[];openEditor();say(found.size!=='tv'?'Utworzono kopię Scena TV. Sprawdź ułożenie bloków i kliknij Zapisz.':'Scena otwarta.');}
+
 function openEditor(){if(!active)return;const info=$('infoSlidesArea');if(!info)return;
  info.hidden=false;$('isaTV').hidden=true;for(const node of info.querySelectorAll('#isaList button.selected:not([data-doc-page])'))node.classList.remove('selected');const pdf=$('pdfInlineViewer');if(pdf)pdf.hidden=true;
  const slideEditor=info.querySelector('.isa-editor');if(slideEditor)slideEditor.hidden=true;
  editor().hidden=false;editor().classList.remove('doc-TV');
- $('docTitle').value=active.title;$('docSize').value=active.size;$('docZoom').value=zoom;
+ $('docTitle').value=active.title;$('docZoom').value=zoom;
  $('docSave').textContent=modified?'● Zapisz':'Zapisz';
  render();docList();
  // Call base tab's open handler only when switching from an unrelated tab.
@@ -68,7 +89,15 @@ function openEditor(){if(!active)return;const info=$('infoSlidesArea');if(!info)
 function closeEditor(){if(editor()){editor().hidden=true;editor().classList.remove('doc-TV');}const normal=$('infoSlidesArea')?.querySelector('.isa-editor');if(normal)normal.hidden=false;docList();}
 function fieldMarkup(b,editable){const cls='doc-field '+(b.type==='heading'?'doc-heading':'');const txt=esc(b.text).replace(/\n/g,'<br>');
  if(b.type==='table')return `<table class="doc-table"><tbody>${(b.rows||[]).map((row,ri)=>`<tr>${row.map((v,ci)=>`<${ri?'td':'th'} data-row="${ri}" data-col="${ci}" ${editable?'contenteditable="true"':''}>${esc(v)}</${ri?'td':'th'}>`).join('')}</tr>`).join('')}</tbody></table>`;
- if(b.type==='yesno')return `<div class="doc-question">${esc(b.text||'PYTANIE / DECYZJA')}</div><div class="doc-yesno"><div><strong>TAK</strong><span>${esc(b.tak||'')}</span></div><div><strong>NIE</strong><span>${esc(b.nie||'')}</span></div></div>`;
+ if(b.type==='yesno'){
+  const edit=(field,hint)=>editable?`contenteditable="true" spellcheck="true" data-yesno-part="${field}" data-placeholder="${hint}"`:'';
+  const val=(v,fallback)=>esc(v===undefined||v===null?fallback:String(v)).replace(/\n/g,'<br>');
+  return `<div class="doc-question" ${edit('text','Wpisz pytanie')}>${val(b.text,'PYTANIE / DECYZJA')}</div>`+
+   `<div class="doc-yesno">`+
+   `<div><strong ${edit('takLabel','TAK')}>${val(b.takLabel,'TAK')}</strong><span ${edit('tak','Opisz działanie')}>${val(b.tak,'')}</span></div>`+
+   `<div><strong ${edit('nieLabel','NIE')}>${val(b.nieLabel,'NIE')}</strong><span ${edit('nie','Opisz działanie')}>${val(b.nie,'')}</span></div>`+
+   `</div>`;
+ }
  if(b.type==='image')return b.src?`<img src="${b.src}" alt="Zdjęcie dokumentu" draggable="false">`:'<div class="doc-image-empty">▧ Dodaj zdjęcie w panelu właściwości</div>';
  if(b.type==='arrow')return `<div class="doc-arrowline"></div>`;
  return `<div class="${cls}" ${editable?'contenteditable="true" spellcheck="true"':''}>${txt||'&nbsp;'}</div>`;
@@ -86,6 +115,12 @@ function buildBlock(b,editable=false){const n=document.createElement('div');n.cl
  n.style.setProperty('--doc-font',(Number(b.fontSize)||22)+'px');
  n.style.setProperty('--doc-align',b.align||'left');
  n.style.setProperty('--doc-weight',b.bold?'750':'450');
+ if(b.type==='yesno'){
+  n.style.setProperty('--doc-yes-bg',b.yesBg||'#e4f0e7');
+  n.style.setProperty('--doc-no-bg',b.noBg||'#fff2d1');
+  n.style.setProperty('--doc-yes-badge',b.yesBadge||'#4a9162');
+  n.style.setProperty('--doc-no-badge',b.noBadge||'#cf951d');
+ }
  n.innerHTML=editable?`<button class="doc-move" type="button" aria-label="Przesuń element" title="Przeciągnij, aby przenieść">⠿</button><button class="doc-remove-inline" type="button" aria-label="Usuń element" title="Usuń blok">×</button><button class="doc-resize" type="button" aria-label="Zmień rozmiar" title="Przeciągnij, aby zmienić rozmiar">↘</button><div class="doc-element-content">${fieldMarkup(b,editable)}</div>`:`<div class="doc-element-content">${fieldMarkup(b,editable)}</div>`;
  n.classList.toggle('doc-framed',!!b.border);return n;}
 function fit(){if(!active||editor().hidden)return;const width=page().w,height=page().h;
@@ -96,7 +131,7 @@ function fit(){if(!active||editor().hidden)return;const width=page().w,height=pa
  Object.assign(root().style,{width:width+'px',height:height+'px',transform:'scale('+scale+')'});
 }
 function render(){if(!active)return;const canvas=root();canvas.replaceChildren(...active.blocks.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(b=>buildBlock(b,true)));
- $('docSize').value=active.size;root().classList.toggle('doc-canvas-empty',active.blocks.length===0);editor().classList.toggle('doc-mode-scene',active.size==='tv');$('docModeHint').textContent=active.size==='tv'?'Scena TV: tło aplikacji i niezależne karty. Przesuwaj elementy w obrębie formatu 16:9.':'Dokument A4: układ papierowy. Na ekranie TV elementy są pokazywane jako osobne karty, bez białego arkusza.';editInspector();requestAnimationFrame(fit);}
+ root().classList.toggle('doc-canvas-empty',active.blocks.length===0);editor().classList.add('doc-mode-scene');$('docModeHint').textContent='Scena TV: tło aplikacji i niezależne karty. Przesuwaj elementy w obrębie formatu 16:9.';editInspector();requestAnimationFrame(fit);}
 function editInspector(){const b=active?.blocks.find(x=>x.id===chosen);$('docNoSelection').hidden=!!b;$('docProperties').hidden=!b;
  if(!b)return;
  $('docBlockType').textContent=types[b.type]||b.type;
@@ -104,7 +139,9 @@ function editInspector(){const b=active?.blocks.find(x=>x.id===chosen);$('docNoS
  $('docTransparent').checked=b.bg==='transparent';$('docBackground').disabled=b.bg==='transparent';$('docRadius').value=b.radius??16;$('docShadow').checked=b.shadow!==false;
  $('docImageRow').hidden=b.type!=='image';$('docTextOptions').hidden=['table','image','arrow'].includes(b.type);
  $('docYesNoOptions').hidden=b.type!=='yesno';$('docTableOptions').hidden=b.type!=='table';
- $('docTak').value=b.tak||'';$('docNie').value=b.nie||'';
+ if(b.type==='yesno'){
+  for(const [id,value] of [['docQuestion',b.text??'PYTANIE / DECYZJA'],['docTakLabel',b.takLabel??'TAK'],['docTak',b.tak??''],['docNieLabel',b.nieLabel??'NIE'],['docNie',b.nie??''],['docYesBg',b.yesBg||'#e4f0e7'],['docNoBg',b.noBg||'#fff2d1'],['docYesBadge',b.yesBadge||'#4a9162'],['docNoBadge',b.noBadge||'#cf951d']])$(id).value=value;
+ }
 }
 function activate(id){if(chosen===id)return;chosen=id;for(const n of root().querySelectorAll('.doc-element'))n.classList.toggle('selected',n.dataset.blockId===id);editInspector();}
 function addType(type){if(!active)return;if(!types[type])return;
@@ -117,7 +154,7 @@ function addType(type){if(!active)return;if(!types[type])return;
    if(!overlap){place={x,y};break;}
   }
  }
- if(!place){say('Brak miejsca na kolejny element. Zmniejsz bloki lub wybierz większy format strony.',true);return;}
+ if(!place){say('Brak miejsca na kolejny element. Zmniejsz albo przesuń istniejące bloki.',true);return;}
  history();b.x=place.x;b.y=place.y;b.z=1+Math.max(0,...active.blocks.map(v=>v.z||1));active.blocks.push(b);chosen=b.id;dirty();render();say('Element dodany. Przeciągnij za uchwyt i dopasuj jego rozmiar.');}
 function addScenePreset(){if(!active||active.size!=='tv')return;
  if(active.blocks.length&&!confirm('Zastąpić obecne bloki układem zdjęcie + tekst?'))return;
@@ -139,7 +176,7 @@ function uploadPhoto(file){if(!file)return;const b=active?.blocks.find(x=>x.id==
  if(!file.type.startsWith('image/')||file.size>MAX_IMG){say('Wybierz obraz JPG, PNG lub WebP do 6 MB.',true);return;}
  const reader=new FileReader();reader.onload=()=>{history();b.src=reader.result;dirty();render();say('Zdjęcie dodane.');};reader.onerror=()=>say('Nie udało się wczytać zdjęcia.',true);reader.readAsDataURL(file);}
 function onInspector(e){const b=active?.blocks.find(x=>x.id===chosen);if(!b)return;const id=e.target.id;
- const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTransparent:'bg',docRadius:'radius',docShadow:'shadow',docTak:'tak',docNie:'nie'};
+ const map={docColor:'color',docBackground:'bg',docFontSize:'fontSize',docAlign:'align',docBorder:'border',docTransparent:'bg',docRadius:'radius',docShadow:'shadow',docQuestion:'text',docTakLabel:'takLabel',docNieLabel:'nieLabel',docTak:'tak',docNie:'nie',docYesBg:'yesBg',docNoBg:'noBg',docYesBadge:'yesBadge',docNoBadge:'noBadge'};
  if(!map[id])return;history();
  if(id==='docTransparent'){if(e.target.checked){b.bgSolid=b.bg==='transparent'?(b.bgSolid||'#ffffff'):b.bg;b.bg='transparent';}else b.bg=b.bgSolid||'#ffffff';}
  else if(id==='docBackground'){b.bg=e.target.value;b.bgSolid=e.target.value;}
@@ -147,10 +184,22 @@ function onInspector(e){const b=active?.blocks.find(x=>x.id===chosen);if(!b)retu
  else if(id==='docRadius')b.radius=clamp(Number(e.target.value)||0,0,40);
  else if(id==='docShadow'||id==='docBorder')b[map[id]]=e.target.checked;
  else b[map[id]]=e.target.value;
- if(id==='docTak'||id==='docNie')b.text=b.text||'PYTANIE / DECYZJA';dirty();render();}
+ dirty();render();}
 function fromContent(e){const block=e.target.closest('[data-block-id]');if(!block||!active)return;
  const b=active.blocks.find(x=>x.id===block.dataset.blockId);if(!b)return;
- if(e.target.matches('td[data-row],th[data-row]')){const r=+e.target.dataset.row,c=+e.target.dataset.col;if(b.rows[r])b.rows[r][c]=(e.target.innerText||'').slice(0,400);}
+ const yesno=e.target.closest('[data-yesno-part]');
+ if(yesno&&b.type==='yesno'){
+  const field=yesno.dataset.yesnoPart;
+  if(['text','takLabel','nieLabel','tak','nie'].includes(field)){
+   const limit=field==='text'?500:field.endsWith('Label')?35:1500;
+   b[field]=(yesno.innerText||'').slice(0,limit);
+   // Keep the inspector synchronized without rebuilding the contenteditable DOM.
+   // Re-rendering here would move the caret and make typing nearly impossible.
+   const inspectorId={text:'docQuestion',takLabel:'docTakLabel',tak:'docTak',nieLabel:'docNieLabel',nie:'docNie'}[field];
+   if(inspectorId&&chosen===b.id&&$(inspectorId))$(inspectorId).value=b[field];
+  }
+ }
+ else if(e.target.matches('td[data-row],th[data-row]')){const r=+e.target.dataset.row,c=+e.target.dataset.col;if(b.rows[r])b.rows[r][c]=(e.target.innerText||'').slice(0,400);}
  else if(e.target.closest('.doc-field')){b.text=(e.target.closest('.doc-field').innerText||'').slice(0,3500);}
  else return;dirty();}
 function dragPointer(e,mode){const block=e.target.closest('[data-block-id]'),b=active?.blocks.find(x=>x.id===block?.dataset.blockId);if(!b||e.button!==0)return;
@@ -274,7 +323,7 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  const shell=info.querySelector('.isa-shell');if(!shell)return false;
  const pane=document.createElement('section');pane.id='docBuilder';pane.hidden=true;
  pane.innerHTML=`
- <div class="doc-topbar"><div class="doc-title-row"><label>Nazwa dokumentu<input id="docTitle" maxlength="110" placeholder="Nazwa podstrony"></label><label>Format<select id="docSize"><option value="tv">Scena TV · 16:9</option><option value="a4-portrait">Dokument · A4 pion</option><option value="a4-landscape">Dokument · A4 poziom</option></select></label><label>Widok<select id="docZoom"><option value="auto">Dopasuj</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></label></div>
+ <div class="doc-topbar"><div class="doc-title-row"><label>Nazwa dokumentu<input id="docTitle" maxlength="110" placeholder="Nazwa podstrony"></label><span class="doc-scene-format" title="Jedyny format konstruktora">Scena TV · 16:9</span><label>Widok<select id="docZoom"><option value="auto">Dopasuj</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option></select></label></div>
  <div class="doc-main-actions"><button type="button" id="docDuplicate">Kopiuj</button><button type="button" id="docRemove">Usuń</button><button class="doc-primary" type="button" id="docSave">Zapisz</button></div></div>
  <p id="docModeHint" class="doc-mode-hint"></p>
  <div class="doc-editor-layout"><aside class="doc-palette"><strong>Dodaj element</strong><div class="doc-palette-grid">
@@ -284,7 +333,12 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  <div class="doc-workspace" id="docCanvasViewport"><div id="docCanvasSize"><div id="docCanvas"></div></div></div>
  <aside class="doc-inspector"><strong>Właściwości bloku</strong><div id="docNoSelection" class="doc-help">Zaznacz element na stronie, aby zmienić jego wygląd.</div>
  <div id="docProperties" hidden><h3 id="docBlockType"></h3><label>Rozmiar tekstu<input id="docFontSize" type="number" min="10" max="90" step="1"></label><label>Kolor tekstu<input id="docColor" type="color"></label><label>Kolor tła<input id="docBackground" type="color"></label><label class="doc-inline">Bez tła <input id="docTransparent" type="checkbox"></label><label>Zaokrąglenie (px)<input id="docRadius" type="number" min="0" max="40" step="1"></label><label class="doc-inline">Cień <input id="docShadow" type="checkbox"></label><label>Wyrównanie<select id="docAlign"><option value="left">Do lewej</option><option value="center">Wyśrodkuj</option><option value="right">Do prawej</option></select></label><label class="doc-inline">Ramka <input id="docBorder" type="checkbox"></label>
- <div id="docTextOptions"><small>Tekst zmieniasz bezpośrednio w bloku.</small></div><div id="docYesNoOptions" hidden><label>TAK<textarea id="docTak" rows="3"></textarea></label><label>NIE<textarea id="docNie" rows="3"></textarea></label></div>
+ <div id="docTextOptions"><small>Tekst zmieniasz bezpośrednio w bloku.</small></div><div id="docYesNoOptions" hidden>
+ <small>Każdy napis możesz edytować również bezpośrednio na scenie.</small>
+ <label>Pytanie<textarea id="docQuestion" rows="2"></textarea></label>
+ <div class="doc-yesno-inspector-group"><strong>TAK</strong><label>Etykieta<input id="docTakLabel" type="text" maxlength="35"></label><label>Odpowiedź<textarea id="docTak" rows="3"></textarea></label><label>Kolor pola<input id="docYesBg" type="color"></label><label>Kolor etykiety<input id="docYesBadge" type="color"></label></div>
+ <div class="doc-yesno-inspector-group"><strong>NIE</strong><label>Etykieta<input id="docNieLabel" type="text" maxlength="35"></label><label>Odpowiedź<textarea id="docNie" rows="3"></textarea></label><label>Kolor pola<input id="docNoBg" type="color"></label><label>Kolor etykiety<input id="docNoBadge" type="color"></label></div>
+ </div>
  <div id="docTableOptions" hidden><button id="docAddRow" type="button">＋ Wiersz</button><button id="docAddCol" type="button">＋ Kolumna</button></div>
  <div id="docImageRow" hidden><label class="doc-file-label">Wybierz zdjęcie<input id="docImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden></label></div>
  <div class="doc-element-actions"><button type="button" id="docFront">Na wierzch</button><button type="button" id="docBack">Pod spód</button><button type="button" id="docCloneBlock">Kopiuj blok</button><button type="button" id="docDeleteBlock">Usuń blok</button></div></div></aside></div>
@@ -306,24 +360,26 @@ function install(){if(installed||!window.incSlides||!$('isaList')||!$('isaNew')|
  if(block)activate(block.dataset.blockId);
  });
  $('docCanvas').addEventListener('input',fromContent);
+ $('docCanvas').addEventListener('focusin',e=>{
+  if(e.target.closest('[data-yesno-part]')){
+   history();
+   const owner=e.target.closest('[data-block-id]');if(owner)activate(owner.dataset.blockId);
+  }
+ });
+ $('docCanvas').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.closest('[data-yesno-part="takLabel"],[data-yesno-part="nieLabel"]')){
+   e.preventDefault();e.target.blur();
+  }
+ });
  $('docCanvas').addEventListener('pointerdown',e=>{
   const block=e.target.closest('[data-block-id]');
   if(block&&!e.target.closest('[contenteditable=true]'))activate(block.dataset.blockId);
   if(e.target.closest('.doc-move'))dragPointer(e,'move');
   else if(e.target.closest('.doc-resize'))dragPointer(e,'resize');
  });
- for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTransparent','docRadius','docShadow','docTak','docNie'])$(id).addEventListener('change',onInspector);
+ for(const id of ['docColor','docBackground','docFontSize','docAlign','docBorder','docTransparent','docRadius','docShadow','docQuestion','docTakLabel','docTak','docNieLabel','docNie','docYesBg','docNoBg','docYesBadge','docNoBadge'])$(id).addEventListener('change',onInspector);
  $('docTitle').addEventListener('change',saveInput);
- $('docSize').addEventListener('change',e=>{if(!active)return;
- const next=pages[e.target.value];if(!next){e.target.value=active.size;return;}
- // Never silently overlap or crop safety instructions during page-format conversion.
- if(active.blocks.some(b=>b.x+b.w>next.w||b.y+b.h>next.h)){
-   e.target.value=active.size;
-   say('Nie można zmniejszyć strony: część bloków nie zmieści się. Przesuń lub zmniejsz je przed zmianą formatu.',true);
-   return;
- }
- active.size=e.target.value;dirty();render();});
- $('docZoom').addEventListener('change',e=>{zoom=e.target.value;fit();});
+  $('docZoom').addEventListener('change',e=>{zoom=e.target.value;fit();});
  $('docSave').onclick=save;$('docRemove').onclick=remove;$('docDuplicate').onclick=duplicate;$('docPresetPhotoText').onclick=addScenePreset;
  $('docCloneBlock').onclick=duplicateBlock;$('docDeleteBlock').onclick=deleteBlock;
  editor().addEventListener('keydown',event=>{

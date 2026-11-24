@@ -150,3 +150,19 @@ body.unified-tv #docTVPage.doc-tv-scene .doc-element{animation:incDocCardRise .6
 #docTVPage.doc-tv-adapted .doc-tv-content.doc-tv-single-card .doc-element-content{padding:20px 35px}
 #docTVPage.doc-tv-adapted .doc-tv-content>.doc-element,
 #docTVPage.doc-tv-adapted .doc-tv-document-heading>.doc-element{isolation:isolate}
+
+/* Scene-only editor: no A4 format selector. */
+#docBuilder .doc-scene-format{display:inline-flex;align-items:center;justify-content:center;min-height:35px;white-space:nowrap;border:1px solid #d5e4ef;border-radius:10px;padding:8px 12px;background:#eef6fc;color:#326286;font-size:11px;font-weight:750}
+#docBuilder .doc-yesno-inspector-group{display:grid;gap:8px;border:1px solid #dae5ef;border-radius:12px;padding:10px;background:#fff;min-width:0}
+#docBuilder .doc-yesno-inspector-group>strong{font-size:11px;color:#35536c}
+#docBuilder #docYesNoOptions{display:grid;gap:10px;min-width:0}
+#docBuilder #docYesNoOptions label{min-width:0}
+#docBuilder #docYesNoOptions input[type=text]{width:100%}
+/* Every piece of TAK/NIE, including the question and labels, is editable in-place. */
+#docCanvas .doc-type-yesno [data-yesno-part]{outline:none;min-width:0;cursor:text;white-space:pre-wrap;overflow-wrap:anywhere}
+#docCanvas .doc-type-yesno [data-yesno-part]:focus{outline:1px dashed #57a6d8;outline-offset:3px;border-radius:3px}
+#docCanvas .doc-type-yesno [data-yesno-part]:empty::before{content:attr(data-placeholder);opacity:.42;pointer-events:none}
+#docCanvas .doc-type-yesno .doc-yesno>div,#docTVPage .doc-type-yesno .doc-yesno>div{background:var(--doc-yes-bg,#e4f0e7)}
+#docCanvas .doc-type-yesno .doc-yesno>div:nth-child(2),#docTVPage .doc-type-yesno .doc-yesno>div:nth-child(2){background:var(--doc-no-bg,#fff2d1)}
+#docCanvas .doc-type-yesno .doc-yesno strong,#docTVPage .doc-type-yesno .doc-yesno strong{background:var(--doc-yes-badge,#4a9162);white-space:pre-wrap;max-width:43%;overflow-wrap:anywhere}
+#docCanvas .doc-type-yesno .doc-yesno>div:nth-child(2) strong,#docTVPage .doc-type-yesno .doc-yesno>div:nth-child(2) strong{background:var(--doc-no-badge,#cf951d)}
