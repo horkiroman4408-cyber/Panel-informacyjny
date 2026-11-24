@@ -93,7 +93,7 @@
   tab.classList.add('active');
   for(const id of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(id))el(id).hidden=true;
   for(const id of ['results','assignment','infoSlidesTab'])el(id)?.classList.remove('active');
-  el('upload').hidden=true;el('settings').hidden=true;el('tv').hidden=false;el('tv').disabled=false;
+  el('upload').hidden=true;el('settings').hidden=false;el('tv').hidden=false;el('tv').disabled=false;
   render();
  }
  function close(){
