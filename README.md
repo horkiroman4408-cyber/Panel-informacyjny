@@ -1,53 +1,64 @@
-# INCYDENTY
+# INCYDENTY · Panel informacyjny działu
 
-**Panel informacyjny działu · Информационная панель отдела**
+Panel na odprawę i na halę. Na jednym telewizorze zespół może sprawdzić przydział do procesu i godzinę przerwy, a na drugim zobaczyć wyniki, karty pracowników i komunikaty na bieżącą zmianę.
 
-## Polski
+**Wersja 1.1.63** · **Aplikacja PWA** · **Import z Excela** · **Tryb TV**
 
-Aplikacja PWA do prezentowania danych działu na komputerze i telewizorze, w jasnym stylu Mr. Robot.
+## Pierwszy pokaz
 
-### Co zawiera
+1. Otwórz **Wyniki i normy → Wyniki procesów → Wczytaj Excel** i wybierz plik `.xlsx` z arkuszem `RAPORT`.
+2. W oknie **Okres wyników** podaj daty, których dotyczą dane. Możesz też wybrać **Pomiń** i uzupełnić je później.
+3. Otwórz jeden proces. Sprawdź jego normę, wynik w sztukach na godzinę i liczbę osób, które osiągnęły normę.
+4. Kliknij **Tryb TV → Jeden stały ekran**, wybierz wyniki i naciśnij **Uruchom pokaz**. Klawisz `Esc` kończy pokaz.
 
-- **Wyniki i normy** — wyniki pracowników, normy procesów i procent ich realizacji. Dostępny jest też widok samych norm.
-- **Przydział do procesów** — zakładka przygotowana do dalszej rozbudowy; import przydziału nie jest jeszcze dostępny.
-- **Okres wyników** — daty od/do, opcjonalnie godziny; okres jest zapisywany z raportem. Obsługiwane procesy obejmują Audyt, Scalanie, Rozkładanie, NADWE i VAS.
-- **Tryb TV** — wszystkie procesy razem lub osobno, wybór i kolejność ekranów, zmiana co 10–60 sekund albo stały ekran. Panel sterowania ukrywa się po 3 sekundach. Automatyczna, komfortowa lub kompaktowa gęstość dopasowuje liczbę wierszy do ekranu; listy procesów zmieniają strony niezależnie. Widok wszystkich procesów pokazuje login, wynik, procent i pasek realizacji. Widok jednego procesu zawiera także sztuki, czas i status normy.
-- **PWA** — instalacja jako aplikacja, praca offline po pierwszym załadowaniu i powiadomienia o aktualizacjach.
+> **Przykład z pliku wzorcowego.** Norma procesu AUDYT wynosi 120 szt./h. Osoba z wynikiem 102 szt./h realizuje 85% normy, a osoba z wynikiem 130 szt./h osiąga 108,3%. Licznik „osiąga normę” pokazuje **1 / 2**.
 
-- **Karty pracowników** — import do 25 plików `Export` jednocześnie; Login TH i okres z filtrów, miesięczny KPI ważony czasem, dane procesów i osobny pokaz TV (1, 2 lub 4 karty). Raporty są zapisywane oddzielnie od wyników procesów.
+## Co można pokazać zespołowi
 
-### Jak działa
-
-Przy pierwszym uruchomieniu aplikacja jest pusta. Użytkownik wczytuje Excel w formacie raportu Mr. Robot: arkusz `RAPORT`, sekcje procesów z normą oraz kolumny loginu, liczby sztuk, czasu i wyniku na godzinę.
-
-Plik jest przetwarzany lokalnie. Ostatni raport i ustawienia TV są zapamiętywane w przeglądarce. Dane nie są wysyłane na serwer ani synchronizowane między urządzeniami.
-
-## Русский
-
-PWA-приложение для показа данных отдела на компьютере и телевизоре, в светлом стиле Mr. Robot.
-
-### Что есть
-
-- **Wyniki i normy** — результаты сотрудников, нормы процессов и процент выполнения. Есть отдельный показ только норм.
-- **Przydział do procesów** — вкладка для дальнейшего развития; загрузка распределения пока не реализована.
-- **Период результатов** — даты от/до и время по желанию; сохраняется вместе с отчётом. Поддерживаются Audyt, Scalanie, Rozkładanie, NADWE и VAS.
-- **Режим TV** — все процессы вместе или отдельно, выбор и порядок экранов, переключение каждые 10–60 секунд либо постоянный экран. Управление скрывается через 3 секунды. Автоматическая, комфортная и компактная плотность подстраивают вместимость под экран; списки процессов листаются независимо. В общем обзоре видны логин, результат, процент и полоска выполнения. При показе одного процесса дополнительно видны количество штук, время и статус нормы.
-- **PWA** — установка как приложения, офлайн-работа после первой загрузки и уведомления об обновлениях.
-
-- **Карточки работников** — загрузка до 25 файлов `Export` за раз; Login TH и период из фильтров, месячный KPI с учётом времени, данные процессов и отдельный TV-показ (1, 2 или 4 карточки). Данные хранятся отдельно от результатов процессов.
-
-### Как работает
-
-При первом запуске приложение пустое. Пользователь загружает Excel в формате отчёта Mr. Robot: лист `RAPORT`, блоки процессов с нормой и столбцы логина, количества, времени и результата в час.
-
-Файл обрабатывается локально. Последний отчёт и настройки TV сохраняются в браузере. Данные не отправляются на сервер и не синхронизируются между устройствами.
-
-## Pliki / Файлы
-
-| Plik / Файл | Rola / Назначение |
+| Widok | Co zobaczysz na ekranie |
 | --- | --- |
-| `index.html`, `style.css` | Interfejs i wygląd / Интерфейс и оформление |
-| `app.js`, `workers.js`, `data.js` | Logika i pusty stan początkowy / Логика и пустое начальное состояние |
-| `pwa.js`, `sw.js` | Instalacja, aktualizacje i offline / Установка, обновления и офлайн |
-| `manifest.webmanifest`, `icons/`, `fonts/` | Ustawienia PWA, ikony i czcionki / Настройки PWA, иконки и шрифты |
-| `version.json`, `tools/release.py` | Wersja i przygotowanie aktualizacji / Версия и подготовка обновлений |
+| **Harmonogram pracy** | Przydziały pracowników, nieobecności i przerwy. Wybierz zmianę oraz czas pracy 8H, 10H lub 12H. Ikona oka określa, które osoby i zespoły pojawią się na TV. |
+| **Wyniki procesów** | Norma procesu, wynik każdej osoby w szt./h i procent realizacji. Możesz pokazać wszystkie procesy razem albo przejść do jednego z nich. |
+| **Karty pracowników** | Procesy jednej osoby, przepracowane godziny i KPI za wybrany okres. Na TV wszystkie procesy pracownika są widoczne na jednej karcie. |
+| **Tablica informacyjna** | Ogłoszenia i instrukcje ze zdjęciami. Wybierz jedną z siedmiu makiet, wpisz treść bezpośrednio na slajdzie, zapisz podstronę i dodaj ją do pokazu. |
+
+## Jaki plik Excel wczytać?
+
+Panel przyjmuje pliki `.xlsx` do **10 MB każdy**. Wybierz plik w zakładce odpowiadającej jego zawartości.
+
+| Dane | Arkusz | Oczekiwany układ |
+| --- | --- | --- |
+| **Wyniki procesów** | `RAPORT` | Nazwa procesu w A, norma w C, np. `NORMA: 120 szt./h`. Pod nagłówkiem umieść login, liczbę sztuk, godziny i wynik w szt./h. Każdy proces ma osobną sekcję. |
+| **Karta pracownika** | `Export` | Kolumny `PROCESS`, `Pieces`, `Time`, `KPI %`. Pod tabelą zachowaj filtr `Login TH` z jednym loginem i `Date` z zakresem dat. Jeden plik opisuje jedną osobę za jeden okres. |
+| **Grafik na jutro** | `STAN` lub `Arkusz1` | Data i oznaczenie zmiany w nagłówku lub nazwie pliku. Pod każdą grupą umieść login, a bezpośrednio po prawej proces lub status. |
+| **Przerwy** | `Sheet2` we wzorze | W A umieść sekcje `I ZMIANA` i `II ZMIANA` oraz wiersze `8H`, `10H`, `12H`. Przedziały godzin wpisz w B, D i F, np. `08:00 - 08:15`. |
+
+W kartach pracowników można wczytać **do 25 plików jednocześnie**. Aby poprawić kartę, wczytaj plik ponownie z tym samym loginem i identycznym zakresem dat. Przy innym okresie powstanie osobna karta.
+
+## Jak czytać KPI
+
+- **Realizacja normy procesu** = wynik w szt./h ÷ norma × 100%.
+- **KPI za okres** to średnia ważona czasem pracy. Proces wykonywany przez osiem godzin ma większy wpływ na wynik niż proces wykonywany przez godzinę.
+- **Procesy w normie** pokazują, w ilu procesach pracownik osiągnął co najmniej 100%.
+- W kolumnie `KPI %` wpisz w Excelu `95%` albo wartość liczbową `0,95`.
+
+## Dwa telewizory, dwa widoki
+
+Ustaw w systemie rozszerzony pulpit. Otwórz panel w dwóch oknach tego samego profilu przeglądarki i przenieś po jednym oknie na każdy telewizor. Po wczytaniu danych odśwież drugie okno przed uruchomieniem pokazu.
+
+| Telewizor | Przykładowe ustawienie |
+| --- | --- |
+| **TV 1 · Przydział** | **Jeden stały ekran → Harmonogram pracy**. Zespół może w każdej chwili sprawdzić swój proces i przerwę. |
+| **TV 2 · Wyniki i komunikaty** | **Automatyczny pokaz**. Zaznacz wyniki, karty i wybrane ogłoszenia. Strzałkami ustaw kolejność, a przy każdym ekranie wybierz czas wyświetlania. |
+
+Dostępne czasy to **10, 15, 20, 30 i 60 sekund**. Czas dotyczy całego ekranu: przy trzech stronach wewnętrznych i ustawieniu 30 sekund każda strona będzie widoczna przez około 10 sekund.
+
+## Gdzie są zapisane dane?
+
+Panel odczytuje pliki Excel w przeglądarce. Raporty i ustawienia pozostają w profilu danego stanowiska, a slajdy ze zdjęciami są zapisywane lokalnie w IndexedDB. Na innym komputerze trzeba ponownie wczytać pliki źródłowe. Wyczyszczenie danych witryny może usunąć zapisane raporty i slajdy.
+
+Przed pracą offline otwórz aplikację online i sprawdź status PWA w **Informacje → Aplikacja**.
+
+---
+
+**Autor projektu · [Roman Horki](https://github.com/horkiroman4408-cyber)**
