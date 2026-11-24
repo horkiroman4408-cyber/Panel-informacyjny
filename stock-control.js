@@ -10,14 +10,14 @@
  // Exports Power BI can include a descriptive filter row, not an RS1 system.
  const isRS1Metadata=value=>/^(?:ZASTOSOWANE\s+FILTRY|APPLIED\s+FILTERS|ПРИМЕНЕННЫЕ\s+ФИЛЬТРЫ)\b/i.test(String(value??'').trim());
  const STORE='incydenty-stock-powerbi-v2';
- let datasets={shelves:null,units:null,rs1:null},selected=new Set(),originStockTV=false,tvBrandScope=null;
+ let datasets={shelves:null,units:null,rs1:null},selected=new Set(),originStockTV=false,tvBrandScope=null,alertTimer=null;
  try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&typeof obj==='object'){for(const k of Object.keys(datasets)){if(obj.datasets?.[k]&&Array.isArray(obj.datasets[k].rows))datasets[k]=obj.datasets[k];}if(Array.isArray(obj.selected))selected=new Set(obj.selected)}}catch{}
  if(!document.querySelector('.tabs')||el('stockTab'))return;
  const nav=document.querySelector('.tabs'),tab=document.createElement('button');tab.id='stockTab';tab.type='button';tab.textContent='STOCK CONTROL';nav.append(tab);
  const section=document.createElement('section');section.id='stockControl';section.hidden=true;section.innerHTML=`
  <div class="stk-tv-title" id="stkTVTitle" hidden><h2>STOCK CONTROL</h2><p id="stkTVBrand" hidden></p></div>
  <div class="stk-heading"><div class="stk-heading-title"><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><div class="stk-actionbuttons"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div><div class="stk-sources" id="stkSources"></div></div></div>
- <div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
+ <div class="stk-alert" id="stkAlert" hidden role="status" aria-live="polite"></div>
  <div class="stk-brandnav" id="stkBrands"></div>
  <div class="stk-kpis" id="stkKpis"></div>
  <div class="stk-layout"><article class="stk-card stk-wide"><div class="stk-cardtop"><h3>ALL SHELVES</h3><span>Liczba półek według typu lokalizacji</span></div><div class="stk-scroller" id="stkShelves"></div></article>
@@ -30,7 +30,11 @@
  const key=(b,l)=>name(b)+'\u0000'+name(l);
  const groups=()=>{const names=new Set();for(const t of ['shelves','units'])for(const r of datasets[t]?.rows||[])names.add(r.brand);return [...names].sort((a,b)=>['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(a)-['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(b)||a.localeCompare(b))};
  const filtered=rows=>(rows||[]).filter(x=>tvBrandScope!==null?(tvBrandScope==='*'||x.brand===tvBrandScope):(!selected.size||selected.has(x.brand)));
- function fail(s){el('stkAlert').textContent=s;el('stkAlert').hidden=!s}
+ function notify(message,temporary=false){
+  clearTimeout(alertTimer);alertTimer=null;
+  const alert=el('stkAlert');alert.textContent=message;alert.hidden=!message;
+  if(message&&temporary)alertTimer=setTimeout(()=>{alert.textContent='';alert.hidden=true;alertTimer=null;},5000);
+ }
  // Colour scale matches Power BI example. Lower FULL is greener,
  // while EMPTY uses the same colour determined from its complementary FULL value.
  function tint(pct,kind){
@@ -59,7 +63,7 @@
  const labels={shelves:'ALL SHELVES',units:'NO OF UNITS',rs1:'RS1 STOCK'};el('stkSources').innerHTML=Object.entries(labels).map(([k,label])=>`<div class="stk-source ${datasets[k]?'loaded':''}"><span>${datasets[k]?'✓':'○'} ${label}</span><strong>${html(datasets[k]?.file||'Nie wczytano')}</strong></div>`).join('');
  const s=filtered(datasets.shelves?.rows),u=filtered(datasets.units?.rows);
  const all=sum(s,'all'),full=sum(s,'full'),empty=sum(s,'empty'),stock=sum(u,'stock'),todo=sum(u,'todo');
- const kpis=[['Wszystkie półki',all,!!datasets.shelves],['Z towarem',full,!!datasets.shelves],['Puste półki',empty,!!datasets.shelves],['% zapełnienia',all?full/all*100:0,!!datasets.shelves,true],['MP STOCKING',stock,!!datasets.units],['DO ROZŁOŻENIA',todo,!!datasets.units]];
+ const kpis=[['Wszystkie półki',all,!!datasets.shelves],['Z towarem',full,!!datasets.shelves],['Puste półki',empty,!!datasets.shelves],['% zapełnienia',all?full/all*100:0,!!datasets.shelves,true],['MP STOCKING',stock,!!datasets.units],['DO ZATOWAROWANIA',todo,!!datasets.units]];
  el('stkKpis').innerHTML=kpis.map(([label,v,has,percent])=>`<div class="stk-kpi"><span>${label}</span><strong>${has?(fmt(v,percent?2:0)+(percent?'%':'')):'—'}</strong></div>`).join('');
  el('stkShelves').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','ALL SHELVES','AVG UNITS','TOTAL UNITS','MP1','MP2','MP3','WITH STOCK','% FULL','MP1','MP2','MP3','EMPTY','% EMPTY'],s.map(r=>[r.brand,r.loc,...r.a,r.all,{value:r.avg,dec:2},{value:r.totalUnits,dec:2},...r.f,r.full,P(r.fullPct),...r.e,r.empty,P(r.emptyPct,'empty')]),['Suma','',...['','',''],all,'','',...['','',''],full,all?fmt(full/all*100,2)+'%':'—',...['','',''],empty,all?fmt(empty/all*100,2)+'%':'—']);
  el('stkUnits').innerHTML=table(['BRAND','LOCATION TYPE','MP1','MP2','MP3','MP STOCKING','% FULL','MP1','MP2','MP3','TO BE STOCKED','% EMPTY'],u.map(r=>[r.brand,r.loc,...r.a,r.stock,P(r.fullPct),...r.b,r.todo,P(r.emptyPct,'empty')]),['Suma','',...['','',''],stock,'',...['','',''],todo,'']);
@@ -85,7 +89,7 @@
  function identify(rows){const h=(rows[0]||[]).map(name);if(h[0]==='SYSTEM'&&h.includes('NO OF ITEMS'))return'rs1';if(h[0]==='BRAND (LOC SUBAREA)'&&h.includes('MP STOCKING'))return'units';if(h[0]==='BRAND (LOC SUBAREA)'&&h.includes('AVG UNITS'))return'shelves';return null}
  function persist(){try{localStorage.setItem(STORE,JSON.stringify({datasets,selected:[...selected]}));return true}catch{return false}}
  async function ingest(files){if(!files.length)return;let successful=[],failed=[];let pending={...datasets};for(const file of files){try{if(!/\.xlsx$/i.test(file.name))throw Error('Tylko .xlsx');if(file.size>10_000_000)throw Error('Plik powyżej 10 MB');const rows=await xlsxRows(await file.arrayBuffer(),'Export');const kind=identify(rows);if(!kind)throw Error('Nieznany format Export');pending[kind]=readRows(rows,kind,file.name);successful.push(file.name+' → '+kind)}catch(e){failed.push(file.name+': '+e.message)}}
- datasets=pending;selected.clear();const saved=persist();render();fail(`${successful.length?'Wczytano: '+successful.join(' · ')+'. ':''}${failed.length?'Błędy: '+failed.join(' · ')+'. ':''}${saved?'':'Dane wyświetlono, ale nie udało się ich zapisać w przeglądarce.'}`)}
+ datasets=pending;selected.clear();const saved=persist();render();notify(`${successful.length?'Wczytano: '+successful.join(' · ')+'. ':''}${failed.length?'Błędy: '+failed.join(' · ')+'. ':''}${saved?'':'Dane wyświetlono, ale nie udało się ich zapisać w przeglądarce.'}`,failed.length===0&&saved)}
  // Tab switching is exclusive. infoSlidesTab is created asynchronously.
  function open(){
   if(window.incSlides?.isOpen())window.incSlides.close();
@@ -161,6 +165,6 @@
  el('tv').addEventListener('click',()=>{originStockTV=!section.hidden},true);
  // Unified controller owns fullscreen, slide timing, and exit behaviour.
 
- el('stkDelete').onclick=()=>{if(!confirm('Usunąć wyłącznie lokalne dane STOCK CONTROL?'))return;datasets={shelves:null,units:null,rs1:null};selected.clear();localStorage.removeItem(STORE);render();fail('Usunięto dane STOCK CONTROL.');};
+ el('stkDelete').onclick=()=>{if(!confirm('Usunąć wyłącznie lokalne dane STOCK CONTROL?'))return;datasets={shelves:null,units:null,rs1:null};selected.clear();localStorage.removeItem(STORE);render();notify('Usunięto dane STOCK CONTROL.',true);};
  render();
 })();
