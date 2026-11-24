@@ -181,3 +181,36 @@ body.unified-tv #stockControl.stk-unified-screen .stk-layout>.stk-card:nth-child
   #stockControl .stk-heading>.stk-actions{justify-self:center;flex-wrap:wrap;justify-content:center}
   #stockControl .stk-heading>.stk-sources{justify-content:center}
 }
+
+
+/* Stock header: centered title and file statuses below the import actions. */
+#stockControl .stk-heading{
+ display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+ grid-template-areas:"left title actions";align-items:center;gap:12px;
+}
+#stockControl .stk-heading>.stk-heading-title{grid-area:title;justify-self:center;text-align:center;min-width:0}
+#stockControl .stk-heading>.stk-actions{
+ grid-area:actions;justify-self:end;display:flex;flex-direction:column;
+ align-items:flex-end;justify-content:center;gap:7px;
+ flex:none;min-width:0;width:auto;
+}
+#stockControl .stk-actionbuttons{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+#stockControl .stk-heading>.stk-actions>.stk-sources{
+ display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;
+ width:auto;margin:0;gap:5px;
+}
+#stockControl .stk-heading>.stk-actions>.stk-sources .stk-source{padding:4px 8px;min-height:25px;gap:4px}
+#stockControl .stk-heading>.stk-actions>.stk-sources .stk-source span,
+#stockControl .stk-heading>.stk-actions>.stk-sources .stk-source strong{font-size:9px}
+#stockControl .stk-heading>.stk-actions>.stk-sources .stk-source strong{max-width:105px}
+@media(max-width:1350px){
+ #stockControl .stk-heading{grid-template-columns:1fr;grid-template-areas:"title" "actions"}
+ #stockControl .stk-heading>.stk-actions{justify-self:center;align-items:center}
+ #stockControl .stk-heading>.stk-actions>.stk-sources{justify-content:center}
+}
+@media(max-width:700px){
+ #stockControl .stk-actionbuttons{flex-wrap:wrap;justify-content:center}
+ #stockControl .stk-heading>.stk-actions>.stk-sources{flex-wrap:wrap;justify-content:center}
+}
+/* Brand selection is configured per screen in the shared TV playlist, not on TV. */
+body.unified-tv #stockControl.stk-unified-screen .stk-brandnav{display:none!important}

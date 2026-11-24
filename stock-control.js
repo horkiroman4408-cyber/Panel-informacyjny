@@ -10,12 +10,12 @@
  // Exports Power BI can include a descriptive filter row, not an RS1 system.
  const isRS1Metadata=value=>/^(?:ZASTOSOWANE\s+FILTRY|APPLIED\s+FILTERS|ПРИМЕНЕННЫЕ\s+ФИЛЬТРЫ)\b/i.test(String(value??'').trim());
  const STORE='incydenty-stock-powerbi-v2';
- let datasets={shelves:null,units:null,rs1:null},selected=new Set(),originStockTV=false;
+ let datasets={shelves:null,units:null,rs1:null},selected=new Set(),originStockTV=false,tvBrandScope=null;
  try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&typeof obj==='object'){for(const k of Object.keys(datasets)){if(obj.datasets?.[k]&&Array.isArray(obj.datasets[k].rows))datasets[k]=obj.datasets[k];}if(Array.isArray(obj.selected))selected=new Set(obj.selected)}}catch{}
  if(!document.querySelector('.tabs')||el('stockTab'))return;
  const nav=document.querySelector('.tabs'),tab=document.createElement('button');tab.id='stockTab';tab.type='button';tab.textContent='STOCK CONTROL';nav.append(tab);
  const section=document.createElement('section');section.id='stockControl';section.hidden=true;section.innerHTML=`
- <div class="stk-heading"><div class="stk-heading-title"><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-sources" id="stkSources"></div><div class="stk-actions"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div></div>
+ <div class="stk-heading"><div class="stk-heading-title"><span class="stk-eyebrow">INCYDENTY · WIDOK MAGAZYNOWY</span><h2>STOCK CONTROL</h2><p>Stan półek, jednostki i RS1 na podstawie eksportów Power BI</p></div><div class="stk-actions"><div class="stk-actionbuttons"><button type="button" id="stkChoose">↥ Wczytaj 3 pliki Excel</button><input id="stkFiles" type="file" accept=".xlsx" multiple hidden><button id="stkDelete" type="button" title="Usuń tylko dane STOCK CONTROL">Wyczyść</button></div><div class="stk-sources" id="stkSources"></div></div></div>
  <div class="stk-alert" id="stkAlert" role="status" aria-live="polite"></div>
  <div class="stk-brandnav" id="stkBrands"></div>
  <div class="stk-kpis" id="stkKpis"></div>
@@ -28,7 +28,7 @@
  const css=document.createElement('link');css.rel='stylesheet';css.href='stock-control.css';document.head.append(css);
  const key=(b,l)=>name(b)+'\u0000'+name(l);
  const groups=()=>{const names=new Set();for(const t of ['shelves','units'])for(const r of datasets[t]?.rows||[])names.add(r.brand);return [...names].sort((a,b)=>['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(a)-['SINSAY','RESERVED','MOHITO','CROPP','HOUSE','RTS'].indexOf(b)||a.localeCompare(b))};
- const filtered=rows=>(rows||[]).filter(x=>!selected.size||selected.has(x.brand));
+ const filtered=rows=>(rows||[]).filter(x=>tvBrandScope!==null?(tvBrandScope==='*'||x.brand===tvBrandScope):(!selected.size||selected.has(x.brand)));
  function fail(s){el('stkAlert').textContent=s;el('stkAlert').hidden=!s}
  // Colour scale matches Power BI example. Lower FULL is greener,
  // while EMPTY uses the same colour determined from its complementary FULL value.
@@ -97,6 +97,7 @@
   render();
  }
  function close(){
+  tvBrandScope=null;
   section.hidden=true;
   section.classList.remove('stk-unified-screen');
   tab.classList.remove('active');
@@ -116,14 +117,17 @@
   if(slides.__stockControlBridge)return true;
   const original={list:slides.list,close:slides.close,showTV:slides.showTV,restore:slides.restore,isOpen:slides.isOpen};
   slides.__stockControlBridge=true;
-  slides.list=()=>[...original.list(),{
-   id:'info:stock-control',name:'STOCK CONTROL',description:'Stan półek, jednostki i RS1',
-   available:!!(datasets.shelves||datasets.units||datasets.rs1)
-  }];
+  slides.list=()=>[
+   ...original.list(),
+   {id:'info:stock-control:all',name:'STOCK CONTROL · Wszystkie marki',description:'Wszystkie marki · półki, jednostki i RS1',available:!!(datasets.shelves||datasets.units||datasets.rs1)},
+   ...groups().map(brand=>({id:'info:stock-control:brand:'+brand,name:'STOCK CONTROL · '+brand,description:'Dane tylko dla marki '+brand,available:true}))
+  ];
   slides.isOpen=()=>!section.hidden||original.isOpen();
   slides.close=()=>{close();original.close();};
   slides.showTV=id=>{
-   if(id!=='stock-control'){close();return original.showTV(id);}
+   if(id!=='stock-control'&&id!=='stock-control:all'&&!id.startsWith('stock-control:brand:')){close();return original.showTV(id);}
+   // Select brand for this TV screen only, without changing saved edit filters.
+   tvBrandScope=id.startsWith('stock-control:brand:')?id.slice('stock-control:brand:'.length):'*';
    original.close();
    section.hidden=false;section.classList.add('stk-unified-screen');
    for(const k of ['norms','assign','workerArea','resultViews','infoSlidesArea'])if(el(k))el(k).hidden=true;
