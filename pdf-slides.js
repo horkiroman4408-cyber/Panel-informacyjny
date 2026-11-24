@@ -41,7 +41,11 @@
       const vp=page.getViewport({scale:1});
       const host=$('pdfSlidesTV').querySelector('.pdfs-tv-stage');
       const box=host.getBoundingClientRect();
-      const scale=Math.max(.1,Math.min((box.width-12)/vp.width,(box.height-12)/vp.height));
+      // Keep the entire PDF page inside the softly padded TV mat.
+      const mat=getComputedStyle(host);
+      const usableWidth=box.width-(parseFloat(mat.paddingLeft)||0)-(parseFloat(mat.paddingRight)||0)-4;
+      const usableHeight=box.height-(parseFloat(mat.paddingTop)||0)-(parseFloat(mat.paddingBottom)||0)-4;
+      const scale=Math.max(.1,Math.min(usableWidth/vp.width,usableHeight/vp.height));
       const dpr=Math.min(2,window.devicePixelRatio||1);
       const renderViewport=page.getViewport({scale:scale*dpr});
       canvas.width=Math.max(1,Math.ceil(renderViewport.width));
@@ -224,6 +228,21 @@
       #pdfSlidesTV .pdfs-tv-fallback a{color:#176ca7}
       body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-stage{display:flex;align-items:center;justify-content:center;background:#fff!important;overflow:hidden}
       body.inc-pdf-tv-screen #pdfTVCanvas{display:block;max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+      /* TV: a quiet exhibition mat around the original, unmodified PDF page.
+         White regions drawn INSIDE the PDF remain untouched for safety. */
+      body.inc-pdf-tv-screen #pdfSlidesTV .pdfs-tv-stage{
+        padding:clamp(10px,1.2vw,22px)!important;
+        background:linear-gradient(145deg,#edf2f7 0%,#e5edf5 100%)!important;
+        border:1px solid rgba(123,146,166,.18)!important;
+        border-radius:14px!important;
+        box-shadow:inset 0 1px 2px rgba(34,62,82,.04)!important;
+      }
+      body.inc-pdf-tv-screen #pdfTVCanvas:not([hidden]){
+        flex:none;
+        border:1px solid rgba(99,124,145,.22);
+        border-radius:3px;
+        box-shadow:0 9px 28px rgba(26,49,68,.12),0 2px 6px rgba(26,49,68,.06);
+      }
       body.inc-pdf-tv-screen #pdfTVCanvas[hidden],body.inc-pdf-tv-screen #pdfTVFrame[hidden]{display:none!important}
       body.inc-pdf-tv-screen #pdfTVStatus{position:absolute;bottom:12px;left:20px;font-size:11px;color:#718096}
       body.inc-pdf-tv-screen #pdfTVFrame:not([hidden]){clip-path:inset(0 11% 0 11%)}
