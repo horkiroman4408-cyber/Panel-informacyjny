@@ -1,11 +1,19 @@
 'use strict';
-/* INCYDENTY 1.1.64 · update informational copy without replacing old controllers. */
+/* INCYDENTY · informational copy and release history. The version number itself comes from version.json. */
+// Add the new release at the TOP of this list before running tools/release.py (the script checks it).
+const RELEASES=[
+  {v:'1.1.65',date:'25.11.2026',title:'Porządek w numerach wersji',text:'Numer wersji w oknie Informacje i w statusie PWA jest odczytywany z jednego pliku, version.json, więc zawsze zgadza się z zainstalowaną wersją. Uproszczono nazwę pamięci podręcznej offline oraz skrypt wydań. Bez zmian w danych, KPI, Excel i TV.'},
+  {v:'1.1.64',date:'24.11.2026',title:'STOCK CONTROL, PDF i Tryb TV',text:'Dodano STOCK CONTROL z importem 3 eksportów Excel, filtrami marek i ekranami TV. W Tablica informacyjna dodano PDF jako zapisane podstrony, podgląd TV, dopasowanie i kadrowanie. Rozszerzono formatowanie tekstu. Uspójniono przejścia TV, nawigację i układ ekranów oraz poprawiono wyświetlanie źródeł i wskaźników.'}
+];
 (()=>{
   const $=id=>document.getElementById(id);
   const info=$('incInfo');if(!info)return;
-  const version='1.1.64';
-  if($('incVersion'))$('incVersion').textContent='v'+version;
-  if($('incAppVersion'))$('incAppVersion').textContent=version;
+  // Version labels follow version.json (also read in workers.js when the dialog opens).
+  fetch('./version.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j||!/^\d+\.\d+\.\d+$/.test(j.version))return;
+    if($('incVersion'))$('incVersion').textContent='v'+j.version;
+    if($('incAppVersion'))$('incAppVersion').textContent=j.version;
+  }).catch(()=>{});
   // Show all current sources in Dane. Original source metrics remain live.
   const data=$('incTabData');
   const sources=data?.querySelector('.inc-info-safe');
@@ -45,17 +53,16 @@
     }
   }
   const history=$('incTabHistory');
-  if(history&&!$('incHistory1164')){
-    const details=document.createElement('details');details.id='incHistory1164';details.open=true;
-    const summary=document.createElement('summary');const strong=document.createElement('strong');strong.textContent='v1.1.64';summary.append(strong,document.createTextNode(' · 24.11.2026 · STOCK CONTROL, PDF i Tryb TV'));
-    const p=document.createElement('p');p.textContent='Dodano STOCK CONTROL z importem 3 eksportów Excel, filtrami marek i ekranami TV. W Tablica informacyjna dodano PDF jako zapisane podstrony, podgląd TV, dopasowanie i kadrowanie. Rozszerzono formatowanie tekstu. Uspójniono przejścia TV, nawigację i układ ekranów oraz poprawiono wyświetlanie źródeł i wskaźników.';
-    details.append(summary,p);
-    const previous=history.querySelector('details');if(previous)history.insertBefore(details,previous);else history.append(details);
-    for(const older of history.querySelectorAll('details:not(#incHistory1164)'))older.open=false;
-  }
-  const state=$('pwaState');
-  if(state){
-    const refresh=()=>{const next=state.textContent.replace(/1\.1\.63/g,version);if(next!==state.textContent)state.textContent=next;};
-    refresh();new MutationObserver(refresh).observe(state,{childList:true,characterData:true,subtree:true});
+  if(history&&!history.querySelector('[data-inc-release]')){
+    const first=history.querySelector('details');
+    RELEASES.forEach((r,i)=>{
+      const details=document.createElement('details');details.dataset.incRelease=r.v;details.open=i===0;
+      const summary=document.createElement('summary');const strong=document.createElement('strong');strong.textContent='v'+r.v;
+      summary.append(strong,document.createTextNode(' · '+r.date+' · '+r.title));
+      const p=document.createElement('p');p.textContent=r.text;
+      details.append(summary,p);
+      if(first)history.insertBefore(details,first);else history.append(details);
+    });
+    for(const older of history.querySelectorAll('details:not([data-inc-release])'))older.open=false;
   }
 })();

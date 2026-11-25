@@ -106,5 +106,5 @@ Ustaw rozszerzony pulpit i otwórz dwa okna aplikacji w tym samym profilu przegl
 
 ---
 
-**Autor projektu · Автор проекта** — [Roman Horki](https://github.com/horkiroman4408-cyber)  
-**Wersja · Версия** — 1.1.63
+**Autor projektu · Автор проекта** — [Raman Horki](https://github.com/horkiroman4408-cyber)  
+**Wersja · Версия** — 1.1.65
