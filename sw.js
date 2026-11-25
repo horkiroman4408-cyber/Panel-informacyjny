@@ -1,8 +1,8 @@
 /* INCYDENTY PWA · cache name = prefix + VERSION. Bump VERSION with tools/release.py on every publish. */
-const VERSION = '1.1.65';
+const VERSION = '1.1.66';
 const PREFIX = 'incydenty-' + new URL(self.registration.scope).pathname + '-';
 const CACHE = PREFIX + VERSION;
-const FILES = ['./','index.html','style.css','theme-typography.css','data.js','app.js','workers.js','schedule.js','info-slides.js','tv-fit.js','pwa.js','stock-control.js','stock-control.css','pdf-slides.js','rich-font-sizes.js','tv-card-motion.js','tv-back-nav.js','info-release.js','doc-builder.js','doc-builder.css','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png','icons/icon-32.png','icons/icon-48.png'];
+const FILES = ['./','index.html','style.css','theme-typography.css','data.js','app.js','workers.js','schedule.js','info-slides.js','tv-fit.js','pwa.js','stock-control.js','stock-control.css','pdf-slides.js','rich-font-sizes.js','tv-card-motion.js','tv-back-nav.js','info-release.js','doc-builder.js','page-menu.js','doc-builder.css','manifest.webmanifest','version.json','fonts/NotoSansDisplay-Regular.ttf','fonts/NotoSansDisplay-Bold.ttf','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png','icons/icon-32.png','icons/icon-48.png'];
 self.addEventListener('install', event => {event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(path => new Request(new URL(path,self.registration.scope),{cache:'reload'})))));});
 self.addEventListener('activate', event => {event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);await self.clients.claim();})());});
 self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')self.skipWaiting();});

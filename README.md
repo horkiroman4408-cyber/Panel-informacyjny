@@ -1,159 +1,110 @@
-<div align="center">
-  <img src="icons/icon-192.png" width="100" alt="INCYDENTY">
-  <h1>INCYDENTY</h1>
-  <p><strong>Panel informacyjny działu</strong></p>
-  <p>Harmonogram · KPI · Kontrola magazynu · Komunikacja na TV</p>
-  <a href="https://horkiroman4408-cyber.github.io/Panel-informacyjny/"><img src="docs/media/readme/readme-launch-pl.png" width="220" alt="Uruchom aplikację"></a>
-  <p><a href="CHANGELOG.md"><img src="docs/media/readme/readme-version.png" width="90" alt="v1.1.65"></a> <img src="docs/media/readme/readme-pwa.png" width="146" alt="PWA · Offline"> <img src="docs/media/readme/readme-tv.png" width="108" alt="TV 16:9"></p>
-  <p><a href="README.md">Polski</a> · <a href="README_RU.md">Русский</a> · <a href="CHANGELOG.md">Historia / История</a></p>
-  <img src="docs/media/incydenty.png" alt="INCYDENTY · prezentacja projektu" width="100%">
-</div>
+# INCYDENTY
 
-## O projekcie
+**Panel informacyjny działu · Информационная панель отдела**
 
-INCYDENTY to panel informacyjny PWA przeznaczony dla stanowiska kierującego zmianą i dużych ekranów na hali. Zamiast osobnych arkuszy i prezentacji pozwala przygotować dane, ogłoszenia i kolejność pokazu w jednym miejscu. Interfejs jest po polsku; niniejsza dokumentacja dostępna jest także [po rosyjsku](README_RU.md).
+[Polski ↓](#polski) · [Русский ↓](#русский) · [Instrukcja PL (PDF)](docs/manuals/INCYDENTY_Instrukcja_1.1.63_PL.pdf) · [Инструкция RU (PDF)](docs/manuals/INCYDENTY_Instrukcja_1.1.63_RU.pdf)
 
-| Moduł | Co daje zespołowi |
-|---|---|
-| **Harmonogram pracy** | Przydziały, nieobecności, godziny przerw i widżety |
-| **Wyniki i normy** | Wyniki procesów i indywidualne karty pracowników |
-| **STOCK CONTROL** | Stan półek, zatowarowanie i dane RS1 z eksportów Power BI |
-| **Tablica informacyjna** | Komunikaty, zdjęcia, PDF oraz własne sceny 16:9 |
+![INCYDENTY · Panel informacyjny działu](docs/media/incydenty.png)
 
-[Uruchomienie](#uruchomienie-i-instalacja) · [Moduły](#moduły) · [Formaty danych](#formaty-danych-i-wzory-excel) · [Tryb TV](#tryb-tv) · [Dokumentacja](#dokumentacja-i-wersje)
+## Polski
 
-## Uruchomienie i instalacja
+Na początku zmiany pracownik może sprawdzić, do którego procesu został przydzielony i o której ma przerwę. W trakcie zmiany ten sam panel pokazuje wyniki procesów, karty pracowników i ogłoszenia ze zdjęciami. Osoba prowadząca zmianę przygotowuje dane na komputerze i wybiera, co trafi na telewizory.
 
-**[Otwórz INCYDENTY](https://horkiroman4408-cyber.github.io/Panel-informacyjny/)**. Nie trzeba pobierać instalatora. Przy pierwszym uruchomieniu wczytaj własne dane lub pliki przykładowe z sekcji poniżej.
+### Pierwszy pokaz
 
-| Microsoft Edge | Google Chrome |
-|---|---|
-| Otwórz stronę → `…` → **Aplikacje** → **Zainstaluj tę witrynę jako aplikację**. | Otwórz stronę → ikona instalacji w pasku adresu lub menu `⋮` → opcja instalacji strony jako aplikacji. |
+1. Pobierz [przykładowy raport procesów](docs/examples/01_Wyniki_procesow.xlsx).
+2. W aplikacji wybierz **Wyniki i normy → Wyniki procesów → Wczytaj Excel**. W oknie **Okres wyników** ustaw daty raportu lub wybierz **Pomiń**.
+3. Otwórz **AUDYT**. W pliku wzorcowym norma wynosi **120 szt./h**. Wyniki 102 i 130 szt./h dają odpowiednio 85% i około 108,3%. Licznik **osiąga normę** powinien pokazać **1 / 2**.
+4. Wybierz **Tryb TV → Jeden stały ekran**, wskaż wyniki i kliknij **Uruchom pokaz**. Klawisz **Esc** kończy pokaz.
 
-Jeśli pojawi się przycisk **Zainstaluj** w aplikacji, można użyć również jego. Nazwy poleceń zależą od wersji przeglądarki. Praca offline jest dostępna po poprawnym zapisaniu zasobów PWA; sprawdź **Informacje → Aplikacja**. Aktualizację najlepiej uruchamiać po zakończeniu pokazu.
+### Cztery widoki panelu
 
-## Moduły
+| Widok | Do czego służy |
+| --- | --- |
+| **Harmonogram pracy** | Łączy grafik z rozkładem przerw. Wybierz zmianę i czas pracy 8H, 10H lub 12H. Ikoną oka możesz ukryć na TV jedną osobę lub cały zespół. |
+| **Wyniki procesów** | Pokazuje normę, tempo pracy każdej osoby i procent realizacji. Na odprawie możesz otworzyć jeden proces albo zestawić wszystkie obok siebie. |
+| **Karty pracowników** | Zbiera wszystkie procesy jednej osoby za wybrany okres. KPI za okres jest średnią ważoną czasem pracy w poszczególnych procesach. |
+| **Tablica informacyjna** | Pozwala przygotować ogłoszenie w jednym z siedmiu układów. Dodaj tekst lub zdjęcia, zapisz podstronę i zaznacz jej tytuł w ustawieniach TV. |
 
-### 01 · Harmonogram pracy
+![Przerwy dla drugiej zmiany i 12-godzinnego dnia pracy](docs/media/przerwy.png)
 
-Wczytaj grafik `STAN` i osobny plik przerw. Wybierz zmianę oraz czas pracy 8H, 10H lub 12H. Widżety można rozmieszczać, a ikoną oka określać widoczność osób i zespołów na TV. Panel wyróżnia trwającą przerwę lub najbliższą, jeśli zaczyna się w ciągu 30 minut.
+*Widżet Przerwy. W nagłówku wybierasz zmianę, a nad tabelą długość dnia pracy. Panel wyróżnia trwającą przerwę lub najbliższą, gdy do jej początku pozostało najwyżej 30 minut.*
 
-<img src="docs/media/przerwy.png" alt="Przykładowy widżet Przerwy" width="100%">
+### Wzory Excel
 
-### 02 · Wyniki i normy
+Pracuj na kopii wzoru. Zachowaj nazwy arkuszy oraz nagłówki kolumn. Limit jednego pliku **.xlsx** wynosi **10 MB**.
 
-**Wyniki procesów**: raport Excel `RAPORT`, norma procesu, liczba osób osiągających normę, wydajność w szt./h i procent realizacji. Ustaw okres raportu, filtruj, sortuj i wybieraj `Przegląd` lub `Jeden proces`. Nowy raport zastępuje poprzedni.
+| Pobierz wzór | Arkusz | Co wpisać |
+| --- | --- | --- |
+| [Wyniki procesów](docs/examples/01_Wyniki_procesow.xlsx) | `RAPORT` | Każdy proces ma osobną sekcję. W A wpisz nazwę procesu, w C np. `NORMA: 120 szt./h`. Poniżej umieść login, sztuki, godziny i wynik w szt./h. |
+| [Karta pracownika](docs/examples/02_Karta_pracownika_Export.xlsx) | `Export` | Jeden login i jeden okres na plik. Kolumny: `PROCESS`, `Pieces`, `Time`, `KPI %`. Pod tabelą zachowaj filtry `Login TH` i `Date`. Wartość 0,95 oznacza 95%. |
+| [Grafik na jutro](docs/examples/03_Grafik_STAN.xlsx) | `STAN` lub `Arkusz1` | Podaj datę i zmianę. Dla każdej grupy umieść login i przypisany proces lub status w sąsiednich kolumnach. |
+| [Przerwy](docs/examples/04_Przerwy_agencje.xlsx) | `Sheet2` we wzorze | W A umieść sekcje `I ZMIANA` i `II ZMIANA` z wierszami 8H, 10H i 12H. Przedziały godzin wpisz w B, D i F. |
 
-<img src="docs/media/wyniki.png" alt="Widok kart procesów" width="100%">
+**Korekta po imporcie.** Nowy raport procesów zastępuje poprzedni. Karty pracowników możesz wczytywać partiami do 25 plików. Aby poprawić jedną kartę, ponownie wczytaj plik z tym samym loginem i obiema datami okresu.
 
-**Karty pracowników**: import do 25 plików jednocześnie, identyfikacja według `Login TH` i okresu, KPI ważone czasem, godziny oraz wszystkie procesy danej osoby. Ponowny import tego samego loginu i identycznego okresu aktualizuje kartę; inny okres tworzy osobny zapis. Karty i raport procesów są przechowywane oddzielnie.
+### Dwa telewizory na jednej zmianie
 
-#### Jak czytać KPI
+Ustaw rozszerzony pulpit i otwórz dwa okna aplikacji w tym samym profilu przeglądarki. Po imporcie odśwież drugie okno, a następnie przenieś po jednym oknie na każdy TV.
 
-- Realizacja normy = wynik w szt./h ÷ norma × 100%.
-- KPI za okres = suma (KPI procesu × czas procesu) ÷ suma czasów.
-- Procesy w normie = liczba procesów z KPI co najmniej 100% względem wszystkich procesów pracownika.
+- **TV 1 — przydział.** Ustaw **Jeden stały ekran → Harmonogram pracy**, żeby zespół mógł wrócić do grafiku w dowolnej chwili.
+- **TV 2 — wyniki i ogłoszenia.** Wybierz **Automatyczny pokaz**, zaznacz ekrany i ustaw kolejność strzałkami. Dostępne czasy to 10, 15, 20, 30 i 60 sekund. Przy ekranie z trzema stronami 30 sekund oznacza około 10 sekund na stronę.
 
-![Przykład KPI: norma 120, wyniki 102 i 130](docs/media/readme/readme-kpi.png)
+**Dane i praca offline.** Excel jest odczytywany w przeglądarce. Raporty i ustawienia pozostają w profilu stanowiska, a slajdy ze zdjęciami są przechowywane w IndexedDB. Na innym komputerze ponownie wczytaj pliki. Przed pracą offline otwórz panel online i sprawdź status PWA w **Informacje → Aplikacja**.
 
-*Dane demonstracyjne z przykładowego raportu: 85% oraz 108,3%, czyli jedna z dwóch osób osiąga normę.*
-
-### 03 · STOCK CONTROL
-
-Wczytaj trzy eksporty `.xlsx` z Power BI: **ALL SHELVES**, **NO OF UNITS** i **RS1 STOCK**. Aplikacja identyfikuje pliki według kolumn w arkuszu `Export`, nie według nazwy pliku. Pokazuje wszystkie półki, półki z towarem, puste półki, procent zapełnienia, MP STOCKING i **DO ZATOWAROWANIA**. Dodatkowo prezentuje tabele wg typu lokalizacji, marki, RS1 i średnią ważoną liczby jednostek na półkę.
-
-Wysokie zapełnienie jest wyróżnione czerwienią, niższe zielenią; kolor `% EMPTY` odpowiada uzupełniającemu zapełnieniu. Można wybrać wszystkie dostępne marki lub filtrować widok. W TV dostępne są ekrany zbiorczy, SINSAY i RTS; w RTS nie ma tabeli RS1. Dane aktualizuje się przez ponowny import, **nie przez połączenie na żywo z Power BI**.
-
-![STOCK CONTROL z danymi demonstracyjnymi](docs/media/readme/readme-stock-demo.png)
-
-*Zrzut modułu z izolowanego uruchomienia kodu; liczby i nazwy plików są demonstracyjne.*
-
-### 04 · Tablica informacyjna
-
-Trzy sposoby przygotowania treści w `Zapisane podstrony`:
-
-| Typ | Zastosowanie |
-|---|---|
-| **Nowa podstrona** | Gotowe makiety tekstowo-zdjęciowe, edycja tekstu w bloku i pływająca belka formatowania zaznaczenia |
-| **Dodaj PDF** | Gotowy dokument, podgląd i oddzielny ekran TV; dopasowanie i kadrowanie |
-| **Konstruktor** | Swobodny układ niezależnych bloków na tle aplikacji, w proporcjach 16:9 |
-
-#### Konstruktor Scena TV
-
-Dodaj `Nagłówek`, `Tekst`, `Krok numerowany`, `TAK / NIE`, `Tabela`, `Zdjęcie`, `Ważne / alert`, `Lista` lub `Sekcja`. Możesz też wybrać gotowy układ zdjęcie + tekst. Przeciągaj bloki za uchwyty, zmieniaj wymiary, klikaj tekst i edytuj bezpośrednio. Pływające **Właściwości bloku** pozwalają zmienić rozmiar i kolor tekstu, tło, wyrównanie, zaokrąglenie, cień i ramkę; dodatkowe ustawienia zależą od typu bloku. Tabela ma edycję wierszy i kolumn, zdjęcie dopasowanie i położenie, a TAK/NIE edytowalne pytanie, odpowiedzi, etykiety i kolory. Bloki można kopiować, usuwać oraz zmieniać ich warstwy. Zapisana scena może wejść do wspólnego pokazu TV.
-
-![Konstruktor: przykładowa scena](docs/media/readme/readme-scene.png)
-
-![Pływające właściwości bloku](docs/media/readme/readme-scene-editor.png)
-
-*Zrzuty edytora z izolowanego uruchomienia kodu, z neutralnym obrazem i tekstem demonstracyjnym.*
-
-## Jak działa przepływ danych
-
-```mermaid
-flowchart TD
-    A[Excel: RAPORT / Export / STAN / Przerwy] --> E[INCYDENTY · przeglądarka]
-    B[Power BI: 3 eksporty Excel] --> E
-    C[Komunikaty, zdjęcia i PDF] --> E
-    E --> D[Przetwarzanie i zapis lokalny]
-    D --> F[Harmonogram i KPI]
-    D --> G[STOCK CONTROL]
-    D --> H[Tablica i Scena TV]
-    F --> T[Tryb TV]
-    G --> T
-    H --> T
-    T --> I[Stały ekran]
-    T --> J[Automatyczny pokaz]
-```
-
-## Formaty danych i wzory Excel
-
-Zachowaj nazwy arkuszy i kolejność wymaganych nagłówków. Pliki `.xlsx` do 10 MB każdy. Dane magazynowe eksportuj z odpowiednich tabel, nie ze zrzutu ekranu ani wydruku PDF.
-
-| Plik / wzór | Arkusz | Wymagania |
-|---|---|---|
-| [01 · Wyniki procesów](docs/examples/01_Wyniki_procesow.xlsx) | `RAPORT` | Sekcje procesów: nazwa w A, norma w C (np. `NORMA: 120 szt./h`), login, sztuki, godziny, wynik szt./h |
-| [02 · Karta pracownika](docs/examples/02_Karta_pracownika_Export.xlsx) | `Export` | `PROCESS`, `Pieces`, `Time`, `KPI %`; filtry `Login TH` i `Date`; jeden login i jeden okres |
-| [03 · Grafik STAN](docs/examples/03_Grafik_STAN.xlsx) | `STAN` / `Arkusz1` | Data, zmiana, login i sąsiednia kolumna procesu/statusu |
-| [04 · Przerwy](docs/examples/04_Przerwy_agencje.xlsx) | `Sheet2` we wzorze | W A sekcje `I ZMIANA`, `II ZMIANA` i wiersze 8H, 10H, 12H; przedziały B, D, F |
-| ALL SHELVES | `Export` | `BRAND (LOC SUBAREA)`, `LOCATION TYPE`, grupy MP1/MP2/MP3, sumy, `AVG UNITS`, `TOTAL UNITS`, `% OF FULNESS`, `% OF EMPTY` |
-| NO OF UNITS | `Export` | `BRAND (LOC SUBAREA)`, `LOCATION TYPE`, grupy MP1/MP2/MP3, `MP STOCKING`, `MP TO BE STOCKED` i procenty |
-| RS1 STOCK | `Export` | `SYSTEM`, `NO OF ITEMS`, `NO OF TSUS`, `AVG NO OF ITEMS` |
-
-Cztery pierwsze wzory są dostępne w repozytorium. Dla STOCK CONTROL użyj trzech oryginalnych eksportów Power BI, zachowując pełny układ i kolejność kolumn. W kartach pracowników `0,95` jako wartość procentowa oznacza 95%; w eksporcie STOCK CONTROL procenty są w skali 0–100. Błąd importu nie oznacza konieczności czyszczenia wszystkich danych.
-
-## Tryb TV
-
-1. Przygotuj dane i zapisz podstrony.
-2. Kliknij **Tryb TV**. Wybierz `Jeden stały ekran` lub `Automatyczny pokaz`.
-3. Zaznacz dostępne ekrany, ustaw kolejność i czas wyświetlania (10, 15, 20, 30 lub 60 sekund).
-4. Kliknij `Uruchom pokaz`. Sterowanie obejmuje ustawienia, pauzę, poprzedni i następny ekran oraz zakończenie. `Esc` kończy pokaz. Panel może znikać po 3 sekundach bezczynności.
-
-| TV 1 | TV 2 |
-|---|---|
-| **Stały ekran:** Harmonogram pracy, przydziały, przerwy. | **Automatyczny pokaz:** wyniki, karty, STOCK CONTROL, komunikaty, PDF i sceny. |
-
-Użyj rozszerzonego pulpitu i dwóch okien tego samego profilu przeglądarki. Po zmianie danych odśwież drugie okno przed pokazem. Czas ekranu może dzielić się między jego strony wewnętrzne.
-
-## Dane, offline i bezpieczeństwo
-
-Excel jest przetwarzany lokalnie. Raporty i ustawienia pozostają w przeglądarce, a slajdy, zdjęcia, PDF i sceny są zapisywane w lokalnych magazynach IndexedDB. Aplikacja nie synchronizuje danych automatycznie między komputerami. Usunięcie danych witryny może usunąć zapisane materiały. Nie publikuj prawdziwych raportów, loginów pracowników, dokumentów wewnętrznych ani kluczy w publicznym repozytorium. Podgląd PDF może wymagać zewnętrznej biblioteki PDF.js; przed użyciem offline sprawdź go z konkretnym dokumentem.
-
-## Dokumentacja i wersje
-
-| Materiał | Link |
-|---|---|
-| Wersja aplikacji | [1.1.65 · 25.11.2026](version.json) |
-| Historia zmian | [CHANGELOG.md](CHANGELOG.md) |
-| Instrukcja PL | [PDF · v1.1.63](docs/manuals/INCYDENTY_Instrukcja_1.1.63_PL.pdf) |
-| Instrukcja RU | [PDF · v1.1.63](docs/manuals/INCYDENTY_Instrukcja_1.1.63_RU.pdf) |
-| Pliki wzorcowe | [docs/examples](docs/examples/) |
-
-Instrukcje PDF pochodzą z wersji 1.1.63, więc nie obejmują wszystkich późniejszych funkcji. Aktualny opis modułów znajduje się w tym README. Wersja 1.1.65 porządkuje numerację i aktualizacje PWA; w 1.1.64 wprowadzono STOCK CONTROL i PDF oraz usprawniono TV.
+[Pełna instrukcja po polsku](docs/manuals/INCYDENTY_Instrukcja_1.1.63_PL.pdf)
 
 ---
 
-<div align="center">
-  <strong>INCYDENTY</strong> · Autor projektu: <a href="https://github.com/horkiroman4408-cyber">Raman Horki</a><br>
-  <a href="https://horkiroman4408-cyber.github.io/Panel-informacyjny/">Uruchom aplikację</a> · <a href="README_RU.md">Русский</a> · <a href="CHANGELOG.md">Historia zmian</a>
-</div>
+## Русский
+
+В начале смены сотрудник может посмотреть, на какой процесс он назначен и когда у него перерыв. В течение смены панель показывает результаты процессов, карточки сотрудников и объявления с фотографиями. Руководитель смены загружает данные на компьютере и выбирает, что увидит команда на телевизорах.
+
+### Первый показ
+
+1. Скачайте [учебный отчёт по процессам](docs/examples/01_Wyniki_procesow.xlsx).
+2. В приложении откройте **Wyniki i normy → Wyniki procesów → Wczytaj Excel**. В окне **Okres wyników** укажите даты отчёта или нажмите **Pomiń**.
+3. Откройте **AUDYT**. В образце норма — **120 шт./ч**. Результаты 102 и 130 шт./ч соответствуют 85% и примерно 108,3%. Счётчик **osiąga normę** покажет **1 / 2**.
+4. Выберите **Tryb TV → Jeden stały ekran**, укажите экран результатов и нажмите **Uruchom pokaz**. Клавиша **Esc** завершает показ.
+
+### Четыре раздела панели
+
+| Раздел в приложении | Для чего он нужен |
+| --- | --- |
+| **Harmonogram pracy** | Показывает расстановку и перерывы. Выберите смену и длительность рабочего дня — 8H, 10H или 12H. Значком глаза можно скрыть на ТВ отдельного сотрудника или команду. |
+| **Wyniki procesów** | Показывает норму, скорость каждого сотрудника и процент выполнения. Для обсуждения на смене можно открыть один процесс или несколько рядом. |
+| **Karty pracowników** | Объединяет все процессы одного сотрудника за период. Итоговый KPI — среднее с учётом времени на каждом процессе. |
+| **Tablica informacyjna** | Позволяет собрать объявление в одном из семи макетов. Добавьте текст или фотографии, сохраните слайд и отметьте его название в настройках ТВ. |
+
+![Норма и число сотрудников, достигших её на каждом процессе](docs/media/wyniki.png)
+
+*Карточки процессов. Крупное число — норма в штуках за час. Дробь рядом показывает, сколько сотрудников её достигли. Данные на снимке отличаются от учебного примера.*
+
+### Образцы Excel
+
+Заполняйте копию образца, сохраняя названия листов и заголовки колонок. Максимальный размер одного файла **.xlsx — 10 МБ**.
+
+| Скачать образец | Лист | Что заполнить |
+| --- | --- | --- |
+| [Результаты процессов](docs/examples/01_Wyniki_procesow.xlsx) | `RAPORT` | Для каждого процесса создайте секцию. В A укажите название, в C — например, `NORMA: 120 szt./h`. Ниже заполните логин, количество штук, часы и результат в шт./ч. |
+| [Карточка сотрудника](docs/examples/02_Karta_pracownika_Export.xlsx) | `Export` | Один логин и один период на файл. Колонки: `PROCESS`, `Pieces`, `Time`, `KPI %`. Под таблицей сохраните фильтры `Login TH` и `Date`. Значение 0,95 означает 95%. |
+| [График на завтра](docs/examples/03_Grafik_STAN.xlsx) | `STAN` или `Arkusz1` | Укажите дату и смену. Для каждой группы поместите логин и назначенный процесс или статус в соседние колонки. |
+| [Перерывы](docs/examples/04_Przerwy_agencje.xlsx) | `Sheet2` в образце | В A разместите секции `I ZMIANA` и `II ZMIANA` со строками 8H, 10H и 12H. В B, D и F впишите интервалы времени. |
+
+**Как исправить данные.** Новый отчёт процессов заменяет предыдущий. Карточки сотрудников можно загружать партиями до 25 файлов. Чтобы исправить одну карточку, повторно загрузите файл с тем же логином и теми же датами начала и конца периода.
+
+### Два телевизора на одной смене
+
+Включите расширенный рабочий стол и откройте два окна приложения в одном профиле браузера. После импорта обновите второе окно и перенесите по окну на каждый ТВ.
+
+- **ТВ 1 — расстановка.** Выберите **Jeden stały ekran → Harmonogram pracy**, чтобы сотрудники могли посмотреть график в любой момент. Панель выделяет текущий перерыв или ближайший, если до его начала осталось не больше 30 минут.
+- **ТВ 2 — результаты и объявления.** Выберите **Automatyczny pokaz**, отметьте экраны и задайте порядок стрелками. Доступные интервалы — 10, 15, 20, 30 и 60 секунд. Если внутри экрана три страницы, интервал 30 секунд даст около 10 секунд на каждую.
+
+**Хранение данных и офлайн-режим.** Панель читает Excel в браузере. Отчёты и настройки хранятся в профиле рабочего компьютера, слайды с фотографиями — в IndexedDB. На другом компьютере исходные файлы нужно загрузить заново. Перед работой без сети откройте панель онлайн и проверьте готовность PWA в **Informacje → Aplikacja**.
+
+[Полная инструкция на русском](docs/manuals/INCYDENTY_Instrukcja_1.1.63_RU.pdf)
+
+---
+
+**Autor projektu · Автор проекта** — [Raman Horki](https://github.com/horkiroman4408-cyber)  
+**Wersja · Версия** — 1.1.66

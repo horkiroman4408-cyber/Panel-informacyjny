@@ -4,6 +4,10 @@ Numer wersji jest zapisany w `version.json`. Wydanie przygotowuje `python tools/
 
 Wersje, których tu nie ma, nie miały wpisu w historii aplikacji.
 
+## 1.1.66 · 2026-11-25 · Jedno menu „Nowa podstrona”
+
+W Tablicy informacyjnej trzy przyciski tworzenia podstron (Dodaj PDF, Konstruktor, Nowa podstrona) zastąpiono jednym menu „Nowa podstrona”: Scena TV, Ogłoszenie z szablonu i Dokument PDF. Edytory i zapisane podstrony działają bez zmian.
+
 ## 1.1.65 · 2026-11-25 · Porządek w numerach wersji
 
 Numer wersji w oknie Informacje i w statusie PWA jest odczytywany z jednego pliku, version.json, więc zawsze zgadza się z zainstalowaną wersją. Uproszczono nazwę pamięci podręcznej offline oraz skrypt wydań. Bez zmian w danych, KPI, Excel i TV.

@@ -105,7 +105,7 @@ def bump(new):
     _, errors, warnings = collect()
     if not report(errors, warnings):
         raise SystemExit(1)
-    print('Wydanie %s gotowe. Wgraj zmienione pliki: version.json, sw.js, README.md, info-release.js.' % new)
+    print('Wydanie %s gotowe. Wgraj wszystkie zmienione pliki (porównaj z poprzednim wydaniem).' % new)
     return 0
 
 

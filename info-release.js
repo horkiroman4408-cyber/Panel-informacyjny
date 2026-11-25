@@ -2,6 +2,7 @@
 /* INCYDENTY · informational copy and release history. The version number itself comes from version.json. */
 // Add the new release at the TOP of this list before running tools/release.py (the script checks it).
 const RELEASES=[
+  {v:'1.1.66',date:'25.11.2026',title:'Jedno menu „Nowa podstrona”',text:'W Tablicy informacyjnej trzy przyciski tworzenia podstron (Dodaj PDF, Konstruktor, Nowa podstrona) zastąpiono jednym menu „Nowa podstrona”: Scena TV, Ogłoszenie z szablonu i Dokument PDF. Edytory i zapisane podstrony działają bez zmian.'},
   {v:'1.1.65',date:'25.11.2026',title:'Porządek w numerach wersji',text:'Numer wersji w oknie Informacje i w statusie PWA jest odczytywany z jednego pliku, version.json, więc zawsze zgadza się z zainstalowaną wersją. Uproszczono nazwę pamięci podręcznej offline oraz skrypt wydań. Bez zmian w danych, KPI, Excel i TV.'},
   {v:'1.1.64',date:'24.11.2026',title:'STOCK CONTROL, PDF i Tryb TV',text:'Dodano STOCK CONTROL z importem 3 eksportów Excel, filtrami marek i ekranami TV. W Tablica informacyjna dodano PDF jako zapisane podstrony, podgląd TV, dopasowanie i kadrowanie. Rozszerzono formatowanie tekstu. Uspójniono przejścia TV, nawigację i układ ekranów oraz poprawiono wyświetlanie źródeł i wskaźników.'}
 ];
