@@ -1,307 +1,159 @@
 <div align="center">
-
-# INCYDENTY
-
-**Panel informacyjny działu**  
-Nowoczesna aplikacja PWA do prezentacji wyników, harmonogramu pracy, komunikatów TV i kontroli magazynu.
-
-<p>
-  <a href="https://horkiroman4408-cyber.github.io/Panel-informacyjny/"><img alt="Uruchom aplikację" src="https://img.shields.io/badge/Uruchom_aplikację-INCYDENTY-0a84ff?style=for-the-badge"></a>
-  <a href="https://github.com/horkiroman4408-cyber/Panel-informacyjny"><img alt="Repozytorium" src="https://img.shields.io/badge/GitHub-Repozytorium-1f2937?style=for-the-badge"></a>
-</p>
-
-<p>
-  <a href="#-szybki-start">Szybki start</a> •
-  <a href="#-moduły">Moduły</a> •
-  <a href="#-konstruktor-scena-tv">Konstruktor Scena TV</a> •
-  <a href="#-wymagane-pliki">Wymagane pliki</a> •
-  <a href="#-tryb-tv">Tryb TV</a> •
-  <a href="README_RU.md">Русская версия</a>
-</p>
-
+  <img src="icons/icon-192.png" width="100" alt="INCYDENTY">
+  <h1>INCYDENTY</h1>
+  <p><strong>Panel informacyjny działu</strong></p>
+  <p>Harmonogram · KPI · Kontrola magazynu · Komunikacja na TV</p>
+  <a href="https://horkiroman4408-cyber.github.io/Panel-informacyjny/"><img src="docs/media/readme/readme-launch-pl.png" width="220" alt="Uruchom aplikację"></a>
+  <p><a href="CHANGELOG.md"><img src="docs/media/readme/readme-version.png" width="90" alt="v1.1.65"></a> <img src="docs/media/readme/readme-pwa.png" width="146" alt="PWA · Offline"> <img src="docs/media/readme/readme-tv.png" width="108" alt="TV 16:9"></p>
+  <p><a href="README.md">Polski</a> · <a href="README_RU.md">Русский</a> · <a href="CHANGELOG.md">Historia / История</a></p>
+  <img src="docs/media/incydenty.png" alt="INCYDENTY · prezentacja projektu" width="100%">
 </div>
-
----
 
 ## O projekcie
 
-**INCYDENTY** to aplikacja typu **PWA (Progressive Web App)** przygotowana do pracy na komputerze i na telewizorach działowych.  
-Łączy kilka obszarów w jednym miejscu:
+INCYDENTY to panel informacyjny PWA przeznaczony dla stanowiska kierującego zmianą i dużych ekranów na hali. Zamiast osobnych arkuszy i prezentacji pozwala przygotować dane, ogłoszenia i kolejność pokazu w jednym miejscu. Interfejs jest po polsku; niniejsza dokumentacja dostępna jest także [po rosyjsku](README_RU.md).
 
-- **Harmonogram pracy** – podział pracowników i podstrony działowe.
-- **Wyniki i normy** – analiza procesów oraz karty pracowników.
-- **Stock Control** – kontrola półek, jednostek, MP Stocking i RS1 na podstawie eksportów Excel / Power BI.
-- **Tablica informacyjna** – komunikaty, zdjęcia, PDF-y, zapisane podstrony i własne slajdy.
-- **Konstruktor Scena TV** – edytor kart/ogłoszeń w układzie telewizyjnym 16:9.
-- **Tryb TV** – automatyczny pokaz pełnoekranowy z kolejnością i czasem slajdów.
+| Moduł | Co daje zespołowi |
+|---|---|
+| **Harmonogram pracy** | Przydziały, nieobecności, godziny przerw i widżety |
+| **Wyniki i normy** | Wyniki procesów i indywidualne karty pracowników |
+| **STOCK CONTROL** | Stan półek, zatowarowanie i dane RS1 z eksportów Power BI |
+| **Tablica informacyjna** | Komunikaty, zdjęcia, PDF oraz własne sceny 16:9 |
 
-Projekt jest rozwijany pod realną pracę działu i nastawiony na:
+[Uruchomienie](#uruchomienie-i-instalacja) · [Moduły](#moduły) · [Formaty danych](#formaty-danych-i-wzory-excel) · [Tryb TV](#tryb-tv) · [Dokumentacja](#dokumentacja-i-wersje)
 
-- szybkie ładowanie,
-- czytelność na dużych ekranach,
-- prosty import danych,
-- lokalne przechowywanie ustawień i materiałów,
-- możliwość pracy jak w aplikacji, a nie jak w zwykłej stronie.
+## Uruchomienie i instalacja
 
----
+**[Otwórz INCYDENTY](https://horkiroman4408-cyber.github.io/Panel-informacyjny/)**. Nie trzeba pobierać instalatora. Przy pierwszym uruchomieniu wczytaj własne dane lub pliki przykładowe z sekcji poniżej.
 
-## 🚀 Szybki start
+| Microsoft Edge | Google Chrome |
+|---|---|
+| Otwórz stronę → `…` → **Aplikacje** → **Zainstaluj tę witrynę jako aplikację**. | Otwórz stronę → ikona instalacji w pasku adresu lub menu `⋮` → opcja instalacji strony jako aplikacji. |
 
-### 1) Uruchom aplikację
+Jeśli pojawi się przycisk **Zainstaluj** w aplikacji, można użyć również jego. Nazwy poleceń zależą od wersji przeglądarki. Praca offline jest dostępna po poprawnym zapisaniu zasobów PWA; sprawdź **Informacje → Aplikacja**. Aktualizację najlepiej uruchamiać po zakończeniu pokazu.
 
-**Link do aplikacji:**  
-👉 **[https://horkiroman4408-cyber.github.io/Panel-informacyjny/](https://horkiroman4408-cyber.github.io/Panel-informacyjny/)**
+## Moduły
 
-Po wejściu na stronę możesz używać jej od razu w przeglądarce albo zainstalować jako aplikację.
+### 01 · Harmonogram pracy
 
-### 2) Zainstaluj jako aplikację (PWA)
+Wczytaj grafik `STAN` i osobny plik przerw. Wybierz zmianę oraz czas pracy 8H, 10H lub 12H. Widżety można rozmieszczać, a ikoną oka określać widoczność osób i zespołów na TV. Panel wyróżnia trwającą przerwę lub najbliższą, jeśli zaczyna się w ciągu 30 minut.
 
-#### Microsoft Edge
-1. Otwórz link do aplikacji.
-2. Kliknij menu **⋯**.
-3. Wybierz **Aplikacje** → **Zainstaluj tę witrynę jako aplikację**.
-4. Potwierdź instalację.
+<img src="docs/media/przerwy.png" alt="Przykładowy widżet Przerwy" width="100%">
 
-#### Google Chrome
-1. Otwórz link do aplikacji.
-2. Kliknij ikonę instalacji w pasku adresu **lub** menu **⋮**.
-3. Wybierz **Zainstaluj aplikację** / **Install app**.
-4. Potwierdź.
+### 02 · Wyniki i normy
 
-### 3) Do czego najlepiej używać
+**Wyniki procesów**: raport Excel `RAPORT`, norma procesu, liczba osób osiągających normę, wydajność w szt./h i procent realizacji. Ustaw okres raportu, filtruj, sortuj i wybieraj `Przegląd` lub `Jeden proces`. Nowy raport zastępuje poprzedni.
 
-- **Komputer / laptop** – edycja, import danych, tworzenie slajdów i ustawień.
-- **Telewizor / duży ekran** – pełnoekranowy pokaz działowy w Trybie TV.
+<img src="docs/media/wyniki.png" alt="Widok kart procesów" width="100%">
 
----
+**Karty pracowników**: import do 25 plików jednocześnie, identyfikacja według `Login TH` i okresu, KPI ważone czasem, godziny oraz wszystkie procesy danej osoby. Ponowny import tego samego loginu i identycznego okresu aktualizuje kartę; inny okres tworzy osobny zapis. Karty i raport procesów są przechowywane oddzielnie.
 
-## 📸 Podgląd aplikacji
+#### Jak czytać KPI
 
-### Wyniki i normy – karty pracowników
+- Realizacja normy = wynik w szt./h ÷ norma × 100%.
+- KPI za okres = suma (KPI procesu × czas procesu) ÷ suma czasów.
+- Procesy w normie = liczba procesów z KPI co najmniej 100% względem wszystkich procesów pracownika.
 
-![Wyniki i normy – karty pracowników](docs/images/wyniki-karty-pracownikow.png)
+![Przykład KPI: norma 120, wyniki 102 i 130](docs/media/readme/readme-kpi.png)
 
-### STOCK CONTROL – widok TV
+*Dane demonstracyjne z przykładowego raportu: 85% oraz 108,3%, czyli jedna z dwóch osób osiąga normę.*
 
-![Stock Control – widok TV](docs/images/stock-control-tv.png)
+### 03 · STOCK CONTROL
 
-### Tablica informacyjna – scena TV
+Wczytaj trzy eksporty `.xlsx` z Power BI: **ALL SHELVES**, **NO OF UNITS** i **RS1 STOCK**. Aplikacja identyfikuje pliki według kolumn w arkuszu `Export`, nie według nazwy pliku. Pokazuje wszystkie półki, półki z towarem, puste półki, procent zapełnienia, MP STOCKING i **DO ZATOWAROWANIA**. Dodatkowo prezentuje tabele wg typu lokalizacji, marki, RS1 i średnią ważoną liczby jednostek na półkę.
 
-![Tablica informacyjna – scena TV](docs/images/tablica-informacyjna-tv.png)
+Wysokie zapełnienie jest wyróżnione czerwienią, niższe zielenią; kolor `% EMPTY` odpowiada uzupełniającemu zapełnieniu. Można wybrać wszystkie dostępne marki lub filtrować widok. W TV dostępne są ekrany zbiorczy, SINSAY i RTS; w RTS nie ma tabeli RS1. Dane aktualizuje się przez ponowny import, **nie przez połączenie na żywo z Power BI**.
 
-### Konstruktor Scena TV
+![STOCK CONTROL z danymi demonstracyjnymi](docs/media/readme/readme-stock-demo.png)
 
-![Konstruktor Scena TV](docs/images/konstruktor-scena-tv.png)
+*Zrzut modułu z izolowanego uruchomienia kodu; liczby i nazwy plików są demonstracyjne.*
 
-### PDF i zapisane podstrony
+### 04 · Tablica informacyjna
 
-![PDF i zapisane podstrony](docs/images/pdf-i-zapisane-podstrony.png)
+Trzy sposoby przygotowania treści w `Zapisane podstrony`:
 
----
+| Typ | Zastosowanie |
+|---|---|
+| **Nowa podstrona** | Gotowe makiety tekstowo-zdjęciowe, edycja tekstu w bloku i pływająca belka formatowania zaznaczenia |
+| **Dodaj PDF** | Gotowy dokument, podgląd i oddzielny ekran TV; dopasowanie i kadrowanie |
+| **Konstruktor** | Swobodny układ niezależnych bloków na tle aplikacji, w proporcjach 16:9 |
 
-## 🧩 Moduły
+#### Konstruktor Scena TV
 
-## Harmonogram pracy
+Dodaj `Nagłówek`, `Tekst`, `Krok numerowany`, `TAK / NIE`, `Tabela`, `Zdjęcie`, `Ważne / alert`, `Lista` lub `Sekcja`. Możesz też wybrać gotowy układ zdjęcie + tekst. Przeciągaj bloki za uchwyty, zmieniaj wymiary, klikaj tekst i edytuj bezpośrednio. Pływające **Właściwości bloku** pozwalają zmienić rozmiar i kolor tekstu, tło, wyrównanie, zaokrąglenie, cień i ramkę; dodatkowe ustawienia zależą od typu bloku. Tabela ma edycję wierszy i kolumn, zdjęcie dopasowanie i położenie, a TAK/NIE edytowalne pytanie, odpowiedzi, etykiety i kolory. Bloki można kopiować, usuwać oraz zmieniać ich warstwy. Zapisana scena może wejść do wspólnego pokazu TV.
 
-Moduł do prezentacji zaplanowanej pracy i materiałów działowych.
+![Konstruktor: przykładowa scena](docs/media/readme/readme-scene.png)
 
-Najważniejsze możliwości:
-- podział na podstrony działowe,
-- materiały widoczne na TV,
-- zapisane podstrony i własne sceny,
-- integracja z materiałami informacyjnymi.
+![Pływające właściwości bloku](docs/media/readme/readme-scene-editor.png)
 
-## Wyniki i normy
+*Zrzuty edytora z izolowanego uruchomienia kodu, z neutralnym obrazem i tekstem demonstracyjnym.*
 
-Główna część do analizy pracy procesów i pracowników.
+## Jak działa przepływ danych
 
-### Wyniki procesów
-- import raportu Excel,
-- przegląd procesów i norm,
-- filtrowanie i sortowanie,
-- wybór okresu raportu,
-- pokaz TV z automatycznym przełączaniem kart.
-
-### Karty pracowników
-- zapis kart pracowników z danych Excel,
-- filtrowanie po miesiącu i loginie,
-- widok KPI oraz czasu pracy w procesach,
-- prezentacja na ekranie TV.
-
-## STOCK CONTROL
-
-Moduł magazynowy oparty na **3 plikach Excel**:
-- **ALL SHELVES**,
-- **NO OF UNITS**,
-- **RS1 STOCK**.
-
-Pokazuje m.in.:
-- liczbę wszystkich półek,
-- półki z towarem i puste półki,
-- % zapełnienia,
-- MP STOCKING,
-- **do zatowarowania**,
-- tabele szczegółowe dla ALL SHELVES, NO OF UNITS oraz RS1 STOCK,
-- tryb TV z różnymi widokami dla wszystkich marek, SINSAY i RTS.
-
-## Tablica informacyjna
-
-Miejsce do prezentacji komunikatów działowych.
-
-Obsługuje:
-- zwykłe podstrony tekstowe,
-- zdjęcia,
-- zapisane slajdy,
-- podgląd i pokaz dokumentów PDF,
-- własne sceny TV,
-- kolejność i czas pokazu.
-
-## Konstruktor Scena TV
-
-Nowy edytor do przygotowywania **normalnych kart/ogłoszeń**, a nie sztywnych stron jak PDF.
-
-Przeznaczenie:
-- komunikaty dla pracowników,
-- instrukcje,
-- ogłoszenia działowe,
-- plansze informacyjne,
-- proste sceny 16:9 do TV.
-
-### Dostępne elementy
-- Nagłówek
-- Tekst
-- Krok numerowany
-- TAK / NIE
-- Tabela
-- Zdjęcie
-- Ważne / alert
-- Lista
-- Sekcja
-- Układ: zdjęcie + tekst
-
-### Edycja
-- przeciąganie elementów,
-- zmiana rozmiaru,
-- edycja tekstu bezpośrednio w bloku,
-- formatowanie tekstu (m.in. rozmiar, kolor, marker, tło),
-- kopiowanie i usuwanie bloków,
-- kolejność warstw,
-- ustawienia w wygodnym popoverze zamiast stałego panelu.
-
----
-
-## 🗂 Wymagane pliki
-
-Poniżej przykładowy zakres plików używanych przez aplikację.
-
-| Obszar | Typ pliku | Przeznaczenie |
-|---|---|---|
-| Wyniki procesów | Excel raport procesów | import wyników, norm i procesu |
-| Karty pracowników | Excel / Export | zapis kart pracowników według loginu TH |
-| Harmonogram pracy | Excel STAN | dane zespołów / plan / podstrony |
-| Harmonogram pracy | Excel przerwy | dodatkowe informacje do widoku pracy |
-| Stock Control | ALL SHELVES.xlsx | stan półek |
-| Stock Control | NO OF UNITS.xlsx | jednostki i stocking |
-| Stock Control | RS1 STOCK.xlsx | dane RS1 |
-| Tablica informacyjna | PDF / zdjęcia | materiały do pokazu TV |
-
-Jeżeli w repozytorium są dodane przykładowe pliki, warto trzymać je w osobnym folderze, np. `Dokumenty/przykładowe_pliki/`.
-
----
-
-## 📺 Tryb TV
-
-Tryb TV jest jedną z najważniejszych części aplikacji.
-
-Umożliwia:
-- przejście w pełny ekran,
-- automatyczne odtwarzanie ekranów,
-- ustawienie czasu przełączania,
-- wybór kolejności ekranów,
-- pokaz pojedynczego ekranu lub całej listy,
-- wstrzymanie pokazu,
-- przejście do następnego i poprzedniego slajdu,
-- spójne animacje kart i podstron,
-- osobny pokaz dla danych, PDF i scen TV.
-
-Typowe zastosowania:
-- TV przy stanowiskach pracy,
-- ekran z wydajnością procesów,
-- ekran z kartami pracowników,
-- ekran z komunikatami i instrukcjami,
-- ekran magazynowy STOCK CONTROL.
-
----
-
-## 🧠 Dane, pamięć i praca offline
-
-Aplikacja przechowuje dane **lokalnie w przeglądarce**.
-
-To oznacza, że:
-- importowane pliki nie są wysyłane na zewnętrzny serwer aplikacji,
-- ustawienia TV zapamiętują się lokalnie,
-- zapisane podstrony i materiały mogą być przechowywane w przeglądarce,
-- działanie zależy od konkretnej przeglądarki i urządzenia,
-- po czyszczeniu danych przeglądarki część zapisanych materiałów może zostać usunięta.
-
-PWA pozwala też na bardziej „aplikacyjne” działanie niż zwykła karta w przeglądarce.
-
----
-
-## 📘 Dokumentacja
-
-W projekcie można utrzymywać dodatkowe materiały:
-
-- instrukcję użytkownika PL,
-- instrukcję użytkownika RU,
-- przykładowe pliki Excel,
-- wzory dokumentów,
-- zrzuty ekranu,
-- krótkie instrukcje dla współpracowników.
-
-Jeśli chcesz, warto dodać do repozytorium strukturę np.:
-
-```text
-Dokumenty/
-├── instrukcje/
-├── przykladowe_pliki/
-├── zrzuty_ekranu/
-└── wzory/
+```mermaid
+flowchart TD
+    A[Excel: RAPORT / Export / STAN / Przerwy] --> E[INCYDENTY · przeglądarka]
+    B[Power BI: 3 eksporty Excel] --> E
+    C[Komunikaty, zdjęcia i PDF] --> E
+    E --> D[Przetwarzanie i zapis lokalny]
+    D --> F[Harmonogram i KPI]
+    D --> G[STOCK CONTROL]
+    D --> H[Tablica i Scena TV]
+    F --> T[Tryb TV]
+    G --> T
+    H --> T
+    T --> I[Stały ekran]
+    T --> J[Automatyczny pokaz]
 ```
 
+## Formaty danych i wzory Excel
+
+Zachowaj nazwy arkuszy i kolejność wymaganych nagłówków. Pliki `.xlsx` do 10 MB każdy. Dane magazynowe eksportuj z odpowiednich tabel, nie ze zrzutu ekranu ani wydruku PDF.
+
+| Plik / wzór | Arkusz | Wymagania |
+|---|---|---|
+| [01 · Wyniki procesów](docs/examples/01_Wyniki_procesow.xlsx) | `RAPORT` | Sekcje procesów: nazwa w A, norma w C (np. `NORMA: 120 szt./h`), login, sztuki, godziny, wynik szt./h |
+| [02 · Karta pracownika](docs/examples/02_Karta_pracownika_Export.xlsx) | `Export` | `PROCESS`, `Pieces`, `Time`, `KPI %`; filtry `Login TH` i `Date`; jeden login i jeden okres |
+| [03 · Grafik STAN](docs/examples/03_Grafik_STAN.xlsx) | `STAN` / `Arkusz1` | Data, zmiana, login i sąsiednia kolumna procesu/statusu |
+| [04 · Przerwy](docs/examples/04_Przerwy_agencje.xlsx) | `Sheet2` we wzorze | W A sekcje `I ZMIANA`, `II ZMIANA` i wiersze 8H, 10H, 12H; przedziały B, D, F |
+| ALL SHELVES | `Export` | `BRAND (LOC SUBAREA)`, `LOCATION TYPE`, grupy MP1/MP2/MP3, sumy, `AVG UNITS`, `TOTAL UNITS`, `% OF FULNESS`, `% OF EMPTY` |
+| NO OF UNITS | `Export` | `BRAND (LOC SUBAREA)`, `LOCATION TYPE`, grupy MP1/MP2/MP3, `MP STOCKING`, `MP TO BE STOCKED` i procenty |
+| RS1 STOCK | `Export` | `SYSTEM`, `NO OF ITEMS`, `NO OF TSUS`, `AVG NO OF ITEMS` |
+
+Cztery pierwsze wzory są dostępne w repozytorium. Dla STOCK CONTROL użyj trzech oryginalnych eksportów Power BI, zachowując pełny układ i kolejność kolumn. W kartach pracowników `0,95` jako wartość procentowa oznacza 95%; w eksporcie STOCK CONTROL procenty są w skali 0–100. Błąd importu nie oznacza konieczności czyszczenia wszystkich danych.
+
+## Tryb TV
+
+1. Przygotuj dane i zapisz podstrony.
+2. Kliknij **Tryb TV**. Wybierz `Jeden stały ekran` lub `Automatyczny pokaz`.
+3. Zaznacz dostępne ekrany, ustaw kolejność i czas wyświetlania (10, 15, 20, 30 lub 60 sekund).
+4. Kliknij `Uruchom pokaz`. Sterowanie obejmuje ustawienia, pauzę, poprzedni i następny ekran oraz zakończenie. `Esc` kończy pokaz. Panel może znikać po 3 sekundach bezczynności.
+
+| TV 1 | TV 2 |
+|---|---|
+| **Stały ekran:** Harmonogram pracy, przydziały, przerwy. | **Automatyczny pokaz:** wyniki, karty, STOCK CONTROL, komunikaty, PDF i sceny. |
+
+Użyj rozszerzonego pulpitu i dwóch okien tego samego profilu przeglądarki. Po zmianie danych odśwież drugie okno przed pokazem. Czas ekranu może dzielić się między jego strony wewnętrzne.
+
+## Dane, offline i bezpieczeństwo
+
+Excel jest przetwarzany lokalnie. Raporty i ustawienia pozostają w przeglądarce, a slajdy, zdjęcia, PDF i sceny są zapisywane w lokalnych magazynach IndexedDB. Aplikacja nie synchronizuje danych automatycznie między komputerami. Usunięcie danych witryny może usunąć zapisane materiały. Nie publikuj prawdziwych raportów, loginów pracowników, dokumentów wewnętrznych ani kluczy w publicznym repozytorium. Podgląd PDF może wymagać zewnętrznej biblioteki PDF.js; przed użyciem offline sprawdź go z konkretnym dokumentem.
+
+## Dokumentacja i wersje
+
+| Materiał | Link |
+|---|---|
+| Wersja aplikacji | [1.1.65 · 25.11.2026](version.json) |
+| Historia zmian | [CHANGELOG.md](CHANGELOG.md) |
+| Instrukcja PL | [PDF · v1.1.63](docs/manuals/INCYDENTY_Instrukcja_1.1.63_PL.pdf) |
+| Instrukcja RU | [PDF · v1.1.63](docs/manuals/INCYDENTY_Instrukcja_1.1.63_RU.pdf) |
+| Pliki wzorcowe | [docs/examples](docs/examples/) |
+
+Instrukcje PDF pochodzą z wersji 1.1.63, więc nie obejmują wszystkich późniejszych funkcji. Aktualny opis modułów znajduje się w tym README. Wersja 1.1.65 porządkuje numerację i aktualizacje PWA; w 1.1.64 wprowadzono STOCK CONTROL i PDF oraz usprawniono TV.
+
 ---
 
-## 📝 Najważniejsze elementy aktualnego zakresu projektu
-
-Na podstawie ostatnich prac w aplikacji zakres obejmuje m.in.:
-
-- rozbudowany **STOCK CONTROL**,
-- **Tablicę informacyjną** z PDF i zapisanymi podstronami,
-- **Konstruktor Scena TV** do tworzenia kart 16:9,
-- poprawiony **Tryb TV** z lepszą nawigacją i animacjami,
-- okno **Informacje** z historią i danymi o aplikacji,
-- lepszą prezentację treści na telewizorach.
-
-> Uwaga: wersję numeru wydania warto ustawić już bezpośrednio w repozytorium zgodnie z faktycznym stanem aplikacji.
-
----
-
-## 👤 Autor
-
-**Roman Horki**  
-Projekt: **INCYDENTY / Panel informacyjny działu**
-
-Jeżeli korzystasz z projektu w zespole, warto zostawić w README oraz w aplikacji:
-- link do autora,
-- link do repozytorium,
-- informację o licencji,
-- historię zmian.
-
----
-
-## 🔗 Najważniejsze linki
-
-- **Aplikacja:** [https://horkiroman4408-cyber.github.io/Panel-informacyjny/](https://horkiroman4408-cyber.github.io/Panel-informacyjny/)
-- **Repozytorium:** [https://github.com/horkiroman4408-cyber/Panel-informacyjny](https://github.com/horkiroman4408-cyber/Panel-informacyjny)
-- **Wersja rosyjska README:** [README_RU.md](README_RU.md)
-
+<div align="center">
+  <strong>INCYDENTY</strong> · Autor projektu: <a href="https://github.com/horkiroman4408-cyber">Raman Horki</a><br>
+  <a href="https://horkiroman4408-cyber.github.io/Panel-informacyjny/">Uruchom aplikację</a> · <a href="README_RU.md">Русский</a> · <a href="CHANGELOG.md">Historia zmian</a>
+</div>
